@@ -1,0 +1,17 @@
+{
+    "name": "neo4j",
+    "description": "Neo4j REST client for Node.js",
+    "version": "0.0.1",
+    "author": "Daniel Gasienica <daniel@gasienica.ch>",
+    "main": "lib/neo4j",
+    "keywords": [
+        "neo4j",
+        "graph",
+        "database",
+        "client",
+        "REST"
+    ],
+    "engines": {
+        "node": ">= 0.4.2"
+    }
+}

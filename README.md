@@ -8,6 +8,14 @@ a simple JavaScript API.
 Installation
 ------------
 
+    npm install https://github.com/gasi/node-neo4j/tarball/0.0.1
+
+
+Development
+------------
+
+    git clone git@github.com:gasi/node-neo4j.git neo4j
+    cd neo4j
     npm link
 
 Usage

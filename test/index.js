@@ -1,11 +1,11 @@
 var assert = require('assert');
-var Neo4jClient = require('../lib/neo4j');
+var neo4j = require('../lib/neo4j');
 var sys = require('sys');
 
 // database
 var DB_HOST = 'localhost';
 var DB_PORT = 7474;
-var db = new Neo4jClient(DB_HOST, DB_PORT);
+var db = new neo4j.Client(DB_HOST, DB_PORT, true);
 
 // data
 var data = {
@@ -15,7 +15,10 @@ var data = {
 };
 var newData = {
     name: 'Daniel Gasienica',
-    father: 'Jan Gasienica',
+    father: {
+        firstName: 'Jan',
+        lastName: 'Gasienica'
+    },
     tired: false
 };
 
@@ -27,7 +30,8 @@ db.createNode(data, function(err, res) {
         var id = getNodeId(res);
         db.getNode(id, function (err, res) {
             if (err) {
-                console.log('Error: Failed to get node ' + id);
+                console.log('Error: Failed to get node %d (%s)',
+                    id, JSON.stringify(err));
             } else {
                 assert.deepEqual(res, data,
                         'Retrieved data does not match original data.');
@@ -38,7 +42,8 @@ db.createNode(data, function(err, res) {
                             'Retrieved data does not match updated data.');
                         db.deleteNode(id, function (err, res) {
                             if (err) {
-                                console.log('Error: Failed to delete node ' + id);
+                                console.log('Error: Failed to delete node %d (%s)',
+                                    id, JSON.stringify(err));
                             } else {
                                 db.getNode(id, function (err, res) {
                                     assert.strictEqual(res, null, 'Result not null.');

@@ -8,7 +8,7 @@ a simple JavaScript API.
 Installation
 ------------
 
-    npm install https://github.com/gasi/node-neo4j/tarball/0.0.1
+    npm install https://github.com/gasi/node-neo4j/tarball/0.0.3
 
 
 Development
@@ -21,8 +21,8 @@ Development
 Usage
 -----
 
-    var Neo4jClient = require('neo4j');
-    var client = new Neo4jClient('localhost', 7474)
+    var neo4j = require('neo4j');
+    var client = new neo4j.Client('localhost', 7474, true /* autoMarshal */);
     var print = function (err, res) {
         console.log(err ? err : res);
     };

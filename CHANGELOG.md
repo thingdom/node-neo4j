@@ -1,5 +1,9 @@
 # Changelog: Neo4j REST client for Node.js
 
+## Version 0.0.3 – March 26, 2011
+
+  - Updated README.
+
 ## Version 0.0.2 – March 26, 2011
 
   - Renamed top-level constructor to `Client`.

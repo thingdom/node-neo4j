@@ -40,7 +40,7 @@ db.createNode(data, function(err, res) {
                     db.getNode(id, function (err, res) {
                         assert.deepEqual(res, newData,
                             'Retrieved data does not match updated data.');
-                        db.deleteNode(id, function (err, res) {
+                        db.deleteNode(id, function (err) {
                             if (err) {
                                 console.log('Error: Failed to delete node %d (%s)',
                                     id, JSON.stringify(err));

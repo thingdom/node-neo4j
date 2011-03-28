@@ -59,6 +59,38 @@ db.createNode(data, function(err, res) {
     }
 });
 
+// test serialization / deserialization
+var transform = function (o) {
+    return neo4j.deserialize(neo4j.serialize(o));
+}
+
+assert.deepEqual(transform(data), data);
+assert.deepEqual(transform(newData), newData);
+var o = 1;
+assert.strictEqual(transform(o), o);
+o = true;
+assert.strictEqual(transform(o), o);
+
+// Arrays are not supported
+o = [true, false, true];
+assert.throws(transform(o));
+
+// Using illegal separator '.' in object key should fail
+o = {"this.that": "shouldn't work"};
+assert.notDeepEqual(transform(o), o);
+
+o = "gasi";
+assert.strictEqual(transform(o), o);
+
+
+// prune database
+// for (var i = 0; i < 200; i++) {
+//     db.deleteNode(i, function (err) {
+//        console.log(err);
+//     });
+// }
+
+
 // helper
 function print(error, result) {
     console.log(error ? error : (result ? result : ''));

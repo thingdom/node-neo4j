@@ -33,7 +33,7 @@ Usage
 Test
 ----
 
-    node test/
+    node test
 
 
 License

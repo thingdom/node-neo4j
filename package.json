@@ -3,6 +3,9 @@
     "description": "Neo4j REST client for Node.js",
     "version": "0.0.3",
     "author": "Daniel Gasienica <daniel@gasienica.ch>",
+    "contributors": [
+        {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"}
+    ],
     "main": "lib/neo4j",
     "keywords": [
         "neo4j",

@@ -4,7 +4,8 @@
     "version": "0.0.3",
     "author": "Daniel Gasienica <daniel@gasienica.ch>",
     "contributors": [
-        {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"}
+        {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"},
+        {"name": "Aseem Kishore", "email": "aseem.kishore@gmail.com"}
     ],
     "main": "lib/neo4j",
     "keywords": [
@@ -16,5 +17,8 @@
     ],
     "engines": {
         "node": ">= 0.4.2"
+    },
+    "devDependencies": {
+        "streamline": "0.1.x"
     }
 }

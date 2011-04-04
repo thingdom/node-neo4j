@@ -66,8 +66,18 @@ var transform = function (o) {
 
 assert.deepEqual(transform(data), data);
 assert.deepEqual(transform(newData), newData);
-var o = 1;
+
+var o;
+
+// numbers
+o = 1;
 assert.strictEqual(transform(o), o);
+
+// strings
+o = "gasi";
+assert.strictEqual(transform(o), o);
+
+// booleans
 o = true;
 assert.strictEqual(transform(o), o);
 
@@ -79,15 +89,9 @@ assert.throws(transform(o));
 o = {"this.that": "shouldn't work"};
 assert.notDeepEqual(transform(o), o);
 
-o = "gasi";
-assert.strictEqual(transform(o), o);
-
-
 // prune database
-// for (var i = 0; i < 200; i++) {
-//     db.deleteNode(i, function (err) {
-//        console.log(err);
-//     });
+// for (var i = 0; i < 1000; i++) {
+//     db.deleteNode(i, function (err) {});
 // }
 
 

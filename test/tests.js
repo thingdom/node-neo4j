@@ -6,10 +6,10 @@ function __propagate(_, err) { try { _(err); } catch (ex) { __trap(ex); } }
 function __trap(err) { if (err) { if (__global.__context && __global.__context.errorHandler) __global.__context.errorHandler(err); else console.error("UNCAUGHT EXCEPTION: " + err.message + "\n" + err.stack); } }
             (function(_) {
               var __ = (_ = (_ || __trap));
-/*    94 */   function getNodeId(url) {
-/*    95 */     var NODE_REGEX = /node\/(\d+)/g;
-/*    96 */     var match = NODE_REGEX.exec(url);
-/*    97 */     return (match ? parseInt(match[1]) : null);
+/*   108 */   function getNodeId(url) {
+/*   109 */     var NODE_REGEX = /node\/(\d+)/g;
+/*   110 */     var match = NODE_REGEX.exec(url);
+/*   111 */     return (match ? parseInt(match[1]) : null);
               };
 /*     4 */   var assert = require("assert");
 /*     5 */   var neo4j = require("../lib/neo4j.js");
@@ -29,19 +29,20 @@ function __trap(err) { if (err) { if (__global.__context && __global.__context.e
                 },
 /*    24 */     tired: false
               };
-/*    32 */   return db.createNode(data, __cb(_, function(__0, res1) {
-/*    33 */     var id = getNodeId(res1);
-/*    35 */     return db.getNode(id, __cb(_, function(__0, res2) {
-/*    36 */       assert.deepEqual(res2, data, "Retrieved data does not match original data.");
-/*    38 */       return db.updateNode(id, newData, __cb(_, function(__0, res3) {
-/*    39 */         return db.getNode(id, __cb(_, function(__0, res4) {
-/*    40 */           assert.deepEqual(res4, newData, "Retrieved data does not match updated data.");
-/*    42 */           return db.deleteNode(id, __cb(_, function() {
+/*    31 */   console.log("Running tests...");
+/*    39 */   return db.createNode(data, __cb(_, function(__0, url1) {
+/*    40 */     var id = getNodeId(url1);
+/*    42 */     return db.getNode(id, __cb(_, function(__0, res2) {
+/*    43 */       assert.deepEqual(res2, data, "Retrieved data does not match original data.");
+/*    45 */       return db.updateNode(id, newData, __cb(_, function(__0, res3) {
+/*    46 */         return db.getNode(id, __cb(_, function(__0, res4) {
+/*    47 */           assert.deepEqual(res4, newData, "Retrieved data does not match updated data.");
+/*    49 */           return db.deleteNode(id, __cb(_, function() {
                         return function(__) {
                           return function(_) {
                             try {
-/*    45 */                   return db.getNode(id, __cb(_, function() {
-/*    46 */                     assert.fail("Found node even though it was deleted.");
+/*    52 */                   return db.getNode(id, __cb(_, function() {
+/*    53 */                     assert.fail("Found node even though it was deleted.");
                                 return __();
                               }));
                             } catch (e) {
@@ -50,7 +51,7 @@ function __trap(err) { if (err) { if (__global.__context && __global.__context.e
                           }(function(err, __result) {
                             try {
                               if (err) {
-/*    48 */                     assert.strictEqual(err.statusCode, 404, "Nonexistent node returned non-404 error.");
+/*    55 */                     assert.strictEqual(err.statusCode, 404, "Nonexistent node returned non-404 error.");
                               }
                                else return _(null, __result)
                             ;
@@ -61,26 +62,27 @@ function __trap(err) { if (err) { if (__global.__context && __global.__context.e
                           });
                         }(function() {
                           try {
-/*    54 */                 function transform(o) {
-/*    55 */                   return neo4j.deserialize(neo4j.serialize(o));
+/*    61 */                 function transform(o) {
+/*    62 */                   return neo4j.deserialize(neo4j.serialize(o));
                             };
-/*    58 */                 assert.deepEqual(transform(data), data);
-/*    59 */                 assert.deepEqual(transform(newData), newData);
-/*    61 */                 var o;
-/*    64 */                 o = 1;
-/*    65 */                 assert.strictEqual(transform(o), o);
-/*    68 */                 o = "gasi";
-/*    69 */                 assert.strictEqual(transform(o), o);
-/*    72 */                 o = true;
-/*    73 */                 assert.strictEqual(transform(o), o);
-/*    76 */                 o = [true,false,true,];
-/*    77 */                 assert.throws(transform(o));
-/*    80 */                 o = {
-/*    80 */                   "this.that": "shouldn't work"
+/*    65 */                 assert.deepEqual(transform(data), data);
+/*    66 */                 assert.deepEqual(transform(newData), newData);
+/*    68 */                 var o;
+/*    71 */                 o = 1;
+/*    72 */                 assert.strictEqual(transform(o), o);
+/*    75 */                 o = "gasi";
+/*    76 */                 assert.strictEqual(transform(o), o);
+/*    79 */                 o = true;
+/*    80 */                 assert.strictEqual(transform(o), o);
+/*    83 */                 o = [true,false,true,];
+/*    84 */                 assert.throws(transform(o));
+/*    87 */                 o = {
+/*    87 */                   "this.that": "shouldn't work"
                             };
-/*    81 */                 assert.notDeepEqual(transform(o), o);
-/*    90 */                 function print(error, result) {
-/*    91 */                   console.log(((error || result) || ""));
+/*    88 */                 assert.notDeepEqual(transform(o), o);
+/*    99 */                 console.log("Finished running tests.");
+/*   104 */                 function print(error, result) {
+/*   105 */                   console.log(((error || result) || ""));
                             };
                             return __();
                           } catch (e) {

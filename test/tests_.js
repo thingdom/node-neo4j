@@ -25,12 +25,19 @@ var newData = {
 };
 
 
+// TEST SETUP
+
+// sanity output to make sure our tests ran!
+console.log('Running tests...');
+
+
 // TEST CRUD (create, read, update, delete)
 
-// don't bother try-catching; we want error to propogate.
-// TODO do our callbacks return responses (if so, why?) or urls? getNodeId() takes a url parameter...
-var res1 = db.createNode(data, _);
-var id = getNodeId(res1);
+// don't bother try-catching; we want errors to propogate.
+// note that createNode() returns a string url, whereas getNode() returns a data object!
+// TODO createNode() should return a data object too; update this test in that case.
+var url1 = db.createNode(data, _);
+var id = getNodeId(url1);
 
 var res2 = db.getNode(id, _);
 assert.deepEqual(res2, data, 'Retrieved data does not match original data.');
@@ -86,7 +93,14 @@ assert.notDeepEqual(transform(o), o);
 // }
 
 
-// helper
+// TEST TEARDOWN
+
+// sanity output to make sure we reached the end!
+console.log('Finished running tests.');
+
+
+// HELPERS
+
 function print(error, result) {
     console.log(error || result || '');
 };

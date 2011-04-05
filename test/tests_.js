@@ -1,5 +1,6 @@
 // tests_.js
-// Test cases for node-neo4j, written in Streamline.js syntax: https://github.com/Sage/streamlinejs
+// Test cases for node-neo4j, written in Streamline.js syntax:
+// https://github.com/Sage/streamlinejs
 
 var assert = require('assert');
 var neo4j = require('../lib/neo4j.js');

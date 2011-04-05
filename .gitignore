@@ -1,2 +1,6 @@
 .DS_Store
 db/
+
+# Ignore Streamline-generated files:
+test/crud.js
+test/serialization.js

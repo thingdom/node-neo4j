@@ -1,13 +1,9 @@
-// tests_.js
-// Test cases for node-neo4j, written in Streamline.js syntax: https://github.com/Sage/streamlinejs
+// crud_.js
+// Test cases for creating, reading, updating and deleting nodes and edges.
+// Written in Streamline.js syntax: https://github.com/Sage/streamlinejs
 
 var assert = require('assert');
-var neo4j = require('../lib/neo4j.js');
-
-// database
-var DB_HOST = 'localhost';
-var DB_PORT = 7474;
-var db = new neo4j.Client(DB_HOST, DB_PORT, true);
+var db = require('./setup');
 
 // data
 var data = {
@@ -23,12 +19,6 @@ var newData = {
     },
     tired: false,
 };
-
-
-// TEST SETUP
-
-// sanity output to make sure our tests ran!
-console.log('Running tests...');
 
 
 // TEST CRUD (create, read, update, delete)
@@ -56,54 +46,7 @@ try {
 }
 
 
-// TEST SERIALIZE/DESERIALIZE
-
-function transform(o) {
-    return neo4j.deserialize(neo4j.serialize(o));
-}
-
-assert.deepEqual(transform(data), data);
-assert.deepEqual(transform(newData), newData);
-
-var o;
-
-// numbers
-o = 1;
-assert.strictEqual(transform(o), o);
-
-// strings
-o = "gasi";
-assert.strictEqual(transform(o), o);
-
-// booleans
-o = true;
-assert.strictEqual(transform(o), o);
-
-// Arrays are not supported
-o = [true, false, true];
-assert.throws(transform(o));
-
-// Using illegal separator '.' in object key should fail
-o = {"this.that": "shouldn't work"};
-assert.notDeepEqual(transform(o), o);
-
-// prune database
-// for (var i = 0; i < 1000; i++) {
-//     db.deleteNode(i, function (err) {});
-// }
-
-
-// TEST TEARDOWN
-
-// sanity output to make sure we reached the end!
-console.log('Finished running tests.');
-
-
 // HELPERS
-
-function print(error, result) {
-    console.log(error || result || '');
-};
 
 function getNodeId(url) {
     var NODE_REGEX = /node\/(\d+)/g;

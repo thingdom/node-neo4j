@@ -51,9 +51,28 @@ The tests assume a database instance is running:
 
     db/bin/neo4j start
 
-TODO we should be clearing the database before/after; how to do this? is there a command? is clearing the db/data dir safe?
+TODO we should be clearing the database before/after; how to do this?
+(Note that clearing the `db/data` dir is *not* safe according to Daniel. =P)
 
-    node test
+    expresso test/index.js
+
+Yeah for the time being it's too bad we have to specify `index.js`. Some day...
+(This is because right now, Expresso natively supports neither Streamline nor
+helper files like `setup.js`. I'll request these things when I get a chance.)
+
+You can write more tests by making new files that export test functions (one
+test case per file is the limitation right now), e.g.:
+
+    module.exports = function (beforeExit) {
+        // your test case here
+    };
+
+And update `test/index.js` to include these test cases.
+
+If you want to use Streamline syntax in your test cases (very convenient for
+asynchronous calls), name the file with the postfix `_.js` but keep an empty
+`.js` around, and add a `_` arg after `beforeExit`. You'll need to check in the
+`.js` file for now; I'm working with the Streamline author on fixing this.
 
 
 License

@@ -19,6 +19,7 @@
         "node": ">= 0.4.2"
     },
     "devDependencies": {
+        "expresso": "0.7.x",
         "streamline": "0.1.x"
     }
 }

@@ -2,34 +2,35 @@
 
 var __global = typeof global !== 'undefined' ? global : window;
 function __cb(_, fn) { var ctx = __global.__context; return function(err, result) { __global.__context = ctx; if (err) return _(err); return fn(null, result); } }
+function __future(fn, args, i) { if (!fn) throw new Error("anonymous function requires callback"); var done, err, result; var cb = function(e, r) { done = true; err = e, result = r; }; args = Array.prototype.slice.call(args); args[i] = function(e, r) { cb(e, r); }; fn.apply(this, args); return function(_) { if (typeof _ !== "function") throw new Error("future requires callback"); if (done) _.call(this, err, result); else cb = _.bind(this); }.bind(this); }
 function __propagate(_, err) { try { _(err); } catch (ex) { __trap(ex); } }
 function __trap(err) { if (err) { if (__global.__context && __global.__context.errorHandler) __global.__context.errorHandler(err); else console.error("UNCAUGHT EXCEPTION: " + err.message + "\n" + err.stack); } }
-            (function(_) {
-              var __ = (_ = (_ || __trap));
-/*   109 */   function getNodeId(url) {
-/*   110 */     var NODE_REGEX = /node\/(\d+)/g;
-/*   111 */     var match = NODE_REGEX.exec(url);
-/*   112 */     return (match ? parseInt(match[1]) : null);
-              };
-/*     5 */   var assert = require("assert");
-/*     6 */   var neo4j = require("../lib/neo4j.js");
-/*     9 */   var DB_HOST = "localhost";
-/*    10 */   var DB_PORT = 7474;
-/*    11 */   var db = new neo4j.Client(DB_HOST, DB_PORT, true);
-/*    14 */   var data = {
-/*    15 */     name: "Daniel Gasienica",
-/*    16 */     magicNumber: 42,
-/*    17 */     lovesIceCream: true
-              };
-/*    19 */   var newData = {
-/*    20 */     name: "Daniel Gasienica",
-/*    21 */     father: {
-/*    22 */       firstName: "Jan",
-/*    23 */       lastName: "Gasienica"
-                },
-/*    25 */     tired: false
-              };
-/*    32 */   console.log("Running tests...");
+/*     1 */ var assert = require("assert");
+/*     6 */ var db = require("./db");
+/*    10 */ var data = {
+/*    11 */   name: "Daniel Gasienica",
+/*    12 */   magicNumber: 42,
+/*    13 */   lovesIceCream: true
+            };
+/*    16 */ var newData = {
+/*    17 */   name: "Daniel Gasienica",
+/*    18 */   father: {
+/*    19 */     firstName: "Jan",
+/*    20 */     lastName: "Gasienica"
+              },
+/*    22 */   tired: false
+            };
+/*    27 */ function getNodeId(url) {
+/*    28 */   var NODE_REGEX = /node\/(\d+)/g;
+/*    29 */   var match = NODE_REGEX.exec(url);
+/*    30 */   return (match ? parseInt(match[1]) : null);
+            };
+/*    35 */ module.exports = function __1(beforeExit, _) {
+              if (!_) {
+                return __future(__1, arguments, 1);
+              }
+            ;
+              var __ = _;
 /*    40 */   return db.createNode(data, __cb(_, function(__0, url1) {
 /*    41 */     var id = getNodeId(url1);
 /*    43 */     return db.getNode(id, __cb(_, function(__0, res2) {
@@ -62,28 +63,6 @@ function __trap(err) { if (err) { if (__global.__context && __global.__context.e
                           });
                         }(function() {
                           try {
-/*    62 */                 function transform(o) {
-/*    63 */                   return neo4j.deserialize(neo4j.serialize(o));
-                            };
-/*    66 */                 assert.deepEqual(transform(data), data);
-/*    67 */                 assert.deepEqual(transform(newData), newData);
-/*    69 */                 var o;
-/*    72 */                 o = 1;
-/*    73 */                 assert.strictEqual(transform(o), o);
-/*    76 */                 o = "gasi";
-/*    77 */                 assert.strictEqual(transform(o), o);
-/*    80 */                 o = true;
-/*    81 */                 assert.strictEqual(transform(o), o);
-/*    84 */                 o = [true,false,true,];
-/*    85 */                 assert.throws(transform(o));
-/*    88 */                 o = {
-/*    88 */                   "this.that": "shouldn't work"
-                            };
-/*    89 */                 assert.notDeepEqual(transform(o), o);
-/*   100 */                 console.log("Finished running tests.");
-/*   105 */                 function print(error, result) {
-/*   106 */                   console.log(((error || result) || ""));
-                            };
                             return __();
                           } catch (e) {
                             return __propagate(_, e);
@@ -94,4 +73,4 @@ function __trap(err) { if (err) { if (__global.__context && __global.__context.e
                   }));
                 }));
               }));
-            })();
+            };

@@ -124,6 +124,7 @@ class Node extends PropertyContainer
         if @exists
             request.put
                 uri: @self + '/properties'
+                json: @data
             , (error, response, body) =>
                 if error
                     # internal error
@@ -235,6 +236,7 @@ class Relationship extends PropertyContainer
         if @exists
             request.put
                 uri: @self + '/properties'
+                json: @data
             , (error, response, body) =>
                 if error
                     # internal error

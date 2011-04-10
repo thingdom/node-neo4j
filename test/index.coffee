@@ -29,7 +29,7 @@ daniel.save (err, node) ->
         assert.deepEqual node.data, aseemData, 'Sent and received data should match'
         assert.strictEqual node.exists, true, 'Node should exist'
         assert.ok node.self, 'node.self should not be null'
-        
+
         daniel.createRelationshipTo aseem, 'follows', {created: Date.now()},
             (err, relationship) ->
                 assert.ifError err

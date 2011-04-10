@@ -232,19 +232,114 @@ class Relationship extends PropertyContainer
         @_end = end
         @_type = type || null
 
-        @getter 'type', -> @_type || null
+        @_modified = false
 
-    load: (callback) ->
-        # TODO
+        @getter 'start', -> @_start || null
+        @getter 'end', -> @_end || null
+        @getter 'type', -> @_type || null
+        @getter 'modified', -> @_modified
 
     save: (callback) ->
-        # TODO
+        # TODO: check for actual modification
+        @_modified = true
+
+        if @exists and @modified
+            request.put
+                uri: @self + '/properties'
+            , (error, response, body) =>
+                if error
+                    # internal error
+                    callback error, null
+                else if response.statusCode isnt 204
+                    # database error
+                    message = ''
+                    switch response.statusCode
+                        when 400 then message = 'Invalid data sent'
+                        when 404 then message = 'Relationship not found'
+                    callback new Error message, null
+                else
+                    # success
+                    callback null, this
 
     destroy: (callback) ->
-        # TODO
-
-    createRelationshipTo: (otherNode, type, callback) ->
-        # TODO
+        if not @exists
+            callback null
+        else
+            request.del
+                uri: @self
+            , (error, response, body) =>
+                if error
+                    # internal error
+                    callback error
+                else if response.statusCode isnt 204
+                    # database error
+                    message = ''
+                    switch response.statusCode
+                        when 404 then message = 'Relationship not found'
+                    e = new Error message
+                    callback e
+                else
+                    # success
+                    callback null
 
 # Exports
 exports.GraphDatabase = GraphDatabase
+
+#-----------------------------------------------------------------------------
+#
+#  Serialization / Deserialization
+#
+#-----------------------------------------------------------------------------
+
+exports.serialize = (o, separator) ->
+    JSON.stringify flatten(o, separator)
+
+exports.deserialize = (o, separator) ->
+    unflatten JSON.parse(o), separator
+
+flatten = (o, separator, result, prefix) ->
+    separator = separator || '.'
+    result = result || {}
+    prefix = prefix || ''
+
+    # only proceed if argument o is a complex object
+    if typeof o isnt 'object'
+        return o
+
+    for key in o
+        if o.hasOwnProperty key
+            value = o[key]
+            if typeof value != 'object'
+                result[prefix + key] = value
+            else
+                flatten(value, separator, result, key + separator)
+
+    return result
+
+unflatten = (o, separator, result) ->
+    separator = separator || '.'
+    result = result || {}
+
+    # only proceed if argument o is a complex object
+    if typeof o isnt 'object'
+        return o
+
+    for key in o
+        if o.hasOwnProperty key
+            value = o[key]
+            separatorIndex = key.indexOf separator
+            if separatorIndex == -1
+                result[key] = value
+            else
+                keys = key.split separator
+                target = result
+                numKeys = keys.length
+                for i in [0..(numKeys - 2)]
+                    currentKey = keys[i]
+                    if target[currentKey] == undefined
+                        target[currentKey] = {}
+                    target = target[currentKey]
+                lastKey = keys[numKeys - 1]
+                target[lastKey] = value
+
+    return result

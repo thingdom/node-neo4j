@@ -118,9 +118,9 @@ class GraphDatabase
 
 
     getNodeById: (id, callback) ->
-        @getServices (err, services) ->
+        @getServices (err, services) =>
             url = "#{services.node}/#{id}"
-            getNode url, callback
+            @getNode url, callback
 
     # Relationships
     createRelationship: (startNode, endNode, type, callback) ->

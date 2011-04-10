@@ -136,6 +136,13 @@ class PropertyContainer
 
         @getter 'self', -> @_data.self || null
         @getter 'exists', -> @_data.self?
+        @getter 'id', ->
+            if not @exists
+                return null
+            if not @_id?
+                match = /(?:node|relationship)\/(\d+)$/.exec @self
+                @_id = parseInt match[1]
+            return @_id
 
         @getter 'data', -> @_data.data || null
         @setter 'data', (value) -> @_data.data = value

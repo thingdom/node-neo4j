@@ -70,8 +70,10 @@ class GraphDatabase
 
     # Nodes
     createNode: (data) ->
+        data = data || {}
         node = new Node this,
             data: data
+        return node
 
     getNode: (url, callback) ->
         request.get

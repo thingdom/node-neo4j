@@ -257,6 +257,32 @@ class Node extends PropertyContainer
         else
             callback new Error 'Failed to create relationship', null
 
+    index: (index, key, value, callback) ->
+        # TODO
+        if not @exists
+            error = new Error 'Node must exists before indexing properties'
+            return callback error
+
+        @db.getServices (error, services) =>
+            if error
+                return callback error, null
+            encodedKey = encodeURIComponent key
+            encodedValue = encodeURIComponent value
+            url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}"
+            request.post
+                url: url
+                json: @self
+                , (error, response, body) ->
+                    if error
+                        # internal error
+                        callback error
+                    else if response.statusCode isnt 201
+                        # database error
+                        callback new Error response.statusCode
+                    else
+                        # success
+                        callback null
+
 
 class Relationship extends PropertyContainer
     constructor: (db, start, end, type, data) ->

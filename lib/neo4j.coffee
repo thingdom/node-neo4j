@@ -191,6 +191,39 @@ class Node extends PropertyContainer
                     # success
                     callback null
 
+    createRelationshipTo: (otherNode, type, data, callback) ->
+        # ensure this node exists
+        # ensure otherNode exists
+        # create relationship
+        createRelationshipURL = @_data['create_relationship']
+        otherNodeURL = otherNode.self
+        if createRelationshipURL? and otherNodeURL
+            request.post
+                url: createRelationshipURL
+                json:
+                    to: otherNodeURL
+                    data: data
+                    type: type
+                (error, response, body) ->
+                    if error
+                        # internal error
+                        callback error, null
+                    else if response.statusCode isnt 201
+                        # database error
+                        message = ''
+                        switch response.statusCode
+                            when 400 then message = 'Invalid data sent'
+                            when 409 then message = '"to" node, or the node specified by the URI not found'
+                        callback new Error message, null
+                    else
+                        # success
+                        data = JSON.parse body
+                        relationship = new Relationship @db, this, otherNode, type, data
+                        callback null, relationship
+        else
+            callback new Error 'Failed to create relationship', null
+
+
 class Relationship extends PropertyContainer
     constructor: (db, start, end, type, data) ->
         super db, data

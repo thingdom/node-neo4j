@@ -119,15 +119,9 @@ class Node extends PropertyContainer
     constructor: (db, data) ->
         super db, data
 
-        @_modified = true
-
-        @getter 'modified', -> @_modified
-
     save: (callback) ->
         # TODO: check for actual modification
-        @_modified = true
-
-        if @exists and @modified
+        if @exists
             request.put
                 uri: @self + '/properties'
             , (error, response, body) =>
@@ -232,18 +226,13 @@ class Relationship extends PropertyContainer
         @_end = end
         @_type = type || null
 
-        @_modified = false
-
         @getter 'start', -> @_start || null
         @getter 'end', -> @_end || null
         @getter 'type', -> @_type || null
-        @getter 'modified', -> @_modified
 
     save: (callback) ->
         # TODO: check for actual modification
-        @_modified = true
-
-        if @exists and @modified
+        if @exists
             request.put
                 uri: @self + '/properties'
             , (error, response, body) =>

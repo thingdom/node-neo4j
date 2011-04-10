@@ -89,6 +89,33 @@ class GraphDatabase
             node = new Node this, JSON.parse body
             callback null, node
 
+    getIndexedNode: (index, property, value, callback) ->
+        @getServices (err, services) =>
+            if err
+                return callback err, null
+
+            key = encodeURIComponent property
+            val = encodeURIComponent value
+            url = "#{services.node_index}/#{index}/#{key}/#{val}"
+
+            request.get
+                url: url
+            , (error, response, body) =>
+                if error
+                    # Internal error
+                    callback(error, null)
+                else if response.statusCode is 404
+                    # Node not found
+                    callback null, null
+                else if response.statusCode isnt 200
+                    # Database error
+                    callback response.statusCode, null
+                else
+                    # Success
+                    nodes = JSON.parse body
+                    node = new Node this, nodes[0]
+                    callback null, node
+
 
     getNodeById: (id, callback) ->
         @getServices (err, services) ->

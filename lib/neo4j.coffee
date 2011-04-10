@@ -132,7 +132,7 @@ class PropertyContainer
         @db = db
 
         @_data = data || {}
-        @_data.self = data.self || null
+        @_data.self = data?.self || null
 
         @getter 'self', -> @_data.self || null
         @getter 'exists', -> @_data.self?

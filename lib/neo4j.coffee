@@ -166,7 +166,7 @@ class Node extends PropertyContainer
                             callback new Error message, null
                         else
                             # success
-                            @_data.self = response.headers['location']
+                            @_data = JSON.parse body
                             callback null, this
 
     destroy: (callback) ->

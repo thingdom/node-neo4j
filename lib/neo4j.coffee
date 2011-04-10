@@ -294,8 +294,10 @@ exports.GraphDatabase = GraphDatabase
 exports.serialize = (o, separator) ->
     JSON.stringify flatten(o, separator)
 
+
 exports.deserialize = (o, separator) ->
     unflatten JSON.parse(o), separator
+
 
 flatten = (o, separator, result, prefix) ->
     separator = separator || '.'
@@ -315,6 +317,7 @@ flatten = (o, separator, result, prefix) ->
                 flatten(value, separator, result, key + separator)
 
     return result
+
 
 unflatten = (o, separator, result) ->
     separator = separator || '.'

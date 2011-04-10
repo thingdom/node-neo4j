@@ -39,9 +39,8 @@ class GraphDatabase
         if @_root?
             return callback null, @_root
         else
-            request
+            request.get
                 url: @url
-                method: 'GET'
             , (error, response, body) ->
                 if error
                     callback error, null
@@ -58,9 +57,8 @@ class GraphDatabase
             @getRoot (err, root) ->
                 if err
                     return callback err null
-                request
+                request.get
                     url: root.data
-                    method: 'GET'
                 , (error, response, body) ->
                     if error
                         callback error, null
@@ -76,8 +74,7 @@ class GraphDatabase
             data: data
 
     getNode: (url, callback) ->
-        request
-            method: 'GET'
+        request.get
             url: url
         , (error, response, body) ->
             if error
@@ -132,8 +129,7 @@ class Node extends PropertyContainer
             return callback null, this
 
         if @exists
-            request
-                method: 'PUT'
+            request.put
                 uri: @self + '/properties'
             , (error, response, body) =>
                 if error
@@ -156,8 +152,7 @@ class Node extends PropertyContainer
                     # internal error
                     callback error, null
                 else
-                    request
-                        method: 'POST'
+                    request.post
                         uri: services.node
                         json: @data
                     , (error, response, body) =>

@@ -119,16 +119,15 @@ class Node extends PropertyContainer
     constructor: (db, data) ->
         super db, data
 
-        @_modified = not @exists
+        @_modified = true
 
-    load: (callback) ->
-        # TODO
+        @getter 'modified', -> @_modified
 
     save: (callback) ->
-        if not @_modified
-            return callback null, this
+        # TODO: check for actual modification
+        @_modified = true
 
-        if @exists
+        if @exists and @modified
             request.put
                 uri: @self + '/properties'
             , (error, response, body) =>

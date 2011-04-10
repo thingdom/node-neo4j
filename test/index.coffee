@@ -35,3 +35,11 @@ daniel.save (err, node) ->
                 assert.ifError err
                 assert.strictEqual node.exists, true, 'Relationship should exist'
                 assert.ok node.self, 'relationship.self should not be null'
+
+    daniel.index 'users', 'name', 'Daniel',
+        (err) =>
+            assert.ifError err
+            db.getIndexedNode 'users', 'name', 'Daniel',
+                (err, node) ->
+                    assert.ifError err
+                    assert.ok node

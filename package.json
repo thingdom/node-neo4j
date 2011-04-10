@@ -8,6 +8,9 @@
         {"name": "Aseem Kishore", "email": "aseem.kishore@gmail.com"}
     ],
     "main": "lib/neo4j",
+    "dependencies": {
+        "futures": ">= 2.0"
+    },
     "keywords": [
         "neo4j",
         "graph",

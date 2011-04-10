@@ -164,7 +164,7 @@ class Node extends PropertyContainer
                             @_data = JSON.parse body
                             callback null, this
 
-    destroy: (callback) ->
+    delete: (callback) ->
         if not @exists
             callback null
         else
@@ -185,6 +185,9 @@ class Node extends PropertyContainer
                 else
                     # success
                     callback null
+
+    # Alias
+    del: @delete
 
     createRelationshipTo: (otherNode, type, data, callback) ->
         # ensure this node exists
@@ -252,7 +255,7 @@ class Relationship extends PropertyContainer
                     # success
                     callback null, this
 
-    destroy: (callback) ->
+    delete: (callback) ->
         if not @exists
             callback null
         else
@@ -272,6 +275,8 @@ class Relationship extends PropertyContainer
                 else
                     # success
                     callback null
+    # Alias
+    del: @delete
 
 # Exports
 exports.GraphDatabase = GraphDatabase

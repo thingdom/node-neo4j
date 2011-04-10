@@ -9,6 +9,7 @@
     ],
     "main": "lib/neo4j",
     "dependencies": {
+        "coffee-script": "1.x",
         "futures": ">= 2.0"
     },
     "keywords": [

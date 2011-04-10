@@ -163,8 +163,7 @@ class Node extends PropertyContainer
                             message = ''
                             switch response.statusCode
                                 when 400 then message = 'Invalid data sent'
-                            e = new Error message
-                            callback e, null
+                            callback new Error message, null
                         else
                             # success
                             @_data.self = response.headers['location']

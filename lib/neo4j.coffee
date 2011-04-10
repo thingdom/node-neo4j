@@ -170,7 +170,26 @@ class Node extends PropertyContainer
                             callback null, this
 
     destroy: (callback) ->
-        # TODO
+        if not @exists
+            callback null
+        else
+            request.del
+                uri: @self
+            , (error, response, body) =>
+                if error
+                    # internal error
+                    callback error
+                else if response.statusCode isnt 204
+                    # database error
+                    message = ''
+                    switch response.statusCode
+                        when 404 then message = 'Node not found'
+                        # TODO: handle node with relationships
+                        when 409 then message = 'Node could not be deleted (still has relationships?)'
+                    callback new Error message
+                else
+                    # success
+                    callback null
 
 class Relationship extends PropertyContainer
     constructor: (db, start, end, type, data) ->

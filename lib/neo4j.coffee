@@ -103,7 +103,7 @@ class GraphDatabase
             , (error, response, body) =>
                 if error
                     # Internal error
-                    callback(error, null)
+                    callback error, null
                 else if response.statusCode is 404
                     # Node not found
                     callback null, null
@@ -113,7 +113,9 @@ class GraphDatabase
                 else
                     # Success
                     nodes = JSON.parse body
-                    node = new Node this, nodes[0]
+                    node = null
+                    if nodes.length > 0
+                        node = new Node this, nodes[0]
                     callback null, node
 
 

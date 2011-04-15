@@ -80,16 +80,26 @@ class GraphDatabase
             url: url
         , (error, response, body) ->
             if error
-                return callback(error, null)
-
-            if response.statusCode isnt 200
+                callback(error, null)
+            else if response.statusCode isnt 200
                 # TODO: Handle 404
-                return callback response, null
-
-            node = new Node this, JSON.parse body
-            callback null, node
+                callback response, null
+            else
+                node = new Node this, JSON.parse body
+                callback null, node
 
     getIndexedNode: (index, property, value, callback) ->
+        @getIndexedNodes index, property, value,
+            (err, nodes) =>
+                if err
+                    callback err, null
+                else
+                    node = null
+                    if nodes and nodes.length > 0
+                        node = nodes[0]
+                    callback null, node
+
+    getIndexedNodes: (index, property, value, callback) ->
         @getServices (err, services) =>
             if err
                 return callback err, null
@@ -112,11 +122,10 @@ class GraphDatabase
                     callback response.statusCode, null
                 else
                     # Success
-                    nodes = JSON.parse body
-                    node = null
-                    if nodes.length > 0
-                        node = new Node this, nodes[0]
-                    callback null, node
+                    nodeArray = JSON.parse body
+                    nodes = nodeArray.map (node) =>
+                        new Node this, node
+                    callback null, nodes
 
 
     getNodeById: (id, callback) ->
@@ -137,14 +146,13 @@ class PropertyContainer
         @_data.self = data?.self || null
 
         @getter 'self', -> @_data.self || null
-        @getter 'exists', -> @_data.self?
+        @getter 'exists', -> @self?
         @getter 'id', ->
             if not @exists
-                return null
-            if not @_id?
+                null
+            else
                 match = /(?:node|relationship)\/(\d+)$/.exec @self
-                @_id = parseInt match[1]
-            return @_id
+                parseInt match[1]
 
         @getter 'data', -> @_data.data || null
         @setter 'data', (value) -> @_data.data = value

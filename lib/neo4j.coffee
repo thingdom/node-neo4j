@@ -37,7 +37,7 @@ class GraphDatabase
 
     getRoot: (callback) ->
         if @_root?
-            return callback null, @_root
+            callback null, @_root
         else
             request.get
                 url: @url
@@ -52,7 +52,7 @@ class GraphDatabase
 
     getServices: (callback) ->
         if @_services?
-            return callback null, @_services
+            callback null, @_services
         else
             @getRoot (err, root) ->
                 if err

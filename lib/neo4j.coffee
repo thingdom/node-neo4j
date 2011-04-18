@@ -18,6 +18,7 @@
 
 ###
 
+status = require 'http-status'
 request = require 'request'
 
 
@@ -43,7 +44,7 @@ class GraphDatabase
             , (error, response, body) ->
                 if error
                     callback error, null
-                else if response.statusCode isnt 200
+                else if response.statusCode isnt status.OK
                     callback response.statusCode, null
                 else
                     @_root = JSON.parse body
@@ -61,7 +62,7 @@ class GraphDatabase
                 , (error, response, body) ->
                     if error
                         callback error, null
-                    else if response.statusCode isnt 200
+                    else if response.statusCode isnt status.OK
                         callback response.statusCode, null
                     else
                         @_services = JSON.parse body
@@ -80,7 +81,7 @@ class GraphDatabase
         , (error, response, body) ->
             if error
                 callback(error, null)
-            else if response.statusCode isnt 200
+            else if response.statusCode isnt status.OK
                 # TODO: Handle 404
                 callback response, null
             else
@@ -113,10 +114,10 @@ class GraphDatabase
                 if error
                     # Internal error
                     callback error, null
-                else if response.statusCode is 404
+                else if response.statusCode is status.NOT_FOUND
                     # Node not found
                     callback null, null
-                else if response.statusCode isnt 200
+                else if response.statusCode isnt status.OK
                     # Database error
                     callback response.statusCode, null
                 else
@@ -174,12 +175,12 @@ class Node extends PropertyContainer
                 if error
                     # internal error
                     callback error, null
-                else if response.statusCode isnt 204
+                else if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
                     switch response.statusCode
-                        when 400 then message = 'Invalid data sent'
-                        when 404 then message = 'Node not found'
+                        when status.BAD_REQUEST then message = 'Invalid data sent'
+                        when status.NOT_FOUND then message = 'Node not found'
                     e = new Error message
                     callback error, null
                 else
@@ -198,11 +199,11 @@ class Node extends PropertyContainer
                         if error
                             # internal error
                             callback error, null
-                        else if response.statusCode isnt 201
+                        else if response.statusCode isnt status.CREATED
                             # database error
                             message = ''
                             switch response.statusCode
-                                when 400 then message = 'Invalid data sent'
+                                when status.BAD_REQUEST then message = 'Invalid data sent'
                             callback new Error message, null
                         else
                             # success
@@ -219,13 +220,15 @@ class Node extends PropertyContainer
                 if error
                     # internal error
                     callback error
-                else if response.statusCode isnt 204
+                else if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
                     switch response.statusCode
-                        when 404 then message = 'Node not found'
+                        when status.NOT_FOUND
+                            message = 'Node not found'
                         # TODO: handle node with relationships
-                        when 409 then message = 'Node could not be deleted (still has relationships?)'
+                        when status.CONFLICT
+                            message = 'Node could not be deleted (still has relationships?)'
                     callback new Error message
                 else
                     # success
@@ -251,12 +254,14 @@ class Node extends PropertyContainer
                     if error
                         # internal error
                         callback error, null
-                    else if response.statusCode isnt 201
+                    else if response.statusCode isnt status.CREATED
                         # database error
                         message = ''
                         switch response.statusCode
-                            when 400 then message = 'Invalid data sent'
-                            when 409 then message = '"to" node, or the node specified by the URI not found'
+                            when status.BAD_REQUEST
+                                message = 'Invalid data sent'
+                            when status.CONFLICT
+                                message = '"to" node, or the node specified by the URI not found'
                         callback new Error message, null
                     else
                         # success
@@ -285,7 +290,7 @@ class Node extends PropertyContainer
                     if error
                         # internal error
                         callback error
-                    else if response.statusCode isnt 201
+                    else if response.statusCode isnt status.CREATED
                         # database error
                         callback new Error response.statusCode
                     else
@@ -315,12 +320,14 @@ class Relationship extends PropertyContainer
                 if error
                     # internal error
                     callback error, null
-                else if response.statusCode isnt 204
+                else if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
                     switch response.statusCode
-                        when 400 then message = 'Invalid data sent'
-                        when 404 then message = 'Relationship not found'
+                        when status.BAD_REQUEST
+                            message = 'Invalid data sent'
+                        when status.NOT_FOUND
+                            message = 'Relationship not found'
                     callback new Error message, null
                 else
                     # success
@@ -336,11 +343,12 @@ class Relationship extends PropertyContainer
                 if error
                     # internal error
                     callback error
-                else if response.statusCode isnt 204
+                else if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
                     switch response.statusCode
-                        when 404 then message = 'Relationship not found'
+                        when status.NOT_FOUND
+                            message = 'Relationship not found'
                     e = new Error message
                     callback e
                 else

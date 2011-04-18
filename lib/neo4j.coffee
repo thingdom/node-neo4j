@@ -19,7 +19,6 @@
 ###
 
 request = require 'request'
-Futures = require 'futures'
 
 
 class GraphDatabase

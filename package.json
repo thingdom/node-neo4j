@@ -7,7 +7,7 @@
         {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"},
         {"name": "Aseem Kishore", "email": "aseem.kishore@gmail.com"}
     ],
-    "main": "lib/neo4j",
+    "main": "./lib/neo4j",
     "dependencies": {
         "coffee-script": "1.x",
         "http-status": "0.1.0",

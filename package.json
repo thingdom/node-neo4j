@@ -13,6 +13,9 @@
         "http-status": "0.1.0",
         "request": ">= 1.9.5"
     },
+    "devDependencies": {
+        "streamline": ">=0.1.16 <0.2"
+    },
     "keywords": [
         "neo4j",
         "graph",

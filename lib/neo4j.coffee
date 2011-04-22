@@ -21,7 +21,6 @@
 status = require 'http-status'
 request = require 'request'
 
-
 class GraphDatabase
     constructor: (url) ->
         @url = url
@@ -152,6 +151,7 @@ class PropertyContainer
                 null
             else
                 match = /(?:node|relationship)\/(\d+)$/.exec @self
+                #/ TEMP slash to unbreak broken coda coffee plugin (which chokes on the regex with a slash)
                 parseInt match[1]
 
         @getter 'data', -> @_data.data || null
@@ -237,6 +237,8 @@ class Node extends PropertyContainer
     # Alias
     del: @delete
 
+    # TODO why no createRelationshipFrom()? this actually isn't there in the
+    # REST API, but we might be able to support it oursleves.
     createRelationshipTo: (otherNode, type, data, callback) ->
         # ensure this node exists
         # ensure otherNode exists
@@ -250,7 +252,7 @@ class Node extends PropertyContainer
                     to: otherNodeURL
                     data: data
                     type: type
-                (error, response, body) ->
+                (error, response, body) =>      # important! fat arrow to preserve "this"
                     if error
                         # internal error
                         callback error, null
@@ -270,6 +272,53 @@ class Node extends PropertyContainer
                         callback null, relationship
         else
             callback new Error 'Failed to create relationship', null
+    
+    # TODO support passing direction also? the REST API does, but having to
+    # specify 'in', 'out' or 'all' here would be a bad string API. maybe add
+    # getRelationshipsTo() and getRelationshipsFrom()?
+    # TODO support passing in no type, e.g. for all types?
+    # TODO to be consistent with the REST and Java APIs, this returns an array
+    # of all returned relationships. it would certainly be more user-friendly
+    # though if it returned a dictionary of relationships mapped by type, no?
+    getRelationships: (type, callback) ->
+        
+        # support passing in multiple types, as array
+        types = if type instanceof Array then type else [type]
+        
+        getRelationshipsURL = @_data['all_typed_relationships']
+            .replace '{-list|&|types}', types.join('&')
+        
+        if not getRelationshipsURL
+            callback new Error 'Relationships not available.'
+            return
+        
+        request.get
+            url: getRelationshipsURL
+            (err, resp, body) =>    # important! fat arrow to preserve "this"
+                if err
+                    callback err
+                    return
+                if resp.statusCode is 404
+                    callback new Error 'Node not found.'
+                    return
+                if resp.statusCode isnt 200
+                    callback new Error "Unrecognized response code: #{resp.statusCode}"
+                    return
+                # success
+                data = JSON.parse body
+                relationships = data.map (data) =>  # important! fat arrow to preserve "this"
+                    # TEMP HACK constructing a fake Node obj for other node
+                    if @self is data.start
+                        start = this
+                        end = new Node @db, {self: data.end}
+                    else
+                        start = new Node @db, {self: data.start}
+                        end = this
+                    return new Relationship @db, start, end, type, data
+                callback null, relationships
+        
+        # this is to support streamline futures in the future (pun not intended)
+        return
 
     index: (index, key, value, callback) ->
         # TODO
@@ -302,6 +351,8 @@ class Relationship extends PropertyContainer
     constructor: (db, start, end, type, data) ->
         super db, data
 
+        # TODO relationship "start" and "end" are inconsistent with
+        # creating relationships "to" and "from". consider renaming.
         @_start = start
         @_end = end
         @_type = type || null

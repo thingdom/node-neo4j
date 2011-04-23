@@ -86,6 +86,25 @@ testRelationships(relationships)
 # in this case, the end *should* be our instance
 assert.equal relationships[0].end, aseem
 
+nodes = daniel.getRelationshipNodes 'follows', _
+assert.ok nodes
+assert.ok nodes.length
+assert.equal nodes.length, 1
+assert.ok nodes[0]
+assert.ok nodes[0].exists
+assert.ok nodes[0].self     # TODO see above
+assert.deepEqual nodes[0].data, aseemData
+
+# TODO see how this is misleading? we don't respect or report direction!
+nodes = aseem.getRelationshipNodes 'follows', _
+assert.ok nodes
+assert.ok nodes.length
+assert.equal nodes.length, 1
+assert.ok nodes[0]
+assert.ok nodes[0].exists
+assert.ok nodes[0].self     # TODO see above
+assert.deepEqual nodes[0].data, danielData
+
 daniel.index 'users', 'name', 'Daniel', _
 node = db.getIndexedNode 'users', 'name', 'Daniel', _
 assert.ok node

@@ -31,6 +31,10 @@ Stop the server:
 
     db/bin/neo4j stop
 
+To run the tests:
+
+    npm test
+
 
 ## Usage
 

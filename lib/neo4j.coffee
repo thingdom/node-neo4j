@@ -286,7 +286,7 @@ class Node extends PropertyContainer
         types = if type instanceof Array then type else [type]
 
         getRelationshipsURL = @_data['all_typed_relationships']
-            .replace '{-list|&|types}', types.join('&')
+            ?.replace '{-list|&|types}', types.join('&')
 
         if not getRelationshipsURL
             callback new Error 'Relationships not available.'
@@ -319,6 +319,40 @@ class Node extends PropertyContainer
 
         # this is to support streamline futures in the future (pun not intended)
         return
+
+    # TEMP this is actually a traverse, but in lieu of defining a non-trivial
+    # traverse() method, exposing this for now for our simple use case.
+    getRelationshipNodes: (type, callback) ->
+
+        # support passing in multiple types, as array
+        types = if type instanceof Array then type else [type]
+
+        traverseURL = @_data['traverse']
+            ?.replace '{returnType}', 'node'
+
+        if not traverseURL
+            callback new Error 'Traverse not available.'
+            return
+
+        request.post
+            url: traverseURL
+            json:
+                'max depth': 1
+                'relationships': types.map (type) -> {'type': type}
+            , (err, resp, body) =>      # important! fat arrow to preserve "this"
+                if err
+                    callback err
+                    return
+                if resp.statusCode is 404
+                    callback new Error 'Node not found.'
+                    return
+                if resp.statusCode isnt 200
+                    callback new Error "Unrecognized response code: #{resp.statusCode}"
+                    return
+                #success
+                data = JSON.parse body
+                callback null, data.map (data) => new Node @db, data
+                return
 
     index: (index, key, value, callback) ->
         # TODO

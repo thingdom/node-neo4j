@@ -28,7 +28,7 @@
         "url" : "https://github.com/gasi/node-neo4j.git"
     },
     "scripts": {
-        "test": "coffee test"
+        "test": "coffee test/index.coffee"
     },
     "engines": {
         "node": ">= 0.4.2"

@@ -43,45 +43,45 @@ daniel.save (err, node) ->
             assert.ok relationship.exists, 'Relationship should exist'
             assert.ok relationship.self, 'relationship.self should not be null'     # TODO see above
             assert.equal relationship.type, 'follows', 'Relationship type should be "follows".'
-            
+
             # in some cases, the start/end nodes may not be "filled".
             # they also may not point to the same instances we have.
             #assert.equal relationship.start, daniel
             #assert.equal relationship.end, aseem
-            
+
             # TEMP so for the time being, we're testing that at least
             # their "selves" match. not sure if this is a public API.
             assert.ok relationship.start, 'Relationship should have a start node.'
             assert.ok relationship.end, 'Relationship should have an end node.'
             assert.equal relationship.start.self, daniel.self
             assert.equal relationship.end.self, aseem.self
-        
+
         testRelationships = (relationships) ->
             assert.ok relationships
             assert.ok relationships.length, 'Relationships should be an array.'
             assert.equal relationships.length, 1, 'There should only be one relationship.'
             testRelationship(relationships[0])
-        
+
         daniel.createRelationshipTo aseem, 'follows', {created: Date.now()},
             (err, relationship) ->
                 assert.ifError err
                 testRelationship(relationship)
-                
+
                 # in this case, the start and end *should* be our instances
                 assert.strictEqual relationship.start, daniel
                 assert.strictEqual relationship.end, aseem
-                
+
                 daniel.getRelationships 'follows', (err, relationships) ->
                     assert.ifError err
                     testRelationships(relationships)
-                    
+
                     # in this case, the start *should* be our instance
                     assert.equal relationships[0].start, daniel
-                
+
                 aseem.getRelationships 'follows', (err, relationships) ->
                     assert.ifError err
                     testRelationships(relationships)
-                    
+
                     # in this case, the end *should* be our instance
                     assert.equal relationships[0].end, aseem
 

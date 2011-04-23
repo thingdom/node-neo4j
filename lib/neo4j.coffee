@@ -272,7 +272,7 @@ class Node extends PropertyContainer
                         callback null, relationship
         else
             callback new Error 'Failed to create relationship', null
-    
+
     # TODO support passing direction also? the REST API does, but having to
     # specify 'in', 'out' or 'all' here would be a bad string API. maybe add
     # getRelationshipsTo() and getRelationshipsFrom()?
@@ -281,17 +281,17 @@ class Node extends PropertyContainer
     # of all returned relationships. it would certainly be more user-friendly
     # though if it returned a dictionary of relationships mapped by type, no?
     getRelationships: (type, callback) ->
-        
+
         # support passing in multiple types, as array
         types = if type instanceof Array then type else [type]
-        
+
         getRelationshipsURL = @_data['all_typed_relationships']
             .replace '{-list|&|types}', types.join('&')
-        
+
         if not getRelationshipsURL
             callback new Error 'Relationships not available.'
             return
-        
+
         request.get
             url: getRelationshipsURL
             (err, resp, body) =>    # important! fat arrow to preserve "this"
@@ -316,7 +316,7 @@ class Node extends PropertyContainer
                         end = this
                     return new Relationship @db, start, end, type, data
                 callback null, relationships
-        
+
         # this is to support streamline futures in the future (pun not intended)
         return
 

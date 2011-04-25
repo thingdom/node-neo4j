@@ -468,13 +468,12 @@ flatten = (o, separator, result, prefix) ->
     if typeof o isnt 'object'
         return o
 
-    for key in o
-        if o.hasOwnProperty key
-            value = o[key]
-            if typeof value != 'object'
-                result[prefix + key] = value
-            else
-                flatten(value, separator, result, key + separator)
+    for key in Object.keys o
+        value = o[key]
+        if typeof value != 'object'
+            result[prefix + key] = value
+        else
+            flatten(value, separator, result, key + separator)
 
     return result
 
@@ -487,22 +486,21 @@ unflatten = (o, separator, result) ->
     if typeof o isnt 'object'
         return o
 
-    for key in o
-        if o.hasOwnProperty key
-            value = o[key]
-            separatorIndex = key.indexOf separator
-            if separatorIndex == -1
-                result[key] = value
-            else
-                keys = key.split separator
-                target = result
-                numKeys = keys.length
-                for i in [0..(numKeys - 2)]
-                    currentKey = keys[i]
-                    if target[currentKey] == undefined
-                        target[currentKey] = {}
-                    target = target[currentKey]
-                lastKey = keys[numKeys - 1]
-                target[lastKey] = value
+    for key in Object.keys o
+        value = o[key]
+        separatorIndex = key.indexOf separator
+        if separatorIndex == -1
+            result[key] = value
+        else
+            keys = key.split separator
+            target = result
+            numKeys = keys.length
+            for i in [0..(numKeys - 2)]
+                currentKey = keys[i]
+                if target[currentKey] == undefined
+                    target[currentKey] = {}
+                target = target[currentKey]
+            lastKey = keys[numKeys - 1]
+            target[lastKey] = value
 
     return result

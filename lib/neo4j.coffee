@@ -42,9 +42,9 @@ class GraphDatabase
                 url: @url
             , (error, response, body) ->
                 if error
-                    callback error, null
+                    handleError callback, error
                 else if response.statusCode isnt status.OK
-                    callback response.statusCode, null
+                    handleError callback, response.statusCode
                 else
                     @_root = JSON.parse body
                     callback null, @_root
@@ -55,17 +55,18 @@ class GraphDatabase
         else
             @getRoot (err, root) ->
                 if err
-                    return callback err null
-                request.get
-                    url: root.data
-                , (error, response, body) ->
-                    if error
-                        callback error, null
-                    else if response.statusCode isnt status.OK
-                        callback response.statusCode, null
-                    else
-                        @_services = JSON.parse body
-                        callback null, @_services
+                    handleError callback, err
+                else
+                    request.get
+                        url: root.data
+                    , (error, response, body) ->
+                        if error
+                            handleError callback, error
+                        else if response.statusCode isnt status.OK
+                            handleError callback, response.statusCode
+                        else
+                            @_services = JSON.parse body
+                            callback null, @_services
 
     # Nodes
     createNode: (data) ->
@@ -79,10 +80,10 @@ class GraphDatabase
             url: url
         , (error, response, body) ->
             if error
-                callback(error, null)
+                handleError callback, error
             else if response.statusCode isnt status.OK
                 # TODO: Handle 404
-                callback response, null
+                callback response
             else
                 node = new Node this, JSON.parse body
                 callback null, node
@@ -91,7 +92,7 @@ class GraphDatabase
         @getIndexedNodes index, property, value,
             (err, nodes) =>
                 if err
-                    callback err, null
+                    handleError callback, err
                 else
                     node = null
                     if nodes and nodes.length > 0
@@ -101,7 +102,7 @@ class GraphDatabase
     getIndexedNodes: (index, property, value, callback) ->
         @getServices (err, services) =>
             if err
-                return callback err, null
+                return handleError callback, err
 
             key = encodeURIComponent property
             val = encodeURIComponent value
@@ -112,13 +113,13 @@ class GraphDatabase
             , (error, response, body) =>
                 if error
                     # Internal error
-                    callback error, null
+                    handleError callback, error
                 else if response.statusCode is status.NOT_FOUND
                     # Node not found
                     callback null, null
                 else if response.statusCode isnt status.OK
                     # Database error
-                    callback response.statusCode, null
+                    handleError callback, response.statusCode
                 else
                     # Success
                     nodeArray = JSON.parse body
@@ -174,7 +175,7 @@ class Node extends PropertyContainer
             , (error, response, body) =>
                 if error
                     # internal error
-                    callback error, null
+                    handleError callback, error
                 else if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
@@ -182,7 +183,7 @@ class Node extends PropertyContainer
                         when status.BAD_REQUEST then message = 'Invalid data sent'
                         when status.NOT_FOUND then message = 'Node not found'
                     e = new Error message
-                    callback error, null
+                    handleError callback, error
                 else
                     # success
                     callback null, this
@@ -190,7 +191,7 @@ class Node extends PropertyContainer
             @db.getServices (error, services) =>
                 if error
                     # internal error
-                    callback error, null
+                    handleError callback, error
                 else
                     request.post
                         uri: services.node
@@ -198,13 +199,13 @@ class Node extends PropertyContainer
                     , (error, response, body) =>
                         if error
                             # internal error
-                            callback error, null
+                            handleError callback, error
                         else if response.statusCode isnt status.CREATED
                             # database error
                             message = ''
                             switch response.statusCode
                                 when status.BAD_REQUEST then message = 'Invalid data sent'
-                            callback new Error message, null
+                            callback new Error message
                         else
                             # success
                             @_data = JSON.parse body
@@ -219,7 +220,7 @@ class Node extends PropertyContainer
             , (error, response, body) =>
                 if error
                     # internal error
-                    callback error
+                    handleError callback, error
                 else if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
@@ -255,7 +256,7 @@ class Node extends PropertyContainer
                 (error, response, body) =>
                     if error
                         # internal error
-                        callback error, null
+                        handleError callback, error
                     else if response.statusCode isnt status.CREATED
                         # database error
                         message = ''
@@ -264,14 +265,14 @@ class Node extends PropertyContainer
                                 message = 'Invalid data sent'
                             when status.CONFLICT
                                 message = '"to" node, or the node specified by the URI not found'
-                        callback new Error message, null
+                        callback new Error message
                     else
                         # success
                         data = JSON.parse body
                         relationship = new Relationship @db, this, otherNode, type, data
                         callback null, relationship
         else
-            callback new Error 'Failed to create relationship', null
+            callback new Error 'Failed to create relationship'
 
     # TODO support passing direction also? the REST API does, but having to
     # specify 'in', 'out' or 'all' here would be a bad string API. maybe add
@@ -296,7 +297,7 @@ class Node extends PropertyContainer
             url: getRelationshipsURL
             (err, resp, body) =>
                 if err
-                    callback err
+                    handleError callback, err
                     return
                 if resp.statusCode is 404
                     callback new Error 'Node not found.'
@@ -341,7 +342,7 @@ class Node extends PropertyContainer
                 'relationships': types.map (type) -> {'type': type}
             , (err, resp, body) =>
                 if err
-                    callback err
+                    handleError callback, err
                     return
                 if resp.statusCode is 404
                     callback new Error 'Node not found.'
@@ -358,11 +359,11 @@ class Node extends PropertyContainer
         # TODO
         if not @exists
             error = new Error 'Node must exists before indexing properties'
-            return callback error
+            return handleError callback, error
 
         @db.getServices (error, services) =>
             if error
-                return callback error, null
+                return handleError callback, error
             encodedKey = encodeURIComponent key
             encodedValue = encodeURIComponent value
             url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}"
@@ -372,7 +373,7 @@ class Node extends PropertyContainer
                 , (error, response, body) ->
                     if error
                         # internal error
-                        callback error
+                        handleError callback, error
                     else if response.statusCode isnt status.CREATED
                         # database error
                         callback new Error response.statusCode
@@ -404,7 +405,7 @@ class Relationship extends PropertyContainer
             , (error, response, body) =>
                 if error
                     # internal error
-                    callback error, null
+                    handleError callback, error
                 else if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
@@ -413,7 +414,7 @@ class Relationship extends PropertyContainer
                             message = 'Invalid data sent'
                         when status.NOT_FOUND
                             message = 'Relationship not found'
-                    callback new Error message, null
+                    callback new Error message
                 else
                     # success
                     callback null, this
@@ -427,7 +428,7 @@ class Relationship extends PropertyContainer
             , (error, response, body) =>
                 if error
                     # internal error
-                    callback error
+                    handleError callback, error
                 else if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
@@ -444,6 +445,17 @@ class Relationship extends PropertyContainer
 
 # Exports
 exports.GraphDatabase = GraphDatabase
+
+#-----------------------------------------------------------------------------
+#
+#  Errors
+#
+#-----------------------------------------------------------------------------
+
+handleError = (callback, error) ->
+    if error.errno is 61 # process.ECONNREFUSED
+        error.message = "Couldn't reach database (Connection refused)"
+    callback error
 
 #-----------------------------------------------------------------------------
 #

@@ -151,7 +151,7 @@ class PropertyContainer
                 null
             else
                 match = /(?:node|relationship)\/(\d+)$/.exec @self
-                #/ TEMP slash to unbreak broken coda coffee plugin (which chokes on the regex with a slash)
+                #/ XXX slash to unbreak broken coda coffee plugin (which chokes on the regex with a slash)
                 parseInt match[1]
 
         @getter 'data', -> @_data.data || null
@@ -252,7 +252,7 @@ class Node extends PropertyContainer
                     to: otherNodeURL
                     data: data
                     type: type
-                (error, response, body) =>      # important! fat arrow to preserve "this"
+                (error, response, body) =>
                     if error
                         # internal error
                         callback error, null
@@ -294,7 +294,7 @@ class Node extends PropertyContainer
 
         request.get
             url: getRelationshipsURL
-            (err, resp, body) =>    # important! fat arrow to preserve "this"
+            (err, resp, body) =>
                 if err
                     callback err
                     return
@@ -306,8 +306,8 @@ class Node extends PropertyContainer
                     return
                 # success
                 data = JSON.parse body
-                relationships = data.map (data) =>  # important! fat arrow to preserve "this"
-                    # TEMP HACK constructing a fake Node obj for other node
+                relationships = data.map (data) =>
+                    # XXX constructing a fake Node object for other node
                     if @self is data.start
                         start = this
                         end = new Node @db, {self: data.end}
@@ -320,7 +320,7 @@ class Node extends PropertyContainer
         # this is to support streamline futures in the future (pun not intended)
         return
 
-    # TEMP this is actually a traverse, but in lieu of defining a non-trivial
+    # XXX this is actually a traverse, but in lieu of defining a non-trivial
     # traverse() method, exposing this for now for our simple use case.
     getRelationshipNodes: (type, callback) ->
 
@@ -339,7 +339,7 @@ class Node extends PropertyContainer
             json:
                 'max depth': 1
                 'relationships': types.map (type) -> {'type': type}
-            , (err, resp, body) =>      # important! fat arrow to preserve "this"
+            , (err, resp, body) =>
                 if err
                     callback err
                     return

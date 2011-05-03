@@ -3,6 +3,7 @@
     Node driver for Neo4j
 
     Copyright 2011 Daniel Gasienica <daniel@gasienica.ch>
+    Copyright 2011 Aseem Kishore <aseem.kishore@gmail.com>
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may
     not use this file except in compliance with the License. You may obtain
@@ -161,6 +162,9 @@ class PropertyContainer
     getter: @__defineGetter__
     setter: @__defineSetter__
 
+    equals: (other) ->
+        @self is other?.self
+
 
 class Node extends PropertyContainer
     constructor: (db, data) ->
@@ -281,13 +285,17 @@ class Node extends PropertyContainer
     # TODO to be consistent with the REST and Java APIs, this returns an array
     # of all returned relationships. it would certainly be more user-friendly
     # though if it returned a dictionary of relationships mapped by type, no?
-    getRelationships: (type, callback) ->
+    _getRelationships: (direction, type, callback) ->
+        # Method overload: No type specified
+        if typeof type is 'function'
+            callback = type
+            type = []
 
         # support passing in multiple types, as array
         types = if type instanceof Array then type else [type]
 
-        getRelationshipsURL = @_data['all_typed_relationships']
-            ?.replace '{-list|&|types}', types.join('&')
+        prefix = @_data["#{direction}_typed_relationships"]
+        getRelationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
 
         if not getRelationshipsURL
             callback new Error 'Relationships not available.'
@@ -299,10 +307,10 @@ class Node extends PropertyContainer
                 if err
                     handleError callback, err
                     return
-                if resp.statusCode is 404
+                if resp.statusCode is status.NOT_FOUND
                     callback new Error 'Node not found.'
                     return
-                if resp.statusCode isnt 200
+                if resp.statusCode isnt status.OK
                     callback new Error "Unrecognized response code: #{resp.statusCode}"
                     return
                 # success
@@ -321,6 +329,59 @@ class Node extends PropertyContainer
         # this is to support streamline futures in the future (pun not intended)
         return
 
+    # TODO to be consistent with the REST and Java APIs, this returns an array
+    # of all returned relationships. it would certainly be more user-friendly
+    # though if it returned a dictionary of relationships mapped by type, no?
+    getRelationships: (type, callback) ->
+        @all type, callback
+
+    outgoing: (type, callback) ->
+        @_getRelationships 'outgoing', type, callback
+
+    incoming: (type, callback) ->
+        @_getRelationships 'incoming', type, callbackk
+
+    all: (type, callback) ->
+        @_getRelationships 'all', type, callback
+
+    path: (to, type, direction, maxDepth=1, algorithm='shortestPath', callback) ->
+        pathURL = "#{@self}/path"
+        data =
+            to: to.self
+            relationships:
+                type: type
+                direction: direction
+            max_depth: maxDepth
+            algorithm: algorithm
+
+        request.post
+            url: pathURL
+            json: data
+            (err, res, body) =>
+                if err
+                    handleError callback, err
+                else if res.statusCode is status.NOT_FOUND
+                    # Empty path
+                    path = new Path null, null, 0, [], []
+                    callback null, path
+                else if res.statusCode isnt status.OK
+                    callback new Error "Unrecognized response code: #{res.statusCode}"
+                else
+                    # Parse result
+                    data = JSON.parse body
+
+                    start = new Node this, {self: data.start}
+                    end = new Node this, {self: data.end}
+                    length = data.length
+                    nodes = data.nodes.map (url) =>
+                        new Node this, {self: url}
+                    relationships = data.relationships.map (url) =>
+                        new Relationship this, null, null, type, {self: url}
+
+                    # Return path
+                    path = new Path start, end, length, nodes, relationships
+                    callback null, path
+
     # XXX this is actually a traverse, but in lieu of defining a non-trivial
     # traverse() method, exposing this for now for our simple use case.
     getRelationshipNodes: (type, callback) ->
@@ -328,8 +389,7 @@ class Node extends PropertyContainer
         # support passing in multiple types, as array
         types = if type instanceof Array then type else [type]
 
-        traverseURL = @_data['traverse']
-            ?.replace '{returnType}', 'node'
+        traverseURL = @_data['traverse']?.replace '{returnType}', 'node'
 
         if not traverseURL
             callback new Error 'Traverse not available.'
@@ -442,6 +502,25 @@ class Relationship extends PropertyContainer
                     callback null
     # Alias
     del: @delete
+
+
+class Path
+    constructor: (start, end, length, nodes, relationships) ->
+        @_start = start
+        @_nodes = nodes
+        @_length = length
+        @_relationships = relationships
+        @_end = end
+
+        @getter 'start', -> @_start || null
+        @getter 'end', -> @_end || null
+        @getter 'length', -> @_length || 0
+        @getter 'nodes', -> @_nodes || []
+        @getter 'relationships', -> @_relationships || []
+
+    getter: @__defineGetter__
+    setter: @__defineSetter__
+
 
 # Exports
 exports.GraphDatabase = GraphDatabase

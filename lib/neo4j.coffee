@@ -344,6 +344,44 @@ class Node extends PropertyContainer
     all: (type, callback) ->
         @_getRelationships 'all', type, callback
 
+    path: (to, type, direction, maxDepth=1, algorithm='shortestPath', callback) ->
+        pathURL = "#{@self}/path"
+        data =
+            to: to.self
+            relationships:
+                type: type
+                direction: direction
+            max_depth: maxDepth
+            algorithm: algorithm
+
+        request.post
+            url: pathURL
+            json: data
+            (err, res, body) =>
+                if err
+                    handleError callback, err
+                else if res.statusCode is status.NOT_FOUND
+                    # Empty path
+                    path = new Path null, null, 0, [], []
+                    callback null, path
+                else if res.statusCode isnt status.OK
+                    callback new Error "Unrecognized response code: #{res.statusCode}"
+                else
+                    # Parse result
+                    data = JSON.parse body
+
+                    start = new Node this, {self: data.start}
+                    end = new Node this, {self: data.end}
+                    length = data.length
+                    nodes = data.nodes.map (url) =>
+                        new Node this, {self: url}
+                    relationships = data.relationships.map (url) =>
+                        new Relationship this, null, null, type, {self: url}
+
+                    # Return path
+                    path = new Path start, end, length, nodes, relationships
+                    callback null, path
+
     # XXX this is actually a traverse, but in lieu of defining a non-trivial
     # traverse() method, exposing this for now for our simple use case.
     getRelationshipNodes: (type, callback) ->
@@ -464,6 +502,25 @@ class Relationship extends PropertyContainer
                     callback null
     # Alias
     del: @delete
+
+
+class Path
+    constructor: (start, end, length, nodes, relationships) ->
+        @_start = start
+        @_nodes = nodes
+        @_length = length
+        @_relationships = relationships
+        @_end = end
+
+        @getter 'start', -> @_start || null
+        @getter 'end', -> @_end || null
+        @getter 'length', -> @_length || 0
+        @getter 'nodes', -> @_nodes || []
+        @getter 'relationships', -> @_relationships || []
+
+    getter: @__defineGetter__
+    setter: @__defineSetter__
+
 
 # Exports
 exports.GraphDatabase = GraphDatabase

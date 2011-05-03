@@ -11,10 +11,8 @@
     "dependencies": {
         "coffee-script": "1.x",
         "http-status": "0.1.0",
-        "request": ">= 1.9.5"
-    },
-    "devDependencies": {
-        "streamline": ">=0.1.16 <0.2"
+        "request": ">= 1.9.5",
+        "streamline": ">=0.1.x >=0.1.19"
     },
     "keywords": [
         "neo4j",

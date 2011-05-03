@@ -78,7 +78,7 @@ class GraphDatabase
     getNode: (url, callback) ->
         request.get
             url: url
-        , (error, response, body) ->
+        , (error, response, body) =>    # note fat arrow to preserve 'this'!
             if error
                 handleError callback, error
             else if response.statusCode isnt status.OK

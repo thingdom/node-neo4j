@@ -3,6 +3,7 @@
     Node driver for Neo4j
 
     Copyright 2011 Daniel Gasienica <daniel@gasienica.ch>
+    Copyright 2011 Aseem Kishore <aseem.kishore@gmail.com>
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may
     not use this file except in compliance with the License. You may obtain

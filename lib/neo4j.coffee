@@ -162,6 +162,9 @@ class PropertyContainer
     getter: @__defineGetter__
     setter: @__defineSetter__
 
+    equals: (other) ->
+        @self is other?.self
+
 
 class Node extends PropertyContainer
     constructor: (db, data) ->

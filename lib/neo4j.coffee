@@ -285,13 +285,17 @@ class Node extends PropertyContainer
     # TODO to be consistent with the REST and Java APIs, this returns an array
     # of all returned relationships. it would certainly be more user-friendly
     # though if it returned a dictionary of relationships mapped by type, no?
-    getRelationships: (type, callback) ->
+    _getRelationships: (direction, type, callback) ->
+        # Method overload: No type specified
+        if typeof type is 'function'
+            callback = type
+            type = []
 
         # support passing in multiple types, as array
         types = if type instanceof Array then type else [type]
 
-        getRelationshipsURL = @_data['all_typed_relationships']
-            ?.replace '{-list|&|types}', types.join('&')
+        prefix = @_data["#{direction}_typed_relationships"]
+        getRelationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
 
         if not getRelationshipsURL
             callback new Error 'Relationships not available.'
@@ -303,10 +307,10 @@ class Node extends PropertyContainer
                 if err
                     handleError callback, err
                     return
-                if resp.statusCode is 404
+                if resp.statusCode is status.NOT_FOUND
                     callback new Error 'Node not found.'
                     return
-                if resp.statusCode isnt 200
+                if resp.statusCode isnt status.OK
                     callback new Error "Unrecognized response code: #{resp.statusCode}"
                     return
                 # success
@@ -325,6 +329,21 @@ class Node extends PropertyContainer
         # this is to support streamline futures in the future (pun not intended)
         return
 
+    # TODO to be consistent with the REST and Java APIs, this returns an array
+    # of all returned relationships. it would certainly be more user-friendly
+    # though if it returned a dictionary of relationships mapped by type, no?
+    getRelationships: (type, callback) ->
+        @all type, callback
+
+    outgoing: (type, callback) ->
+        @_getRelationships 'outgoing', type, callback
+
+    incoming: (type, callback) ->
+        @_getRelationships 'incoming', type, callbackk
+
+    all: (type, callback) ->
+        @_getRelationships 'all', type, callback
+
     # XXX this is actually a traverse, but in lieu of defining a non-trivial
     # traverse() method, exposing this for now for our simple use case.
     getRelationshipNodes: (type, callback) ->
@@ -332,8 +351,7 @@ class Node extends PropertyContainer
         # support passing in multiple types, as array
         types = if type instanceof Array then type else [type]
 
-        traverseURL = @_data['traverse']
-            ?.replace '{returnType}', 'node'
+        traverseURL = @_data['traverse']?.replace '{returnType}', 'node'
 
         if not traverseURL
             callback new Error 'Traverse not available.'

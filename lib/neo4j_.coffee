@@ -19,6 +19,12 @@
 
 ###
 
+# TODO many of these functions take a callback but, in some cases, call the
+# callback immediately (e.g. if a value is cached). we should probably make
+# sure to always call callbacks asynchronously, to prevent race conditions.
+# this can be done in Streamline syntax by adding one line before cases where
+# we're returning immediately: process.nextTick _
+
 status = require 'http-status'
 request = require 'request'
 
@@ -35,39 +41,38 @@ class GraphDatabase
         @_root = null
         @_services = null
 
-    getRoot: (callback) ->
+    getRoot: (_) ->
         if @_root?
-            callback null, @_root
-        else
-            request.get
-                url: @url
-            , (error, response) ->
-                if error
-                    handleError callback, error
-                else if response.statusCode isnt status.OK
-                    handleError callback, response.statusCode
-                else
-                    @_root = JSON.parse response.body
-                    callback null, @_root
+            return @_root
+        
+        try    
+            response = request.get {url: @url}, _
+            
+            if response.statusCode isnt status.OK
+                throw response.statusCode
+            
+            @_root = JSON.parse response.body
+            return @_root
 
-    getServices: (callback) ->
+        catch error
+            throw adjustError error
+
+    getServices: (_) ->
         if @_services?
-            callback null, @_services
-        else
-            @getRoot (err, root) ->
-                if err
-                    handleError callback, err
-                else
-                    request.get
-                        url: root.data
-                    , (error, response) ->
-                        if error
-                            handleError callback, error
-                        else if response.statusCode isnt status.OK
-                            handleError callback, response.statusCode
-                        else
-                            @_services = JSON.parse response.body
-                            callback null, @_services
+            return @_services
+        
+        try
+            root = @getRoot _
+            response = request.get {url: root.data}, _
+            
+            if response.statusCode isnt status.OK
+                throw response.statusCode
+            
+            @_services = JSON.parse response.body
+            return @_services
+
+        catch error
+            throw adjustError error
 
     # Nodes
     createNode: (data) ->
@@ -76,94 +81,95 @@ class GraphDatabase
             data: data
         return node
 
-    getNode: (url, callback) ->
-        request.get
-            url: url
-        , (error, response) =>    # note fat arrow to preserve 'this'!
-            if error
-                handleError callback, error
-            else if response.statusCode isnt status.OK
+    getNode: (url, _) ->
+        try
+            response = request.get {url: url}, _
+            
+            if response.statusCode isnt status.OK
                 # TODO: Handle 404
-                callback response
-            else
-                node = new Node this, JSON.parse response.body
-                callback null, node
+                throw response
+            
+            node = new Node this, JSON.parse response.body
+            return node
 
-    getIndexedNode: (index, property, value, callback) ->
-        @getIndexedNodes index, property, value,
-            (err, nodes) =>
-                if err
-                    handleError callback, err
-                else
-                    node = null
-                    if nodes and nodes.length > 0
-                        node = nodes[0]
-                    callback null, node
+        catch error
+            throw adjustError error
 
-    getIndexedNodes: (index, property, value, callback) ->
-        @getServices (err, services) =>
-            if err
-                return handleError callback, err
+    getIndexedNode: (index, property, value, _) ->
+        try
+            nodes = @getIndexedNodes index, property, value, _
 
+            node = null
+            if nodes and nodes.length > 0
+                node = nodes[0]
+            return node
+
+        catch error
+            throw adjustError error
+
+    getIndexedNodes: (index, property, value, _) ->
+        try
+            services = @getServices _
+            
             key = encodeURIComponent property
             val = encodeURIComponent value
             url = "#{services.node_index}/#{index}/#{key}/#{val}"
+            
+            response = request.get {url: url}, _
+            
+            if response.statusCode is status.NOT_FOUND
+                # Node not found
+                return null
+            
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response.statusCode
+            
+            # Success
+            nodeArray = JSON.parse response.body
+            nodes = nodeArray.map (node) =>
+                new Node this, node
+            return nodes
 
-            request.get
-                url: url
-            , (error, response) =>
-                if error
-                    # Internal error
-                    handleError callback, error
-                else if response.statusCode is status.NOT_FOUND
-                    # Node not found
-                    callback null, null
-                else if response.statusCode isnt status.OK
-                    # Database error
-                    handleError callback, response.statusCode
-                else
-                    # Success
-                    nodeArray = JSON.parse response.body
-                    nodes = nodeArray.map (node) =>
-                        new Node this, node
-                    callback null, nodes
+        catch error
+            throw adjustError error
 
-
-    getNodeById: (id, callback) ->
-        @getServices (err, services) =>
-            url = "#{services.node}/#{id}"
-            @getNode url, callback
+    getNodeById: (id, _) ->
+        services = @getServices _
+        url = "#{services.node}/#{id}"
+        @getNode url, _
 
     # Relationships
-    createRelationship: (startNode, endNode, type, callback) ->
+    createRelationship: (startNode, endNode, type, _) ->
         # TODO: Implement
 
-    getRelationship: (url, callback) ->
-        request.get
-            url: url
-        , (error, response) =>
-            if error
-                handleError callback, error
-            else if response.statusCode isnt status.OK
+    getRelationship: (url, _) ->
+        try
+            response = request.get {url: url}, _
+            
+            if response.statusCode isnt status.OK
                 # TODO: Handle 404
-                callback response
-            else
-                data = JSON.parse response.body
+                throw response
+            
+            data = JSON.parse response.body
+            
+            # Construct relationship
+            start = new Node this, {self: data.start}
+            end = new Node this, {self: data.end}
+            type = data.type
+            relationship = new Relationship this, start, end, type, data
+            
+            return relationship
 
-                # Construct relationship
-                start = new Node this, {self: data.start}
-                end = new Node this, {self: data.end}
-                type = data.type
-                relationship = new Relationship this, start, end, type, data
+        catch error
+            throw adjustError error
 
-                callback null, relationship
-
-    getRelationshipById: (id, callback) ->
-        @getServices (err, services) =>
-            # FIXME: Neo4j doesn't expose the path to relationships
-            relationshipURL = services.node.replace('node', 'relationship')
-            url = "#{relationshipURL}/#{id}"
-            @getRelationship url, callback
+    getRelationshipById: (id, _) ->
+        services = @getServices _
+        # FIXME: Neo4j doesn't expose the path to relationships
+        relationshipURL = services.node.replace('node', 'relationship')
+        url = "#{relationshipURL}/#{id}"
+        @getRelationship url, _
 
 
 class PropertyContainer
@@ -557,10 +563,16 @@ exports.GraphDatabase = GraphDatabase
 #
 #-----------------------------------------------------------------------------
 
-handleError = (callback, error) ->
+adjustError = (error) ->
+    if typeof error isnt 'object'
+        error = new Error error
     if error.errno is 61 # process.ECONNREFUSED
         error.message = "Couldn't reach database (Connection refused)"
-    callback error
+    return error
+
+# XXX temporary until we finish porting all code to streamlined try-catch:
+handleError = (callback, error) ->
+    callback adjustError error
 
 #-----------------------------------------------------------------------------
 #

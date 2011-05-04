@@ -203,113 +203,111 @@ class Node extends PropertyContainer
     constructor: (db, data) ->
         super db, data
 
-    save: (callback) ->
-        # TODO: check for actual modification
-        if @exists
-            request.put
-                uri: @self + '/properties'
-                json: @data
-            , (error, response) =>
-                if error
-                    # internal error
-                    handleError callback, error
-                else if response.statusCode isnt status.NO_CONTENT
+    save: (_) ->
+        try
+            # TODO: check for actual modification
+            if @exists
+                response = request.put
+                    uri: @self + '/properties'
+                    json: @data
+                , _
+                
+                if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
                     switch response.statusCode
                         when status.BAD_REQUEST then message = 'Invalid data sent'
                         when status.NOT_FOUND then message = 'Node not found'
-                    e = new Error message
-                    handleError callback, error
-                else
-                    # success
-                    callback null, this
-        else
-            @db.getServices (error, services) =>
-                if error
-                    # internal error
-                    handleError callback, error
-                else
-                    request.post
-                        uri: services.node
-                        json: @data
-                    , (error, response) =>
-                        if error
-                            # internal error
-                            handleError callback, error
-                        else if response.statusCode isnt status.CREATED
-                            # database error
-                            message = ''
-                            switch response.statusCode
-                                when status.BAD_REQUEST then message = 'Invalid data sent'
-                            callback new Error message
-                        else
-                            # success
-                            @_data = JSON.parse response.body
-                            callback null, this
+                    throw new Error message
 
-    delete: (callback) ->
-        if not @exists
-            callback null
-        else
-            request.del
-                uri: @self
-            , (error, response) =>
-                if error
-                    # internal error
-                    handleError callback, error
-                else if response.statusCode isnt status.NO_CONTENT
+                # success
+                return this
+            else
+                services = @db.getServices _
+
+                response = request.post
+                    uri: services.node
+                    json: @data
+                , _
+                
+                if response.statusCode isnt status.CREATED
                     # database error
                     message = ''
                     switch response.statusCode
-                        when status.NOT_FOUND
-                            message = 'Node not found'
-                        # TODO: handle node with relationships
-                        when status.CONFLICT
-                            message = 'Node could not be deleted (still has relationships?)'
-                    callback new Error message
-                else
-                    # success
-                    callback null
+                        when status.BAD_REQUEST then message = 'Invalid data sent'
+                    throw new Error message
+
+                # success
+                @_data = JSON.parse response.body
+                return this
+
+        catch error
+            throw adjustError error
+
+    delete: (_) ->
+        if not @exists
+            return null
+        
+        try
+            response = request.del {uri: @self}, _
+            
+            if response.statusCode isnt status.NO_CONTENT
+                # database error
+                message = ''
+                switch response.statusCode
+                    when status.NOT_FOUND
+                        message = 'Node not found'
+                    # TODO: handle node with relationships
+                    when status.CONFLICT
+                        message = 'Node could not be deleted (still has relationships?)'
+                throw new Error message
+
+            # success
+            return null
+
+        catch error
+            throw adjustError error
 
     # Alias
     del: @::delete
 
     # TODO why no createRelationshipFrom()? this actually isn't there in the
     # REST API, but we might be able to support it oursleves.
-    createRelationshipTo: (otherNode, type, data, callback) ->
-        # ensure this node exists
-        # ensure otherNode exists
-        # create relationship
-        createRelationshipURL = @_data['create_relationship']
-        otherNodeURL = otherNode.self
-        if createRelationshipURL? and otherNodeURL
-            request.post
-                url: createRelationshipURL
-                json:
-                    to: otherNodeURL
-                    data: data
-                    type: type
-                (error, response) =>
-                    if error
-                        # internal error
-                        handleError callback, error
-                    else if response.statusCode isnt status.CREATED
-                        # database error
-                        message = ''
-                        switch response.statusCode
-                            when status.BAD_REQUEST
-                                message = 'Invalid data sent'
-                            when status.CONFLICT
-                                message = '"to" node, or the node specified by the URI not found'
-                        callback new Error message
-                    else
-                        # success
-                        data = JSON.parse response.body
-                        relationship = new Relationship @db, this, otherNode, type, data
-                        callback null, relationship
-        else
-            callback new Error 'Failed to create relationship'
+    createRelationshipTo: (otherNode, type, data, _) ->
+        try
+            # ensure this node exists
+            # ensure otherNode exists
+            # create relationship
+            createRelationshipURL = @_data['create_relationship']
+            otherNodeURL = otherNode.self
+            if createRelationshipURL? and otherNodeURL
+                response = request.post
+                    url: createRelationshipURL
+                    json:
+                        to: otherNodeURL
+                        data: data
+                        type: type
+                , _
+                
+                if response.statusCode isnt status.CREATED
+                    # database error
+                    message = ''
+                    switch response.statusCode
+                        when status.BAD_REQUEST
+                            message = 'Invalid data sent'
+                        when status.CONFLICT
+                            message = '"to" node, or the node specified by the URI not found'
+                    throw new Error message
+
+                # success
+                data = JSON.parse response.body
+                relationship = new Relationship @db, this, otherNode, type, data
+                return relationship
+            else
+                throw new Error 'Failed to create relationship'
+
+        catch error
+            throw adjustError error
 
     # TODO support passing direction also? the REST API does, but having to
     # specify 'in', 'out' or 'all' here would be a bad string API. maybe add
@@ -318,160 +316,163 @@ class Node extends PropertyContainer
     # TODO to be consistent with the REST and Java APIs, this returns an array
     # of all returned relationships. it would certainly be more user-friendly
     # though if it returned a dictionary of relationships mapped by type, no?
-    _getRelationships: (direction, type, callback) ->
+    _getRelationships: (direction, type, _) ->
         # Method overload: No type specified
-        if typeof type is 'function'
-            callback = type
-            type = []
+        # XXX can't support method overloading right now, because Streamline
+        # doesn't allow "setting" the callback parameter like this requires.
+        #if typeof type is 'function'
+        #    _ = type
+        #    type = []
 
         # support passing in multiple types, as array
         types = if type instanceof Array then type else [type]
 
-        prefix = @_data["#{direction}_typed_relationships"]
-        getRelationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
+        try
+            prefix = @_data["#{direction}_typed_relationships"]
+            getRelationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
+    
+            if not getRelationshipsURL
+                throw new Error 'Relationships not available.'
+    
+            resp = request.get {url: getRelationshipsURL}, _
+            
+            if resp.statusCode is status.NOT_FOUND
+                throw new Error 'Node not found.'
 
-        if not getRelationshipsURL
-            callback new Error 'Relationships not available.'
-            return
+            if resp.statusCode isnt status.OK
+                throw new Error "Unrecognized response code: #{resp.statusCode}"
 
-        request.get
-            url: getRelationshipsURL
-            (err, resp) =>
-                if err
-                    handleError callback, err
-                    return
-                if resp.statusCode is status.NOT_FOUND
-                    callback new Error 'Node not found.'
-                    return
-                if resp.statusCode isnt status.OK
-                    callback new Error "Unrecognized response code: #{resp.statusCode}"
-                    return
-                # success
-                data = JSON.parse resp.body
-                relationships = data.map (data) =>
-                    # XXX constructing a fake Node object for other node
-                    if @self is data.start
-                        start = this
-                        end = new Node @db, {self: data.end}
-                    else
-                        start = new Node @db, {self: data.start}
-                        end = this
-                    return new Relationship @db, start, end, type, data
-                callback null, relationships
+            # success
+            data = JSON.parse resp.body
+            relationships = data.map (data) =>
+                # XXX constructing a fake Node object for other node
+                if @self is data.start
+                    start = this
+                    end = new Node @db, {self: data.end}
+                else
+                    start = new Node @db, {self: data.start}
+                    end = this
+                return new Relationship @db, start, end, type, data
+            return relationships
 
-        # this is to support streamline futures in the future (pun not intended)
-        return
+        catch error
+            throw adjustError error
 
     # TODO to be consistent with the REST and Java APIs, this returns an array
     # of all returned relationships. it would certainly be more user-friendly
     # though if it returned a dictionary of relationships mapped by type, no?
-    getRelationships: (type, callback) ->
-        @all type, callback
+    getRelationships: (type, _) ->
+        @all type, _
 
-    outgoing: (type, callback) ->
-        @_getRelationships 'outgoing', type, callback
+    outgoing: (type, _) ->
+        @_getRelationships 'outgoing', type, _
 
-    incoming: (type, callback) ->
-        @_getRelationships 'incoming', type, callbackk
+    incoming: (type, _) ->
+        @_getRelationships 'incoming', type, _
 
-    all: (type, callback) ->
-        @_getRelationships 'all', type, callback
+    all: (type, _) ->
+        @_getRelationships 'all', type, _
 
-    path: (to, type, direction, maxDepth=1, algorithm='shortestPath', callback) ->
-        pathURL = "#{@self}/path"
-        data =
-            to: to.self
-            relationships:
-                type: type
-                direction: direction
-            max_depth: maxDepth
-            algorithm: algorithm
+    path: (to, type, direction, maxDepth=1, algorithm='shortestPath', _) ->
+        try
+            pathURL = "#{@self}/path"
+            data =
+                to: to.self
+                relationships:
+                    type: type
+                    direction: direction
+                max_depth: maxDepth
+                algorithm: algorithm
+    
+            res = request.post
+                url: pathURL
+                json: data
+            , _
+            
+            if res.statusCode is status.NOT_FOUND
+                # Empty path
+                return null
+            
+            if res.statusCode isnt status.OK
+                throw new Error "Unrecognized response code: #{res.statusCode}"
+            
+            # Parse result
+            data = JSON.parse res.body
 
-        request.post
-            url: pathURL
-            json: data
-            (err, res) =>
-                if err
-                    handleError callback, err
-                else if res.statusCode is status.NOT_FOUND
-                    # Empty path
-                    callback null, null
-                else if res.statusCode isnt status.OK
-                    callback new Error "Unrecognized response code: #{res.statusCode}"
-                else
-                    # Parse result
-                    data = JSON.parse res.body
+            start = new Node this, {self: data.start}
+            end = new Node this, {self: data.end}
+            length = data.length
+            nodes = data.nodes.map (url) =>
+                new Node this, {self: url}
+            relationships = data.relationships.map (url) =>
+                new Relationship this, null, null, type, {self: url}
 
-                    start = new Node this, {self: data.start}
-                    end = new Node this, {self: data.end}
-                    length = data.length
-                    nodes = data.nodes.map (url) =>
-                        new Node this, {self: url}
-                    relationships = data.relationships.map (url) =>
-                        new Relationship this, null, null, type, {self: url}
+            # Return path
+            path = new Path start, end, length, nodes, relationships
+            return path
 
-                    # Return path
-                    path = new Path start, end, length, nodes, relationships
-                    callback null, path
+        catch error
+            throw adjustError error
 
     # XXX this is actually a traverse, but in lieu of defining a non-trivial
     # traverse() method, exposing this for now for our simple use case.
-    getRelationshipNodes: (type, callback) ->
+    getRelationshipNodes: (type, _) ->
 
         # support passing in multiple types, as array
         types = if type instanceof Array then type else [type]
 
-        traverseURL = @_data['traverse']?.replace '{returnType}', 'node'
+        try
+            traverseURL = @_data['traverse']?.replace '{returnType}', 'node'
 
-        if not traverseURL
-            callback new Error 'Traverse not available.'
-            return
+            if not traverseURL
+                throw new Error 'Traverse not available.'
+    
+            resp = request.post
+                url: traverseURL
+                json:
+                    'max depth': 1
+                    'relationships': types.map (type) -> {'type': type}
+            , _
+            
+            if resp.statusCode is 404
+                throw new Error 'Node not found.'
+            
+            if resp.statusCode isnt 200
+                throw new Error "Unrecognized response code: #{resp.statusCode}"
 
-        request.post
-            url: traverseURL
-            json:
-                'max depth': 1
-                'relationships': types.map (type) -> {'type': type}
-            , (err, resp) =>
-                if err
-                    handleError callback, err
-                    return
-                if resp.statusCode is 404
-                    callback new Error 'Node not found.'
-                    return
-                if resp.statusCode isnt 200
-                    callback new Error "Unrecognized response code: #{resp.statusCode}"
-                    return
-                #success
-                data = JSON.parse resp.body
-                callback null, data.map (data) => new Node @db, data
-                return
+            #success
+            data = JSON.parse resp.body
+            return data.map (data) => new Node @db, data
 
-    index: (index, key, value, callback) ->
-        # TODO
-        if not @exists
-            error = new Error 'Node must exists before indexing properties'
-            return handleError callback, error
+        catch error
+            throw adjustError error
 
-        @db.getServices (error, services) =>
-            if error
-                return handleError callback, error
+    index: (index, key, value, _) ->
+        try
+            # TODO
+            if not @exists
+                throw new Error 'Node must exists before indexing properties'
+    
+            services = @db.getServices _
+
             encodedKey = encodeURIComponent key
             encodedValue = encodeURIComponent value
             url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}"
-            request.post
+            
+            response = request.post
                 url: url
                 json: @self
-                , (error, response) ->
-                    if error
-                        # internal error
-                        handleError callback, error
-                    else if response.statusCode isnt status.CREATED
-                        # database error
-                        callback new Error response.statusCode
-                    else
-                        # success
-                        callback null
+            , _
+            
+            if response.statusCode isnt status.CREATED
+                # database error
+                throw new Error response.statusCode
+
+            # success
+            return null
+
+        catch error
+            throw adjustError error
 
 
 class Relationship extends PropertyContainer

@@ -12,7 +12,7 @@
         "coffee-script": "1.x",
         "http-status": "0.1.0",
         "request": ">= 1.9.5",
-        "streamline": ">=0.1.x >=0.1.19"
+        "streamline": ">=0.1.x >=0.1.20"
     },
     "keywords": [
         "neo4j",
@@ -20,6 +20,12 @@
         "database",
         "driver",
         "rest"
+    ],
+    "licenses": [
+        {
+            "type": "Apache License, Version 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
     ],
     "repository" : {
         "type" : "git",

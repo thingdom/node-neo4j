@@ -186,8 +186,8 @@ class PropertyContainer
         @getter 'data', -> @_data.data || null
         @setter 'data', (value) -> @_data.data = value
 
-    getter: @__defineGetter__
-    setter: @__defineSetter__
+    getter: @::__defineGetter__
+    setter: @::__defineSetter__
 
     equals: (other) ->
         @self is other?.self
@@ -267,7 +267,7 @@ class Node extends PropertyContainer
                     callback null
 
     # Alias
-    del: @delete
+    del: @::delete
 
     # TODO why no createRelationshipFrom()? this actually isn't there in the
     # REST API, but we might be able to support it oursleves.
@@ -527,7 +527,7 @@ class Relationship extends PropertyContainer
                     # success
                     callback null
     # Alias
-    del: @delete
+    del: @::delete
 
 
 class Path

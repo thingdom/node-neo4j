@@ -22,12 +22,14 @@ assert.strictEqual daniel.self, null, 'Node self should be null'
     # TODO should this really be tested? is @self a public API?
     # maybe it should just have a better name than the misleading 'self'?
 
-daniel.save _
+# test futures here by saving both aseem and daniel in parallel:
+futures = [daniel.save(), aseem.save()]
+future _ for future in futures
+
 assert.ok daniel.exists, 'Node should exist'
 assert.ok daniel.self, 'node.self should not be null'   # TODO see above
 assert.deepEqual daniel.data, danielData, 'Sent and received data should match'
 
-aseem.save _
 assert.ok aseem.exists, 'Node should exist'
 assert.ok aseem.self, 'node.self should not be null'    # TODO see above
 assert.deepEqual aseem.data, aseemData, 'Sent and received data should match'
@@ -68,19 +70,28 @@ assert.strictEqual relationship.end, aseem
 # getRelationships() on both daniel and aseem in parallel, then waiting for
 # both of them to return (i.e. collecting/syncing both futures).
 
-relationships = daniel.getRelationships 'follows', _
+# test futures by *initiating* getRelationships() for both aseem and daniel in
+# parallel. note how we'll still "collect" (process) the futures in sequence.
+danielFuture = daniel.getRelationships 'follows'
+aseemFuture = aseem.getRelationships 'follows'
+
+relationships = danielFuture _
 testRelationships(relationships)
 
 # in this case, the start *should* be our instance
 assert.equal relationships[0].start, daniel
 
-relationships = aseem.getRelationships 'follows', _
+relationships = aseemFuture _
 testRelationships(relationships)
 
 # in this case, the end *should* be our instance
 assert.equal relationships[0].end, aseem
 
-nodes = daniel.getRelationshipNodes 'follows', _
+# same parallel lookups using futures:
+danielFuture = daniel.getRelationshipNodes 'follows'
+aseemFuture = aseem.getRelationshipNodes 'follows'
+
+nodes = danielFuture _
 assert.ok nodes
 assert.ok nodes.length
 assert.equal nodes.length, 1
@@ -90,7 +101,7 @@ assert.ok nodes[0].self     # TODO see above
 assert.deepEqual nodes[0].data, aseemData
 
 # TODO see how this is misleading? we don't respect or report direction!
-nodes = aseem.getRelationshipNodes 'follows', _
+nodes = aseemFuture _
 assert.ok nodes
 assert.ok nodes.length
 assert.equal nodes.length, 1

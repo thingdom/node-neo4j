@@ -2,7 +2,7 @@
 # https://github.com/Sage/streamlinejs
 
 assert = require 'assert'
-neo4j = require '../lib/neo4j.coffee'
+neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'
 

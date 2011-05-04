@@ -221,7 +221,7 @@ class Node extends PropertyContainer
                     throw new Error message
 
                 # success
-                return this
+                return
             else
                 services = @db.getServices _
 
@@ -239,14 +239,14 @@ class Node extends PropertyContainer
 
                 # success
                 @_data = JSON.parse response.body
-                return this
+                return
 
         catch error
             throw adjustError error
 
     delete: (_) ->
         if not @exists
-            return null
+            return
         
         try
             response = request.del {uri: @self}, _
@@ -263,7 +263,7 @@ class Node extends PropertyContainer
                 throw new Error message
 
             # success
-            return null
+            return
 
         catch error
             throw adjustError error
@@ -469,7 +469,7 @@ class Node extends PropertyContainer
                 throw new Error response.statusCode
 
             # success
-            return null
+            return
 
         catch error
             throw adjustError error
@@ -509,14 +509,14 @@ class Relationship extends PropertyContainer
                     throw new Error message
 
                 # success
-                return this
+                return
 
         catch error
             throw adjustError error
 
     delete: (_) ->
         if not @exists
-            return null
+            return
         
         try
             response = request.del
@@ -532,7 +532,7 @@ class Relationship extends PropertyContainer
                 throw new Error message
 
             # success
-            return null
+            return
 
         catch error
             throw adjustError error

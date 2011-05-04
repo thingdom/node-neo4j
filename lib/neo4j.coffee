@@ -138,6 +138,33 @@ class GraphDatabase
     createRelationship: (startNode, endNode, type, callback) ->
         # TODO: Implement
 
+    getRelationship: (url, callback) ->
+        request.get
+            url: url
+        , (error, response, body) =>
+            if error
+                handleError callback, error
+            else if response.statusCode isnt status.OK
+                # TODO: Handle 404
+                callback response
+            else
+                data = JSON.parse body
+
+                # Construct relationship
+                start = new Node this, {self: data.start}
+                end = new Node this, {self: data.end}
+                type = data.type
+                relationship = new Relationship this, start, end, type, data
+
+                callback null, relationship
+
+    getRelationshipById: (id, callback) ->
+        @getServices (err, services) =>
+            # FIXME: Neo4j doesn't expose the path to relationships
+            relationshipURL = services.node.replace('node', 'relationship')
+            url = "#{relationshipURL}/#{id}"
+            @getRelationship url, callback
+
 
 class PropertyContainer
     constructor: (db, data) ->
@@ -362,8 +389,7 @@ class Node extends PropertyContainer
                     handleError callback, err
                 else if res.statusCode is status.NOT_FOUND
                     # Empty path
-                    path = new Path null, null, 0, [], []
-                    callback null, path
+                    callback null, null
                 else if res.statusCode isnt status.OK
                     callback new Error "Unrecognized response code: #{res.statusCode}"
                 else

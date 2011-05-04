@@ -14,7 +14,7 @@
         "request": ">= 1.9.5"
     },
     "devDependencies": {
-        "streamline": ">=0.1.16 <0.2"
+        "streamline": ">=0.1.20 <0.2"
     },
     "keywords": [
         "neo4j",

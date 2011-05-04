@@ -41,13 +41,13 @@ class GraphDatabase
         else
             request.get
                 url: @url
-            , (error, response, body) ->
+            , (error, response) ->
                 if error
                     handleError callback, error
                 else if response.statusCode isnt status.OK
                     handleError callback, response.statusCode
                 else
-                    @_root = JSON.parse body
+                    @_root = JSON.parse response.body
                     callback null, @_root
 
     getServices: (callback) ->
@@ -60,13 +60,13 @@ class GraphDatabase
                 else
                     request.get
                         url: root.data
-                    , (error, response, body) ->
+                    , (error, response) ->
                         if error
                             handleError callback, error
                         else if response.statusCode isnt status.OK
                             handleError callback, response.statusCode
                         else
-                            @_services = JSON.parse body
+                            @_services = JSON.parse response.body
                             callback null, @_services
 
     # Nodes
@@ -79,14 +79,14 @@ class GraphDatabase
     getNode: (url, callback) ->
         request.get
             url: url
-        , (error, response, body) =>    # note fat arrow to preserve 'this'!
+        , (error, response) =>    # note fat arrow to preserve 'this'!
             if error
                 handleError callback, error
             else if response.statusCode isnt status.OK
                 # TODO: Handle 404
                 callback response
             else
-                node = new Node this, JSON.parse body
+                node = new Node this, JSON.parse response.body
                 callback null, node
 
     getIndexedNode: (index, property, value, callback) ->
@@ -111,7 +111,7 @@ class GraphDatabase
 
             request.get
                 url: url
-            , (error, response, body) =>
+            , (error, response) =>
                 if error
                     # Internal error
                     handleError callback, error
@@ -123,7 +123,7 @@ class GraphDatabase
                     handleError callback, response.statusCode
                 else
                     # Success
-                    nodeArray = JSON.parse body
+                    nodeArray = JSON.parse response.body
                     nodes = nodeArray.map (node) =>
                         new Node this, node
                     callback null, nodes
@@ -141,14 +141,14 @@ class GraphDatabase
     getRelationship: (url, callback) ->
         request.get
             url: url
-        , (error, response, body) =>
+        , (error, response) =>
             if error
                 handleError callback, error
             else if response.statusCode isnt status.OK
                 # TODO: Handle 404
                 callback response
             else
-                data = JSON.parse body
+                data = JSON.parse response.body
 
                 # Construct relationship
                 start = new Node this, {self: data.start}
@@ -203,7 +203,7 @@ class Node extends PropertyContainer
             request.put
                 uri: @self + '/properties'
                 json: @data
-            , (error, response, body) =>
+            , (error, response) =>
                 if error
                     # internal error
                     handleError callback, error
@@ -227,7 +227,7 @@ class Node extends PropertyContainer
                     request.post
                         uri: services.node
                         json: @data
-                    , (error, response, body) =>
+                    , (error, response) =>
                         if error
                             # internal error
                             handleError callback, error
@@ -239,7 +239,7 @@ class Node extends PropertyContainer
                             callback new Error message
                         else
                             # success
-                            @_data = JSON.parse body
+                            @_data = JSON.parse response.body
                             callback null, this
 
     delete: (callback) ->
@@ -248,7 +248,7 @@ class Node extends PropertyContainer
         else
             request.del
                 uri: @self
-            , (error, response, body) =>
+            , (error, response) =>
                 if error
                     # internal error
                     handleError callback, error
@@ -284,7 +284,7 @@ class Node extends PropertyContainer
                     to: otherNodeURL
                     data: data
                     type: type
-                (error, response, body) =>
+                (error, response) =>
                     if error
                         # internal error
                         handleError callback, error
@@ -299,7 +299,7 @@ class Node extends PropertyContainer
                         callback new Error message
                     else
                         # success
-                        data = JSON.parse body
+                        data = JSON.parse response.body
                         relationship = new Relationship @db, this, otherNode, type, data
                         callback null, relationship
         else
@@ -330,7 +330,7 @@ class Node extends PropertyContainer
 
         request.get
             url: getRelationshipsURL
-            (err, resp, body) =>
+            (err, resp) =>
                 if err
                     handleError callback, err
                     return
@@ -341,7 +341,7 @@ class Node extends PropertyContainer
                     callback new Error "Unrecognized response code: #{resp.statusCode}"
                     return
                 # success
-                data = JSON.parse body
+                data = JSON.parse resp.body
                 relationships = data.map (data) =>
                     # XXX constructing a fake Node object for other node
                     if @self is data.start
@@ -384,7 +384,7 @@ class Node extends PropertyContainer
         request.post
             url: pathURL
             json: data
-            (err, res, body) =>
+            (err, res) =>
                 if err
                     handleError callback, err
                 else if res.statusCode is status.NOT_FOUND
@@ -394,7 +394,7 @@ class Node extends PropertyContainer
                     callback new Error "Unrecognized response code: #{res.statusCode}"
                 else
                     # Parse result
-                    data = JSON.parse body
+                    data = JSON.parse res.body
 
                     start = new Node this, {self: data.start}
                     end = new Node this, {self: data.end}
@@ -426,7 +426,7 @@ class Node extends PropertyContainer
             json:
                 'max depth': 1
                 'relationships': types.map (type) -> {'type': type}
-            , (err, resp, body) =>
+            , (err, resp) =>
                 if err
                     handleError callback, err
                     return
@@ -437,7 +437,7 @@ class Node extends PropertyContainer
                     callback new Error "Unrecognized response code: #{resp.statusCode}"
                     return
                 #success
-                data = JSON.parse body
+                data = JSON.parse resp.body
                 callback null, data.map (data) => new Node @db, data
                 return
 
@@ -456,7 +456,7 @@ class Node extends PropertyContainer
             request.post
                 url: url
                 json: @self
-                , (error, response, body) ->
+                , (error, response) ->
                     if error
                         # internal error
                         handleError callback, error
@@ -488,7 +488,7 @@ class Relationship extends PropertyContainer
             request.put
                 uri: @self + '/properties'
                 json: @data
-            , (error, response, body) =>
+            , (error, response) =>
                 if error
                     # internal error
                     handleError callback, error
@@ -511,7 +511,7 @@ class Relationship extends PropertyContainer
         else
             request.del
                 uri: @self
-            , (error, response, body) =>
+            , (error, response) =>
                 if error
                     # internal error
                     handleError callback, error

@@ -22,21 +22,15 @@ assert.strictEqual daniel.self, null, 'Node self should be null'
     # TODO should this really be tested? is @self a public API?
     # maybe it should just have a better name than the misleading 'self'?
 
-# TODO why does save() callback w/ a new node? does it also (i.e. shouldn't
-# it?) update the existing instance that save() was called on? if so, it might
-# be better for us to not send a node arg to callback; just callback(err?).
-node = daniel.save _
-assert.ok node  # TEMP see above; should we even callback w/ a node arg?
-assert.ok node.exists, 'Node should exist'
-assert.ok node.self, 'node.self should not be null'     # TODO see above
-assert.deepEqual node.data, danielData, 'Sent and received data should match'
+daniel.save _
+assert.ok daniel.exists, 'Node should exist'
+assert.ok daniel.self, 'node.self should not be null'   # TODO see above
+assert.deepEqual daniel.data, danielData, 'Sent and received data should match'
 
-# TODO see above
-node = aseem.save _
-assert.ok node  # TEMP see above
-assert.ok node.exists, 'Node should exist'
-assert.ok node.self, 'node.self should not be null'
-assert.deepEqual node.data, aseemData, 'Sent and received data should match'
+aseem.save _
+assert.ok aseem.exists, 'Node should exist'
+assert.ok aseem.self, 'node.self should not be null'    # TODO see above
+assert.deepEqual aseem.data, aseemData, 'Sent and received data should match'
 
 testRelationship = (relationship) ->
     assert.ok relationship

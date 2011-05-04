@@ -575,10 +575,6 @@ adjustError = (error) ->
         error.message = "Couldn't reach database (Connection refused)"
     return error
 
-# XXX temporary until we finish porting all code to streamlined try-catch:
-handleError = (callback, error) ->
-    callback adjustError error
-
 #-----------------------------------------------------------------------------
 #
 #  Streamline/Request helpers

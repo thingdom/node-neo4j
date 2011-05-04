@@ -1,6 +1,6 @@
 {
     "name": "neo4j",
-    "description": "Node driver for Neo4j",
+    "description": "Neo4j driver for Node",
     "version": "0.1.0",
     "author": "Daniel Gasienica <daniel@gasienica.ch>",
     "contributors": [

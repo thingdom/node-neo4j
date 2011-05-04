@@ -489,17 +489,16 @@ class Relationship extends PropertyContainer
         @getter 'end', -> @_end || null
         @getter 'type', -> @_type || null
 
-    save: (callback) ->
-        # TODO: check for actual modification
-        if @exists
-            request.put
-                uri: @self + '/properties'
-                json: @data
-            , (error, response) =>
-                if error
-                    # internal error
-                    handleError callback, error
-                else if response.statusCode isnt status.NO_CONTENT
+    save: (_) ->
+        try
+            # TODO: check for actual modification
+            if @exists
+                response = request.put
+                    uri: @self + '/properties'
+                    json: @data
+                , _
+                
+                if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
                     switch response.statusCode
@@ -507,32 +506,37 @@ class Relationship extends PropertyContainer
                             message = 'Invalid data sent'
                         when status.NOT_FOUND
                             message = 'Relationship not found'
-                    callback new Error message
-                else
-                    # success
-                    callback null, this
+                    throw new Error message
 
-    delete: (callback) ->
+                # success
+                return this
+
+        catch error
+            throw adjustError error
+
+    delete: (_) ->
         if not @exists
-            callback null
-        else
-            request.del
+            return null
+        
+        try
+            response = request.del
                 uri: @self
-            , (error, response) =>
-                if error
-                    # internal error
-                    handleError callback, error
-                else if response.statusCode isnt status.NO_CONTENT
-                    # database error
-                    message = ''
-                    switch response.statusCode
-                        when status.NOT_FOUND
-                            message = 'Relationship not found'
-                    e = new Error message
-                    callback e
-                else
-                    # success
-                    callback null
+            , _
+            
+            if response.statusCode isnt status.NO_CONTENT
+                # database error
+                message = ''
+                switch response.statusCode
+                    when status.NOT_FOUND
+                        message = 'Relationship not found'
+                throw new Error message
+
+            # success
+            return null
+
+        catch error
+            throw adjustError error
+
     # Alias
     del: @::delete
 

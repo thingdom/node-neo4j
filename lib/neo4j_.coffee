@@ -583,11 +583,10 @@ __wrapRequestCallback = (callback) ->
 
 # this wraps each of the request.___() methods to wrap the results as above.
 for verb in ['get', 'post', 'put', 'del', 'head']
-    ((verb) ->
+    do (verb) ->    # need closure: inner callback references outer origMethod
         origMethod = request[verb]
         request[verb] = (options, _) ->
             origMethod options, __wrapRequestCallback(_)
-    ) verb
 
 #-----------------------------------------------------------------------------
 #

@@ -1,24 +1,3 @@
-###
-
-    Node driver for Neo4j
-
-    Copyright 2011 Daniel Gasienica <daniel@gasienica.ch>
-    Copyright 2011 Aseem Kishore <aseem.kishore@gmail.com>
-
-    Licensed under the Apache License, Version 2.0 (the "License"); you may
-    not use this file except in compliance with the License. You may obtain
-    a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-    License for the specific language governing permissions and limitations
-    under the License.
-
-###
-
 # TODO many of these functions take a callback but, in some cases, call the
 # callback immediately (e.g. if a value is cached). we should probably make
 # sure to always call callbacks asynchronously, to prevent race conditions.
@@ -31,12 +10,10 @@ request = require './request_'
 util = require './util_'
 adjustError = util.adjustError
 
-PropertyContainer = require './PropertyContainer_'
 Relationship = require './Relationship_'
-Path = require './Path_'
 Node = require './Node_'
 
-class GraphDatabase
+module.exports = class GraphDatabase
     constructor: (url) ->
         @url = url
 
@@ -178,7 +155,3 @@ class GraphDatabase
         relationshipURL = services.node.replace('node', 'relationship')
         url = "#{relationshipURL}/#{id}"
         @getRelationship url, _
-
-
-# Exports
-exports.GraphDatabase = GraphDatabase

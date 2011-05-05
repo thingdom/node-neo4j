@@ -28,9 +28,6 @@ module.exports = class Node extends PropertyContainer
                         when status.BAD_REQUEST then message = 'Invalid data sent'
                         when status.NOT_FOUND then message = 'Node not found'
                     throw new Error message
-
-                # success
-                return
             else
                 services = @db.getServices _
 
@@ -46,9 +43,10 @@ module.exports = class Node extends PropertyContainer
                         when status.BAD_REQUEST then message = 'Invalid data sent'
                     throw new Error message
 
-                # success
-                @_data = JSON.parse response.body
-                return
+            # success in either case: update our copy of the data.
+            # explicitly not returning any value; making this a "void" method.
+            @_data = JSON.parse response.body
+            return
 
         catch error
             throw adjustError error

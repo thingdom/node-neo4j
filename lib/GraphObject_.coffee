@@ -1,4 +1,4 @@
-module.exports = class PropertyContainer
+module.exports = class GraphObject
     constructor: (db, data) ->
         @db = db
 

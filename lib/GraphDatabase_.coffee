@@ -22,11 +22,11 @@ module.exports = class GraphDatabase
         @_services = null
 
     # Database
-    purgeCache: ->
+    _purgeCache: ->
         @_root = null
         @_services = null
 
-    getRoot: (_) ->
+    _getRoot: (_) ->
         if @_root?
             return @_root
         
@@ -47,7 +47,7 @@ module.exports = class GraphDatabase
             return @_services
         
         try
-            root = @getRoot _
+            root = @_getRoot _
             response = request.get {url: root.data}, _
             
             if response.statusCode isnt status.OK

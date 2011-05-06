@@ -4,11 +4,11 @@ request = require './request_'
 util = require './util_'
 adjustError = util.adjustError
 
-GraphObject = require './GraphObject_'
+PropertyContainer = require './PropertyContainer_'
 Relationship = require './Relationship_'
 Path = require './Path_'
 
-module.exports = class Node extends GraphObject
+module.exports = class Node extends PropertyContainer
     constructor: (db, data) ->
         super db, data
 

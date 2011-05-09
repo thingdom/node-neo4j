@@ -12,8 +12,6 @@ danielData =
 aseemData =
     name: 'Aseem'
 
-root = db.getRoot _
-
 daniel = db.createNode danielData
 aseem = db.createNode aseemData
 

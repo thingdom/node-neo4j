@@ -1,13 +1,13 @@
 {
     "name": "neo4j",
-    "description": "Node driver for Neo4j",
+    "description": "Neo4j driver for Node",
     "version": "0.1.0",
     "author": "Daniel Gasienica <daniel@gasienica.ch>",
     "contributors": [
         {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"},
         {"name": "Aseem Kishore", "email": "aseem.kishore@gmail.com"}
     ],
-    "main": "./lib/neo4j",
+    "main": "./lib",
     "dependencies": {
         "coffee-script": "1.x",
         "http-status": "0.1.0",

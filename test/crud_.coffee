@@ -2,7 +2,7 @@
 # https://github.com/Sage/streamlinejs
 
 assert = require 'assert'
-neo4j = require '../lib/neo4j.coffee'
+neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'
 
@@ -22,21 +22,17 @@ assert.strictEqual daniel.self, null, 'Node self should be null'
     # TODO should this really be tested? is @self a public API?
     # maybe it should just have a better name than the misleading 'self'?
 
-# TODO why does save() callback w/ a new node? does it also (i.e. shouldn't
-# it?) update the existing instance that save() was called on? if so, it might
-# be better for us to not send a node arg to callback; just callback(err?).
-node = daniel.save _
-assert.ok node  # TEMP see above; should we even callback w/ a node arg?
-assert.ok node.exists, 'Node should exist'
-assert.ok node.self, 'node.self should not be null'     # TODO see above
-assert.deepEqual node.data, danielData, 'Sent and received data should match'
+# test futures here by saving both aseem and daniel in parallel:
+futures = [daniel.save(), aseem.save()]
+future _ for future in futures
 
-# TODO see above
-node = aseem.save _
-assert.ok node  # TEMP see above
-assert.ok node.exists, 'Node should exist'
-assert.ok node.self, 'node.self should not be null'
-assert.deepEqual node.data, aseemData, 'Sent and received data should match'
+assert.ok daniel.exists, 'Node should exist'
+assert.ok daniel.self, 'node.self should not be null'   # TODO see above
+assert.deepEqual daniel.data, danielData, 'Sent and received data should match'
+
+assert.ok aseem.exists, 'Node should exist'
+assert.ok aseem.self, 'node.self should not be null'    # TODO see above
+assert.deepEqual aseem.data, aseemData, 'Sent and received data should match'
 
 testRelationship = (relationship) ->
     assert.ok relationship
@@ -74,19 +70,28 @@ assert.strictEqual relationship.end, aseem
 # getRelationships() on both daniel and aseem in parallel, then waiting for
 # both of them to return (i.e. collecting/syncing both futures).
 
-relationships = daniel.getRelationships 'follows', _
+# test futures by *initiating* getRelationships() for both aseem and daniel in
+# parallel. note how we'll still "collect" (process) the futures in sequence.
+danielFuture = daniel.getRelationships 'follows'
+aseemFuture = aseem.getRelationships 'follows'
+
+relationships = danielFuture _
 testRelationships(relationships)
 
 # in this case, the start *should* be our instance
 assert.equal relationships[0].start, daniel
 
-relationships = aseem.getRelationships 'follows', _
+relationships = aseemFuture _
 testRelationships(relationships)
 
 # in this case, the end *should* be our instance
 assert.equal relationships[0].end, aseem
 
-nodes = daniel.getRelationshipNodes 'follows', _
+# same parallel lookups using futures:
+danielFuture = daniel.getRelationshipNodes 'follows'
+aseemFuture = aseem.getRelationshipNodes 'follows'
+
+nodes = danielFuture _
 assert.ok nodes
 assert.ok nodes.length
 assert.equal nodes.length, 1
@@ -96,7 +101,7 @@ assert.ok nodes[0].self     # TODO see above
 assert.deepEqual nodes[0].data, aseemData
 
 # TODO see how this is misleading? we don't respect or report direction!
-nodes = aseem.getRelationshipNodes 'follows', _
+nodes = aseemFuture _
 assert.ok nodes
 assert.ok nodes.length
 assert.equal nodes.length, 1

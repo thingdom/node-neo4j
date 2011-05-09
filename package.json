@@ -11,10 +11,8 @@
     "dependencies": {
         "coffee-script": "1.x",
         "http-status": "0.1.0",
-        "request": ">= 1.9.5"
-    },
-    "devDependencies": {
-        "streamline": ">=0.1.20 <0.2"
+        "request": ">= 1.9.5",
+        "streamline": ">=0.1.x >=0.1.20"
     },
     "keywords": [
         "neo4j",
@@ -34,7 +32,7 @@
         "url" : "https://github.com/gasi/node-neo4j.git"
     },
     "scripts": {
-        "test": "coffee test/index.coffee"
+        "test": "node test"
     },
     "engines": {
         "node": ">= 0.4.2"

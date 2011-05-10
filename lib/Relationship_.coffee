@@ -28,7 +28,7 @@ module.exports = class Relationship extends PropertyContainer
                     uri: @self + '/properties'
                     json: @data
                 , _
-                
+
                 if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
@@ -50,12 +50,12 @@ module.exports = class Relationship extends PropertyContainer
     delete: (_) ->
         if not @exists
             return
-        
+
         try
             response = request.del
                 uri: @self
             , _
-            
+
             if response.statusCode isnt status.NO_CONTENT
                 # database error
                 message = ''

@@ -20,7 +20,7 @@ module.exports = class Node extends PropertyContainer
                     uri: @self + '/properties'
                     json: @data
                 , _
-                
+
                 if response.statusCode isnt status.NO_CONTENT
                     # database error
                     message = ''
@@ -35,7 +35,7 @@ module.exports = class Node extends PropertyContainer
                     uri: services.node
                     json: @data
                 , _
-                
+
                 if response.statusCode isnt status.CREATED
                     # database error
                     message = ''
@@ -54,10 +54,10 @@ module.exports = class Node extends PropertyContainer
     delete: (_) ->
         if not @exists
             return
-        
+
         try
             response = request.del {uri: @self}, _
-            
+
             if response.statusCode isnt status.NO_CONTENT
                 # database error
                 message = ''
@@ -95,7 +95,7 @@ module.exports = class Node extends PropertyContainer
                         data: data
                         type: type
                 , _
-                
+
                 if response.statusCode isnt status.CREATED
                     # database error
                     message = ''
@@ -137,12 +137,12 @@ module.exports = class Node extends PropertyContainer
         try
             prefix = @_data["#{direction}_typed_relationships"]
             getRelationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
-    
+
             if not getRelationshipsURL
                 throw new Error 'Relationships not available.'
-    
+
             resp = request.get {url: getRelationshipsURL}, _
-            
+
             if resp.statusCode is status.NOT_FOUND
                 throw new Error 'Node not found.'
 
@@ -190,19 +190,19 @@ module.exports = class Node extends PropertyContainer
                     direction: direction
                 max_depth: maxDepth
                 algorithm: algorithm
-    
+
             res = request.post
                 url: pathURL
                 json: data
             , _
-            
+
             if res.statusCode is status.NOT_FOUND
                 # Empty path
                 return null
-            
+
             if res.statusCode isnt status.OK
                 throw new Error "Unrecognized response code: #{res.statusCode}"
-            
+
             # Parse result
             data = JSON.parse res.body
 
@@ -233,17 +233,17 @@ module.exports = class Node extends PropertyContainer
 
             if not traverseURL
                 throw new Error 'Traverse not available.'
-    
+
             resp = request.post
                 url: traverseURL
                 json:
                     'max depth': 1
                     'relationships': types.map (type) -> {'type': type}
             , _
-            
+
             if resp.statusCode is 404
                 throw new Error 'Node not found.'
-            
+
             if resp.statusCode isnt 200
                 throw new Error "Unrecognized response code: #{resp.statusCode}"
 
@@ -259,18 +259,18 @@ module.exports = class Node extends PropertyContainer
             # TODO
             if not @exists
                 throw new Error 'Node must exists before indexing properties'
-    
+
             services = @db.getServices _
 
             encodedKey = encodeURIComponent key
             encodedValue = encodeURIComponent value
             url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}"
-            
+
             response = request.post
                 url: url
                 json: @self
             , _
-            
+
             if response.statusCode isnt status.CREATED
                 # database error
                 throw new Error response.statusCode

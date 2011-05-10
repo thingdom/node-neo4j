@@ -29,13 +29,13 @@ module.exports = class GraphDatabase
     _getRoot: (_) ->
         if @_root?
             return @_root
-        
-        try    
+
+        try
             response = request.get {url: @url}, _
-            
+
             if response.statusCode isnt status.OK
                 throw response.statusCode
-            
+
             @_root = JSON.parse response.body
             return @_root
 
@@ -45,14 +45,14 @@ module.exports = class GraphDatabase
     getServices: (_) ->
         if @_services?
             return @_services
-        
+
         try
             root = @_getRoot _
             response = request.get {url: root.data}, _
-            
+
             if response.statusCode isnt status.OK
                 throw response.statusCode
-            
+
             @_services = JSON.parse response.body
             return @_services
 
@@ -69,11 +69,11 @@ module.exports = class GraphDatabase
     getNode: (url, _) ->
         try
             response = request.get {url: url}, _
-            
+
             if response.statusCode isnt status.OK
                 # TODO: Handle 404
                 throw response
-            
+
             node = new Node this, JSON.parse response.body
             return node
 
@@ -95,21 +95,21 @@ module.exports = class GraphDatabase
     getIndexedNodes: (index, property, value, _) ->
         try
             services = @getServices _
-            
+
             key = encodeURIComponent property
             val = encodeURIComponent value
             url = "#{services.node_index}/#{index}/#{key}/#{val}"
-            
+
             response = request.get {url: url}, _
-            
+
             if response.statusCode is status.NOT_FOUND
                 # Node not found
                 return null
-            
+
             if response.statusCode isnt status.OK
                 # Database error
                 throw response.statusCode
-            
+
             # Success
             nodeArray = JSON.parse response.body
             nodes = nodeArray.map (node) =>
@@ -131,19 +131,19 @@ module.exports = class GraphDatabase
     getRelationship: (url, _) ->
         try
             response = request.get {url: url}, _
-            
+
             if response.statusCode isnt status.OK
                 # TODO: Handle 404
                 throw response
-            
+
             data = JSON.parse response.body
-            
+
             # Construct relationship
             start = new Node this, {self: data.start}
             end = new Node this, {self: data.end}
             type = data.type
             relationship = new Relationship this, start, end, type, data
-            
+
             return relationship
 
         catch error

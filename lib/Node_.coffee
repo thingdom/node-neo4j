@@ -43,9 +43,10 @@ module.exports = class Node extends PropertyContainer
                         when status.BAD_REQUEST then message = 'Invalid data sent'
                     throw new Error message
 
-            # success in either case: update our copy of the data.
+                # only update our copy of the data when it is POSTed
+                @_data = JSON.parse response.body
+
             # explicitly not returning any value; making this a "void" method.
-            @_data = JSON.parse response.body
             return
 
         catch error

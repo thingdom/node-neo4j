@@ -39,9 +39,7 @@ module.exports = class Relationship extends PropertyContainer
                             message = 'Relationship not found'
                     throw new Error message
 
-                # success: update our copy of the data.
                 # explicitly returning nothing to make this a "void" method.
-                @_data = JSON.parse response.body
                 return
 
         catch error

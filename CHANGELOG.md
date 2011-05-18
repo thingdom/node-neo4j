@@ -1,8 +1,8 @@
-# Changelog: Neo4j REST client for Node.js
+# Changelog: Neo4j driver for Node
 
 ## Version 0.1.0 – April 20, 2011
 
-  - Changed name from _Neo4j REST client for Node.js_ to _Node driver for Neo4j_.
+  - Changed name from _Neo4j REST client for Node.js_ to _Neo4j driver for Node_.
   - Rewrote complete library to feature an object-oriented structure.
 
 ## Version 0.0.3 – March 26, 2011

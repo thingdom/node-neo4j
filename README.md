@@ -1,4 +1,4 @@
-# Node driver for Neo4j
+# Neo4j driver for Node
 
 This driver let's you access the [Neo4j graph database][neo4j] from Node.
 

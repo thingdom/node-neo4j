@@ -5,10 +5,21 @@
 #-----------------------------------------------------------------------------
 
 exports.adjustError = (error) ->
+    # Neo4j server error
+    if error?.statusCode >= 400 and error.body?
+        try
+            serverError = JSON.parse error?.body
+            error = new Error
+            error.message = serverError.exception
+            error.stack = serverError.stacktrace
+        catch e
+
     if typeof error isnt 'object'
         error = new Error error
+
     if error.errno is 61 # process.ECONNREFUSED
         error.message = "Couldn't reach database (Connection refused)"
+
     return error
 
 #-----------------------------------------------------------------------------

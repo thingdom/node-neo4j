@@ -71,7 +71,11 @@ module.exports = class GraphDatabase
             response = request.get {url: url}, _
 
             if response.statusCode isnt status.OK
-                # TODO: Handle 404
+
+                # Node not found
+                if response.statusCode is status.NOT_FOUND
+                    return null
+
                 throw response
 
             node = new Node this, JSON.parse response.body
@@ -120,9 +124,14 @@ module.exports = class GraphDatabase
             throw adjustError error
 
     getNodeById: (id, _) ->
-        services = @getServices _
-        url = "#{services.node}/#{id}"
-        @getNode url, _
+        try
+            services = @getServices _
+            url = "#{services.node}/#{id}"
+            node = @getNode url, _
+            return node
+
+        catch error
+            throw adjustError error
 
     # Relationships
     createRelationship: (startNode, endNode, type, _) ->

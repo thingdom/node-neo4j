@@ -124,10 +124,14 @@ module.exports = class GraphDatabase
             throw adjustError error
 
     getNodeById: (id, _) ->
-        services = @getServices _
-        url = "#{services.node}/#{id}"
-        node = @getNode url, _
-        return node
+        try
+            services = @getServices _
+            url = "#{services.node}/#{id}"
+            node = @getNode url, _
+            return node
+
+        catch error
+            throw adjustError error
 
     # Relationships
     createRelationship: (startNode, endNode, type, _) ->

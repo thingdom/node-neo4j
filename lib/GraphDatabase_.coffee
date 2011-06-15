@@ -71,7 +71,11 @@ module.exports = class GraphDatabase
             response = request.get {url: url}, _
 
             if response.statusCode isnt status.OK
-                # TODO: Handle 404
+
+                # Node not found
+                if response.statusCode is status.NOT_FOUND
+                    return null
+
                 throw response
 
             node = new Node this, JSON.parse response.body
@@ -122,7 +126,8 @@ module.exports = class GraphDatabase
     getNodeById: (id, _) ->
         services = @getServices _
         url = "#{services.node}/#{id}"
-        @getNode url, _
+        node = @getNode url, _
+        return node
 
     # Relationships
     createRelationship: (startNode, endNode, type, _) ->

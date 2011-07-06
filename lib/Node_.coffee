@@ -132,17 +132,24 @@ module.exports = class Node extends PropertyContainer
         #    _ = type
         #    type = []
 
+        # Assume no types
+        types = null
+
         # support passing in multiple types, as array
-        types = if type instanceof Array then type else [type]
+        if type?
+            types = if type instanceof Array then type else [type]
 
         try
-            prefix = @_data["#{direction}_typed_relationships"]
-            getRelationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
+            if types?
+                prefix = @_data["#{direction}_typed_relationships"]
+                relationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
+            else
+                relationshipsURL = @_data["#{direction}_relationships"]
 
-            if not getRelationshipsURL
-                throw new Error 'Relationships not available.'
+            if not relationshipsURL
+                throw new Error 'Couldn’t find URL of relationships endpoint.'
 
-            resp = request.get {url: getRelationshipsURL}, _
+            resp = request.get {url: relationshipsURL}, _
 
             if resp.statusCode is status.NOT_FOUND
                 throw new Error 'Node not found.'

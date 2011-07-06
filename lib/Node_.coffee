@@ -57,6 +57,15 @@ module.exports = class Node extends PropertyContainer
             return
 
         try
+
+            # Delete all relationships, independent of type they have
+            # TODO parallelize using Streamline
+            # TODO only delete relationships if there’s a conflict?
+            relationships = @all null, _
+            for relationship in relationships
+                relationship.delete _
+
+            # Delete node
             response = request.del {uri: @self}, _
 
             if response.statusCode isnt status.NO_CONTENT
@@ -65,7 +74,6 @@ module.exports = class Node extends PropertyContainer
                 switch response.statusCode
                     when status.NOT_FOUND
                         message = 'Node not found'
-                    # TODO: handle node with relationships
                     when status.CONFLICT
                         message = 'Node could not be deleted (still has relationships?)'
                 throw new Error message

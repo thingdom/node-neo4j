@@ -155,7 +155,7 @@ module.exports = class Node extends PropertyContainer
                 relationshipsURL = @_data["#{direction}_relationships"]
 
             if not relationshipsURL
-                throw new Error 'Couldn’t find URL of relationships endpoint.'
+                throw new Error 'Couldn\'t find URL of relationships endpoint.'
 
             resp = request.get {url: relationshipsURL}, _
 

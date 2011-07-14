@@ -18,9 +18,9 @@ This driver let's you access the [Neo4j graph database][neo4j] from Node.
 
 You'll also need a local Neo4j database instance for the tests:
 
-    curl http://dist.neo4j.org/neo4j-1.3.M05-unix.tar.gz --O neo4j-1.3.M05-unix.tar.gz
-    tar -zxvf neo4j-1.3.M05-unix.tar.gz
-    mv neo4j-1.3.M05 db
+    curl http://dist.neo4j.org/neo4j-community-1.3-unix.tar.gz --O neo4j-community-1.3-unix.tar.gz
+    tar -zxvf neo4j-community-1.3-unix.tar.gz
+    mv neo4j-community-1.3 db
 
 If you're new to Neo4j, read the [Getting Started][neo4j-getting-started] page.
 Start the server:

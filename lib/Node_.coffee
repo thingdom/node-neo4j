@@ -38,9 +38,9 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.CREATED
                     # database error
-                    message = ''
-                    switch response.statusCode
-                        when status.BAD_REQUEST then message = 'Invalid data sent'
+                    responseData = try
+                        JSON.parse response.body
+                    message = responseData?.message or 'Invalid data sent'
                     throw new Error message
 
                 # only update our copy of the data when it is POSTed

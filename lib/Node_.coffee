@@ -117,7 +117,11 @@ module.exports = class Node extends PropertyContainer
                     message = ''
                     switch response.statusCode
                         when status.BAD_REQUEST
-                            message = 'Invalid data sent'
+                            responseData = try
+                                JSON.parse response.body
+                            message = responseData?.message or
+                                      responseData?.exception or
+                                      'Invalid data sent'
                         when status.CONFLICT
                             message = '"to" node, or the node specified by the URI not found'
                     throw new Error message

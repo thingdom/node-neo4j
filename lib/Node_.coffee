@@ -87,15 +87,22 @@ module.exports = class Node extends PropertyContainer
     # Alias
     del: @::delete
 
-    # TODO why no createRelationshipFrom()? this actually isn't there in the
-    # REST API, but we might be able to support it oursleves.
     createRelationshipTo: (otherNode, type, data, _) ->
+        @_createRelationship @, otherNode, type, data, _
+
+    createRelationshipFrom: (otherNode, type, data, _) ->
+        @_createRelationship otherNode, @, type, data, _
+
+    _createRelationship: (from, to, type, data, _) ->
         try
             # ensure this node exists
             # ensure otherNode exists
             # create relationship
-            createRelationshipURL = @_data['create_relationship']
-            otherNodeURL = otherNode.self
+
+            # XXX Can we really always assume `from` is loaded?
+            createRelationshipURL = from._data['create_relationship']
+            otherNodeURL = to.self
+
             if createRelationshipURL? and otherNodeURL
                 response = request.post
                     url: createRelationshipURL
@@ -117,7 +124,7 @@ module.exports = class Node extends PropertyContainer
 
                 # success
                 data = JSON.parse response.body
-                relationship = new Relationship @db, this, otherNode, type, data
+                relationship = new Relationship @db, from, to, type, data
                 return relationship
             else
                 throw new Error 'Failed to create relationship'

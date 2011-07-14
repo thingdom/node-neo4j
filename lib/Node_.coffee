@@ -38,9 +38,9 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.CREATED
                     # database error
-                    message = ''
-                    switch response.statusCode
-                        when status.BAD_REQUEST then message = 'Invalid data sent'
+                    responseData = try
+                        JSON.parse response.body
+                    message = responseData?.message or 'Invalid data sent'
                     throw new Error message
 
                 # only update our copy of the data when it is POSTed
@@ -57,6 +57,15 @@ module.exports = class Node extends PropertyContainer
             return
 
         try
+
+            # Delete all relationships, independent of type they have
+            # TODO parallelize using Streamline
+            # TODO only delete relationships if there’s a conflict?
+            relationships = @all null, _
+            for relationship in relationships
+                relationship.delete _
+
+            # Delete node
             response = request.del {uri: @self}, _
 
             if response.statusCode isnt status.NO_CONTENT
@@ -65,7 +74,6 @@ module.exports = class Node extends PropertyContainer
                 switch response.statusCode
                     when status.NOT_FOUND
                         message = 'Node not found'
-                    # TODO: handle node with relationships
                     when status.CONFLICT
                         message = 'Node could not be deleted (still has relationships?)'
                 throw new Error message
@@ -79,15 +87,22 @@ module.exports = class Node extends PropertyContainer
     # Alias
     del: @::delete
 
-    # TODO why no createRelationshipFrom()? this actually isn't there in the
-    # REST API, but we might be able to support it oursleves.
     createRelationshipTo: (otherNode, type, data, _) ->
+        @_createRelationship @, otherNode, type, data, _
+
+    createRelationshipFrom: (otherNode, type, data, _) ->
+        @_createRelationship otherNode, @, type, data, _
+
+    _createRelationship: (from, to, type, data, _) ->
         try
             # ensure this node exists
             # ensure otherNode exists
             # create relationship
-            createRelationshipURL = @_data['create_relationship']
-            otherNodeURL = otherNode.self
+
+            # XXX Can we really always assume `from` is loaded?
+            createRelationshipURL = from._data['create_relationship']
+            otherNodeURL = to.self
+
             if createRelationshipURL? and otherNodeURL
                 response = request.post
                     url: createRelationshipURL
@@ -102,14 +117,18 @@ module.exports = class Node extends PropertyContainer
                     message = ''
                     switch response.statusCode
                         when status.BAD_REQUEST
-                            message = 'Invalid data sent'
+                            responseData = try
+                                JSON.parse response.body
+                            message = responseData?.message or
+                                      responseData?.exception or
+                                      'Invalid data sent'
                         when status.CONFLICT
                             message = '"to" node, or the node specified by the URI not found'
                     throw new Error message
 
                 # success
                 data = JSON.parse response.body
-                relationship = new Relationship @db, this, otherNode, type, data
+                relationship = new Relationship @db, from, to, type, data
                 return relationship
             else
                 throw new Error 'Failed to create relationship'
@@ -132,17 +151,24 @@ module.exports = class Node extends PropertyContainer
         #    _ = type
         #    type = []
 
+        # Assume no types
+        types = null
+
         # support passing in multiple types, as array
-        types = if type instanceof Array then type else [type]
+        if type?
+            types = if type instanceof Array then type else [type]
 
         try
-            prefix = @_data["#{direction}_typed_relationships"]
-            getRelationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
+            if types?
+                prefix = @_data["#{direction}_typed_relationships"]
+                relationshipsURL = prefix?.replace '{-list|&|types}', types.join '&'
+            else
+                relationshipsURL = @_data["#{direction}_relationships"]
 
-            if not getRelationshipsURL
-                throw new Error 'Relationships not available.'
+            if not relationshipsURL
+                throw new Error 'Couldn\'t find URL of relationships endpoint.'
 
-            resp = request.get {url: getRelationshipsURL}, _
+            resp = request.get {url: relationshipsURL}, _
 
             if resp.statusCode is status.NOT_FOUND
                 throw new Error 'Node not found.'

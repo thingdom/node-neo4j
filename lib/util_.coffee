@@ -1,3 +1,5 @@
+constants = require 'constants'
+
 #-----------------------------------------------------------------------------
 #
 #  Errors
@@ -17,8 +19,8 @@ exports.adjustError = (error) ->
     if typeof error isnt 'object'
         error = new Error error
 
-    if error.errno is 61 # process.ECONNREFUSED
-        error.message = "Couldn't reach database (Connection refused)"
+    if error.errno is constants.ECONNREFUSED
+        error.message = "Couldn’t reach database (Connection refused)"
 
     return error
 

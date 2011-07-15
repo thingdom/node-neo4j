@@ -14,11 +14,11 @@ module.exports = class Relationship extends PropertyContainer
         # creating relationships "to" and "from". consider renaming.
         @_start = start
         @_end = end
-        @_type = type || null
+        @_type = type or null
 
-        @getter 'start', -> @_start || null
-        @getter 'end', -> @_end || null
-        @getter 'type', -> @_type || null
+        @getter 'start', -> @_start or null
+        @getter 'end', -> @_end or null
+        @getter 'type', -> @_type or null
 
     save: (_) ->
         try

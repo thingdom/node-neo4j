@@ -17,7 +17,7 @@ module.exports = class Node extends PropertyContainer
             # TODO: check for actual modification
             if @exists
                 response = request.put
-                    uri: @self + '/properties'
+                    uri: "#{@self}/properties"
                     json: @data
                 , _
 

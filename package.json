@@ -11,7 +11,7 @@
     "dependencies": {
         "coffee-script": "1.x",
         "http-status": "0.1.0",
-        "request": ">= 1.9.5",
+        "request": "1.9.x >=1.9.5",
         "streamline": ">=0.1.x >=0.1.33"
     },
     "keywords": [

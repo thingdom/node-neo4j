@@ -88,10 +88,10 @@ module.exports = class Node extends PropertyContainer
     del: @::delete
 
     createRelationshipTo: (otherNode, type, data, _) ->
-        @_createRelationship @, otherNode, type, data, _
+        @_createRelationship this, otherNode, type, data, _
 
     createRelationshipFrom: (otherNode, type, data, _) ->
-        @_createRelationship otherNode, @, type, data, _
+        @_createRelationship otherNode, this, type, data, _
 
     _createRelationship: (from, to, type, data, _) ->
         try

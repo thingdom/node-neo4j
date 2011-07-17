@@ -2,10 +2,10 @@ module.exports = class PropertyContainer
     constructor: (db, data) ->
         @db = db
 
-        @_data = data || {}
-        @_data.self = data?.self || null
+        @_data = data or {}
+        @_data.self = data?.self or null
 
-        @getter 'self', -> @_data.self || null
+        @getter 'self', -> @_data.self or null
         @getter 'exists', -> @self?
         @getter 'id', ->
             if not @exists
@@ -15,7 +15,7 @@ module.exports = class PropertyContainer
                 #/ XXX slash to unbreak broken coda coffee plugin (which chokes on the regex with a slash)
                 parseInt match[1]
 
-        @getter 'data', -> @_data.data || null
+        @getter 'data', -> @_data.data or null
         @setter 'data', (value) -> @_data.data = value
 
     getter: @::__defineGetter__

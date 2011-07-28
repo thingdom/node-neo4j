@@ -23,10 +23,11 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.NO_CONTENT
                     # database error
-                    message = ''
+                    message = try
+                        JSON.parse(response.body).message
                     switch response.statusCode
-                        when status.BAD_REQUEST then message = 'Invalid data sent'
-                        when status.NOT_FOUND then message = 'Node not found'
+                        when status.BAD_REQUEST then message or= 'Invalid data sent'
+                        when status.NOT_FOUND then message or= 'Node not found'
                     throw new Error message
             else
                 services = @db.getServices _

@@ -251,10 +251,15 @@ module.exports = class Node extends PropertyContainer
 
     # XXX this is actually a traverse, but in lieu of defining a non-trivial
     # traverse() method, exposing this for now for our simple use case.
-    getRelationshipNodes: (type, _) ->
+    # the rels parameter can be:
+    # - just a string, e.g. 'has' (both directions traversed)
+    # - an array of strings, e.g. 'has' and 'wants' (both directions traversed)
+    # - just an object, e.g. {type: 'has', direction: 'out'}
+    # - an array of objects, e.g. [{type: 'has', direction: 'out'}, ...]
+    getRelationshipNodes: (rels, _) ->
 
-        # support passing in multiple types, as array
-        types = if type instanceof Array then type else [type]
+        # support passing in both one rel and multiple rels, as array
+        rels = if rels instanceof Array then rels else [rels]
 
         try
             traverseURL = @_data['traverse']?.replace '{returnType}', 'node'
@@ -266,7 +271,8 @@ module.exports = class Node extends PropertyContainer
                 url: traverseURL
                 json:
                     'max depth': 1
-                    'relationships': types.map (type) -> {'type': type}
+                    'relationships': rels.map (rel) ->
+                        if typeof rel is 'string' then {'type': rel} else rel
             , _
 
             if resp.statusCode is 404

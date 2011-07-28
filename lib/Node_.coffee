@@ -122,7 +122,7 @@ module.exports = class Node extends PropertyContainer
                                 JSON.parse response.body
                             message = responseData?.message or
                                       responseData?.exception or
-                                      'Invalid data sent'
+                                      "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
                         when status.CONFLICT
                             message = '"to" node, or the node specified by the URI not found'
                     throw new Error message

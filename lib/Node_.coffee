@@ -137,13 +137,13 @@ module.exports = class Node extends PropertyContainer
         catch error
             throw adjustError error
 
-    # TODO support passing direction also? the REST API does, but having to
-    # specify 'in', 'out' or 'all' here would be a bad string API. maybe add
-    # getRelationshipsTo() and getRelationshipsFrom()?
     # TODO support passing in no type, e.g. for all types?
     # TODO to be consistent with the REST and Java APIs, this returns an array
     # of all returned relationships. it would certainly be more user-friendly
     # though if it returned a dictionary of relationships mapped by type, no?
+    # XXX TODO this takes direction and type as separate parameters, while the
+    # getRelationshipNodes() method combines both as an object. inconsistent?
+    # unfortunately, the REST API is also inconsistent like this...
     _getRelationships: (direction, type, _) ->
         # Method overload: No type specified
         # XXX can't support method overloading right now, because Streamline

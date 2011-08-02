@@ -23,10 +23,11 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.NO_CONTENT
                     # database error
-                    message = ''
+                    message = try
+                        JSON.parse(response.body).message
                     switch response.statusCode
-                        when status.BAD_REQUEST then message = 'Invalid data sent'
-                        when status.NOT_FOUND then message = 'Node not found'
+                        when status.BAD_REQUEST then message or= 'Invalid data sent'
+                        when status.NOT_FOUND then message or= 'Node not found'
                     throw new Error message
             else
                 services = @db.getServices _
@@ -121,7 +122,7 @@ module.exports = class Node extends PropertyContainer
                                 JSON.parse response.body
                             message = responseData?.message or
                                       responseData?.exception or
-                                      'Invalid data sent'
+                                      "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
                         when status.CONFLICT
                             message = '"to" node, or the node specified by the URI not found'
                     throw new Error message
@@ -136,13 +137,13 @@ module.exports = class Node extends PropertyContainer
         catch error
             throw adjustError error
 
-    # TODO support passing direction also? the REST API does, but having to
-    # specify 'in', 'out' or 'all' here would be a bad string API. maybe add
-    # getRelationshipsTo() and getRelationshipsFrom()?
     # TODO support passing in no type, e.g. for all types?
     # TODO to be consistent with the REST and Java APIs, this returns an array
     # of all returned relationships. it would certainly be more user-friendly
     # though if it returned a dictionary of relationships mapped by type, no?
+    # XXX TODO this takes direction and type as separate parameters, while the
+    # getRelationshipNodes() method combines both as an object. inconsistent?
+    # unfortunately, the REST API is also inconsistent like this...
     _getRelationships: (direction, type, _) ->
         # Method overload: No type specified
         # XXX can't support method overloading right now, because Streamline
@@ -250,10 +251,15 @@ module.exports = class Node extends PropertyContainer
 
     # XXX this is actually a traverse, but in lieu of defining a non-trivial
     # traverse() method, exposing this for now for our simple use case.
-    getRelationshipNodes: (type, _) ->
+    # the rels parameter can be:
+    # - just a string, e.g. 'has' (both directions traversed)
+    # - an array of strings, e.g. 'has' and 'wants' (both directions traversed)
+    # - just an object, e.g. {type: 'has', direction: 'out'}
+    # - an array of objects, e.g. [{type: 'has', direction: 'out'}, ...]
+    getRelationshipNodes: (rels, _) ->
 
-        # support passing in multiple types, as array
-        types = if type instanceof Array then type else [type]
+        # support passing in both one rel and multiple rels, as array
+        rels = if rels instanceof Array then rels else [rels]
 
         try
             traverseURL = @_data['traverse']?.replace '{returnType}', 'node'
@@ -265,7 +271,8 @@ module.exports = class Node extends PropertyContainer
                 url: traverseURL
                 json:
                     'max depth': 1
-                    'relationships': types.map (type) -> {'type': type}
+                    'relationships': rels.map (rel) ->
+                        if typeof rel is 'string' then {'type': rel} else rel
             , _
 
             if resp.statusCode is 404

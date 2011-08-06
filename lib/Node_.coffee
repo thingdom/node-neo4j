@@ -270,7 +270,7 @@ module.exports = class Node extends PropertyContainer
             resp = request.post
                 url: traverseURL
                 json:
-                    'max depth': 1
+                    'max_depth': 1
                     'relationships': rels.map (rel) ->
                         if typeof rel is 'string' then {'type': rel} else rel
             , _

@@ -50,9 +50,7 @@ module.exports = class Relationship extends PropertyContainer
             return
 
         try
-            response = request.del
-                uri: @self
-            , _
+            response = request.del @self, _
 
             if response.statusCode isnt status.NO_CONTENT
                 # database error

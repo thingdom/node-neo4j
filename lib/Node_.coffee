@@ -67,7 +67,7 @@ module.exports = class Node extends PropertyContainer
                 relationship.delete _
 
             # Delete node
-            response = request.del {uri: @self}, _
+            response = request.del @self, _
 
             if response.statusCode isnt status.NO_CONTENT
                 # database error
@@ -169,7 +169,7 @@ module.exports = class Node extends PropertyContainer
             if not relationshipsURL
                 throw new Error 'Couldn\'t find URL of relationships endpoint.'
 
-            resp = request.get {url: relationshipsURL}, _
+            resp = request.get relationshipsURL, _
 
             if resp.statusCode is status.NOT_FOUND
                 throw new Error 'Node not found.'

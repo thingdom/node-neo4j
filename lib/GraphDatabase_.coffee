@@ -5,7 +5,7 @@
 # we're returning immediately: process.nextTick _
 
 status = require 'http-status'
-request = require './request_'
+request = require 'request'
 
 util = require './util_'
 adjustError = util.adjustError

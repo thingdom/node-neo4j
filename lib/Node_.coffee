@@ -1,5 +1,5 @@
 status = require 'http-status'
-request = require './request_'
+request = require 'request'
 
 util = require './util_'
 adjustError = util.adjustError

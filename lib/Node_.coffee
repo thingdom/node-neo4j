@@ -56,16 +56,23 @@ module.exports = class Node extends PropertyContainer
         catch error
             throw adjustError error
 
-    delete: (_) ->
+    # throws an error if this node has any relationships on it, unless force
+    # is true, in which case the relationships are also deleted.
+    delete: (_, force=false) ->
         if not @exists
             return
 
         try
 
-            # Delete all relationships, independent of type they have
-            # TODO parallelize using Streamline
-            # TODO only delete relationships if there’s a conflict?
+            # Does this node have any relationships on it?
             relationships = @all null, _
+
+            # If so, and it's not expected, prevent mistakes!
+            if relationships.length and not force
+                throw new Error "Could not delete #{@}; still has relationships."
+
+            # Otherwise, if there are any, delete the relationships
+            # TODO parallelize using Streamline
             for relationship in relationships
                 relationship.delete _
 

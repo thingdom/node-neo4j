@@ -12,6 +12,9 @@ module.exports = class Node extends PropertyContainer
     constructor: (db, data) ->
         super db, data
 
+    toString: ->
+        "node @#{@id}"
+
     save: (_) ->
         try
             # TODO: check for actual modification

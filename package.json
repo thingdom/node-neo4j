@@ -12,7 +12,7 @@
         "coffee-script": "1.x",
         "http-status": "0.1.0",
         "request": "2.0.x",
-        "streamline": ">=0.1.x >=0.1.33"
+        "streamline": ">=0.1.x >=0.1.35"
     },
     "keywords": [
         "neo4j",

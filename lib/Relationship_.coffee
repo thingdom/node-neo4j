@@ -1,5 +1,5 @@
 status = require 'http-status'
-request = require './request_'
+request = require 'request'
 
 util = require './util_'
 adjustError = util.adjustError
@@ -50,9 +50,7 @@ module.exports = class Relationship extends PropertyContainer
             return
 
         try
-            response = request.del
-                uri: @self
-            , _
+            response = request.del @self, _
 
             if response.statusCode isnt status.NO_CONTENT
                 # database error

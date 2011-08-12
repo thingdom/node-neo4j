@@ -5,7 +5,7 @@
 # we're returning immediately: process.nextTick _
 
 status = require 'http-status'
-request = require './request_'
+request = require 'request'
 
 util = require './util_'
 adjustError = util.adjustError
@@ -31,7 +31,7 @@ module.exports = class GraphDatabase
             return @_root
 
         try
-            response = request.get {url: @url}, _
+            response = request.get @url, _
 
             if response.statusCode isnt status.OK
                 throw response.statusCode
@@ -48,7 +48,7 @@ module.exports = class GraphDatabase
 
         try
             root = @_getRoot _
-            response = request.get {url: root.data}, _
+            response = request.get root.data, _
 
             if response.statusCode isnt status.OK
                 throw response.statusCode
@@ -68,7 +68,7 @@ module.exports = class GraphDatabase
 
     getNode: (url, _) ->
         try
-            response = request.get {url: url}, _
+            response = request.get url, _
 
             if response.statusCode isnt status.OK
 
@@ -104,7 +104,7 @@ module.exports = class GraphDatabase
             val = encodeURIComponent value
             url = "#{services.node_index}/#{index}/#{key}/#{val}"
 
-            response = request.get {url: url}, _
+            response = request.get url, _
 
             if response.statusCode is status.NOT_FOUND
                 # Node not found
@@ -139,7 +139,7 @@ module.exports = class GraphDatabase
 
     getRelationship: (url, _) ->
         try
-            response = request.get {url: url}, _
+            response = request.get url, _
 
             if response.statusCode isnt status.OK
                 # TODO: Handle 404

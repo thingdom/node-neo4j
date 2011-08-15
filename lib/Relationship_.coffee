@@ -45,27 +45,6 @@ module.exports = class Relationship extends PropertyContainer
         catch error
             throw adjustError error
 
-    delete: (_) ->
-        if not @exists
-            return
-
-        try
-            response = request.del @self, _
-
-            if response.statusCode isnt status.NO_CONTENT
-                # database error
-                message = ''
-                switch response.statusCode
-                    when status.NOT_FOUND
-                        message = 'Relationship not found'
-                throw new Error message
-
-            # success
-            return
-
-        catch error
-            throw adjustError error
-
     # Alias
     del: @::delete
 

@@ -43,6 +43,8 @@ module.exports = class PropertyContainer
                 switch response.statusCode
                     when status.NOT_FOUND
                         message = 'PropertyContainer not found'
+                    when status.CONFLICT
+                        message = 'Node could not be deleted (still has relationships?)'
                 throw new Error message
 
             # success

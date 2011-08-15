@@ -63,7 +63,6 @@ module.exports = class Node extends PropertyContainer
             return
 
         try
-
             # Does this node have any relationships on it?
             relationships = @all null, _
 
@@ -76,24 +75,13 @@ module.exports = class Node extends PropertyContainer
             for relationship in relationships
                 relationship.delete _
 
-            # Delete node
-            response = request.del @self, _
-
-            if response.statusCode isnt status.NO_CONTENT
-                # database error
-                message = ''
-                switch response.statusCode
-                    when status.NOT_FOUND
-                        message = 'Node not found'
-                    when status.CONFLICT
-                        message = 'Node could not be deleted (still has relationships?)'
-                throw new Error message
-
-            # success
-            return
-
         catch error
             throw adjustError error
+
+        # *Then* delete the node
+        # XXX need to explicitly relay arguments to super since streamline
+        # needs to see the underscore parameter currently.
+        super _
 
     # Alias
     del: @::delete

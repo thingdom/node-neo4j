@@ -46,6 +46,8 @@ module.exports = class PropertyContainer
                 throw new Error message
 
             # success
+            @_data.self = null
+
             return
 
         catch error

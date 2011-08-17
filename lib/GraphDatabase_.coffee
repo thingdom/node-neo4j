@@ -74,7 +74,7 @@ module.exports = class GraphDatabase
 
                 # Node not found
                 if response.statusCode is status.NOT_FOUND
-                    return null
+                    throw new Error "No node at #{url}"
 
                 throw response
 

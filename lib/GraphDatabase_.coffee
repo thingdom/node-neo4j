@@ -106,10 +106,6 @@ module.exports = class GraphDatabase
 
             response = request.get url, _
 
-            if response.statusCode is status.NOT_FOUND
-                # Node not found
-                return null
-
             if response.statusCode isnt status.OK
                 # Database error
                 throw response.statusCode

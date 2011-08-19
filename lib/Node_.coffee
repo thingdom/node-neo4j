@@ -26,8 +26,8 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.NO_CONTENT
                     # database error
-                    message = try
-                        JSON.parse(response.body).message
+                    # note that JSON has already been parsed by request.
+                    message = response.body?.message
                     switch response.statusCode
                         when status.BAD_REQUEST then message or= 'Invalid data sent'
                         when status.NOT_FOUND then message or= 'Node not found'
@@ -42,13 +42,13 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.CREATED
                     # database error
-                    responseData = try
-                        JSON.parse response.body
-                    message = responseData?.message or 'Invalid data sent'
+                    # note that JSON has already been parsed by request.
+                    message = response.body?.message or 'Invalid data sent'
                     throw new Error message
 
-                # only update our copy of the data when it is POSTed
-                @_data = JSON.parse response.body
+                # only update our copy of the data when it is POSTed.
+                # note that JSON has already been parsed by request.
+                @_data = response.body
 
             # explicitly not returning any value; making this a "void" method.
             return
@@ -63,7 +63,6 @@ module.exports = class Node extends PropertyContainer
             return
 
         try
-
             # Does this node have any relationships on it?
             relationships = @all null, _
 
@@ -76,24 +75,13 @@ module.exports = class Node extends PropertyContainer
             for relationship in relationships
                 relationship.delete _
 
-            # Delete node
-            response = request.del @self, _
-
-            if response.statusCode isnt status.NO_CONTENT
-                # database error
-                message = ''
-                switch response.statusCode
-                    when status.NOT_FOUND
-                        message = 'Node not found'
-                    when status.CONFLICT
-                        message = 'Node could not be deleted (still has relationships?)'
-                throw new Error message
-
-            # success
-            return
-
         catch error
             throw adjustError error
+
+        # *Then* delete the node
+        # XXX need to explicitly relay arguments to super since streamline
+        # needs to see the underscore parameter currently.
+        super _
 
     # Alias
     del: @::delete
@@ -128,18 +116,17 @@ module.exports = class Node extends PropertyContainer
                     message = ''
                     switch response.statusCode
                         when status.BAD_REQUEST
-                            responseData = try
-                                JSON.parse response.body
-                            message = responseData?.message or
-                                      responseData?.exception or
+                            # note that JSON has already been parsed by request.
+                            message = response.body?.message or
+                                      response.body?.exception or
                                       "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
                         when status.CONFLICT
                             message = '"to" node, or the node specified by the URI not found'
                     throw new Error message
 
                 # success
-                data = JSON.parse response.body
-                relationship = new Relationship @db, from, to, type, data
+                # note that JSON has already been parsed by request.
+                relationship = new Relationship @db, from, to, type, response.body
                 return relationship
             else
                 throw new Error 'Failed to create relationship'
@@ -242,7 +229,8 @@ module.exports = class Node extends PropertyContainer
                 throw new Error "Unrecognized response code: #{res.statusCode}"
 
             # Parse result
-            data = JSON.parse res.body
+            # Note that JSON has already been parsed by request.
+            data = res.body
 
             start = new Node this, {self: data.start}
             end = new Node this, {self: data.end}
@@ -291,9 +279,9 @@ module.exports = class Node extends PropertyContainer
             if resp.statusCode isnt 200
                 throw new Error "Unrecognized response code: #{resp.statusCode}"
 
-            #success
-            data = JSON.parse resp.body
-            return data.map (data) => new Node @db, data
+            # success
+            # note that JSON has already been parsed by request.
+            return resp.body.map (data) => new Node @db, data
 
         catch error
             throw adjustError error

@@ -40,3 +40,18 @@ assert.ok data[0] instanceof Array
 assert.equal data[0].length, 1
 assert.equal typeof data[0][0], 'object'
 assert.equal data[0][0].data.name, user0.name
+
+# test: can query multiple users
+{columns, data} = db.query _,
+    "start n=(#{user0.id},#{user1.id},#{user2.id}) return n"
+assert.equal columns.length, 1
+assert.equal data.length, 3
+assert.equal data[0].length, 1
+assert.equal data[1].length, 1
+assert.equal data[2].length, 1
+assert.equal data[0][0].data.name, user0.name
+assert.equal data[1][0].data.name, user1.name
+assert.equal data[2][0].data.name, user2.name
+
+# give some confidence that these tests actually passed ;)
+console.log 'passed the shit out of the cypher tests'

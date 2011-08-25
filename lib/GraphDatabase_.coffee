@@ -160,3 +160,41 @@ module.exports = class GraphDatabase
         relationshipURL = services.node.replace('node', 'relationship')
         url = "#{relationshipURL}/#{id}"
         @getRelationship url, _
+
+    # wrapper around the Cypher plugin, which comes bundled w/ Neo4j.
+    # pass in the Cypher query as a string (can be multi-line).
+    # http://docs.neo4j.org/chunked/stable/cypher-query-lang.html
+    # XXX returning the raw {data, columns} for now -- except transforming any
+    # nodes and relationships to Node/Relationship instnces -- because I'm not
+    # sure what else we can do for this kind of potentially tabular data.
+    query: (_, query) ->
+        try
+            services = @getServices _
+            endpoint = services.extensions?.CypherPlugin?['execute_query']
+            if not endpoint
+                throw new Error 'Cypher plugin not installed'
+
+            response = request.post
+                uri: endpoint
+                json: {query}
+            , _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response.statusCode
+
+            # Success
+            # Transform rows of values to rows of nodes/rels where appropriate
+            result = response.body      # JSON already parsed by request
+            columns = result.columns
+            data = for row in result.data
+                for value in row
+                    if typeof value is 'object' and value.self
+                        if value.type then new Relationship this, value
+                        else new Node this, value
+                    else
+                        value
+            return {columns, data}
+
+        catch error
+            throw adjustError error

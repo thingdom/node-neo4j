@@ -28,6 +28,12 @@ user0 = users[0]
 user1 = users[1]
 user2 = users[2]
 user3 = users[3]
+user4 = users[4]
+user5 = users[5]
+user6 = users[6]
+user7 = users[7]
+user8 = users[8]
+user9 = users[9]
 
 # test: can query a single user
 results = db.query _, "start n=(#{user0.id}) return n"
@@ -44,6 +50,44 @@ assert.equal results.length, 3
 assert.equal results[0]['n'].data.name, user0.name
 assert.equal results[1]['n'].data.name, user1.name
 assert.equal results[2]['n'].data.name, user2.name
+
+# have user0 follow user1, user2 and user3
+# have user1 follow user2, user3 and user4
+# ...
+# have user8 follow user9, user0 and user1
+# have user9 follow user0, user1 and user2
+createFollowRelationships = (i, _) ->
+    user = users[i]
+    i1 = (i + 1) % users.length
+    i2 = (i + 2) % users.length
+    i3 = (i + 3) % users.length
+    # create three relationships in parallel
+    # WARNING: don't freaking use a variable called futures!
+    # coffeescript's variable shadowing will FUCK. YOU. UP.
+    f1 = user.createRelationshipTo users[i1], 'follows', {}
+    f2 = user.createRelationshipTo users[i2], 'follows', {}
+    f3 = user.createRelationshipTo users[i3], 'follows', {}
+    f1 _
+    f2 _
+    f3 _
+
+# create follow relationships for each user in parallel
+futures = (createFollowRelationships(i) for user, i in users)
+future _ for future in futures
+
+# test: can query relationships and return multiple values
+results = db.query _, """
+    start n=(#{user6.id})
+    match (n) -[r:follows]-> (m)
+    return r, m.name
+"""
+assert.equal results.length, 3
+assert.ok typeof results[0]['r'], 'object'
+assert.ok typeof results[0]['m.name'], 'string'
+assert.equal results[0]['r'].type, 'follows'
+assert.equal results[0]['m.name'], user7.name
+assert.equal results[1]['m.name'], user8.name
+assert.equal results[2]['m.name'], user9.name
 
 # give some confidence that these tests actually passed ;)
 console.log 'passed the shit out of the cypher tests'

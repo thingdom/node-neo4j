@@ -144,10 +144,7 @@ module.exports = class GraphDatabase
             data = JSON.parse response.body
 
             # Construct relationship
-            start = new Node this, {self: data.start}
-            end = new Node this, {self: data.end}
-            type = data.type
-            relationship = new Relationship this, start, end, type, data
+            relationship = new Relationship this, data
 
             return relationship
 

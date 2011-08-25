@@ -144,10 +144,7 @@ module.exports = class GraphDatabase
             data = JSON.parse response.body
 
             # Construct relationship
-            start = new Node this, {self: data.start}
-            end = new Node this, {self: data.end}
-            type = data.type
-            relationship = new Relationship this, start, end, type, data
+            relationship = new Relationship this, data
 
             return relationship
 
@@ -160,3 +157,43 @@ module.exports = class GraphDatabase
         relationshipURL = services.node.replace('node', 'relationship')
         url = "#{relationshipURL}/#{id}"
         @getRelationship url, _
+
+    # wrapper around the Cypher plugin, which comes bundled w/ Neo4j.
+    # pass in the Cypher query as a string (can be multi-line).
+    # http://docs.neo4j.org/chunked/stable/cypher-query-lang.html
+    # returns an array of "rows" (matches), where each row is a map from
+    # variable name (as given in the passed in query) to value. any values
+    # that represent nodes or relationships are transformed to instances.
+    query: (_, query) ->
+        try
+            services = @getServices _
+            endpoint = services.extensions?.CypherPlugin?['execute_query']
+            if not endpoint
+                throw new Error 'Cypher plugin not installed'
+
+            response = request.post
+                uri: endpoint
+                json: {query}
+            , _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response.statusCode
+
+            # Success: build result maps, and transform nodes/relationships
+            body = response.body    # JSON already parsed by request
+            columns = body.columns
+            results = for row in body.data
+                map = {}
+                for value, i in row
+                    map[columns[i]] =
+                        if typeof value is 'object' and value.self
+                            if value.type then new Relationship this, value
+                            else new Node this, value
+                        else
+                            value
+                map
+            return results
+
+        catch error
+            throw adjustError error

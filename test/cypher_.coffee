@@ -28,3 +28,15 @@ user0 = users[0]
 user1 = users[1]
 user2 = users[2]
 user3 = users[3]
+
+# test: can query a single user
+{columns, data} = db.query _, "start n=(#{user0.id}) return n"
+assert.ok columns instanceof Array
+assert.equal columns.length, 1
+assert.equal columns[0], 'n'
+assert.ok data instanceof Array
+assert.equal data.length, 1
+assert.ok data[0] instanceof Array
+assert.equal data[0].length, 1
+assert.equal typeof data[0][0], 'object'
+assert.equal data[0][0].data.name, user0.name

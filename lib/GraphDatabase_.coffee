@@ -164,9 +164,9 @@ module.exports = class GraphDatabase
     # wrapper around the Cypher plugin, which comes bundled w/ Neo4j.
     # pass in the Cypher query as a string (can be multi-line).
     # http://docs.neo4j.org/chunked/stable/cypher-query-lang.html
-    # XXX returning the raw {data, columns} for now -- except transforming any
-    # nodes and relationships to Node/Relationship instnces -- because I'm not
-    # sure what else we can do for this kind of potentially tabular data.
+    # returns an array of "rows" (matches), where each row is a map from
+    # variable name (as given in the passed in query) to value. any values
+    # that represent nodes or relationships are transformed to instances.
     query: (_, query) ->
         try
             services = @getServices _
@@ -183,18 +183,20 @@ module.exports = class GraphDatabase
                 # Database error
                 throw response.statusCode
 
-            # Success
-            # Transform rows of values to rows of nodes/rels where appropriate
-            result = response.body      # JSON already parsed by request
-            columns = result.columns
-            data = for row in result.data
-                for value in row
-                    if typeof value is 'object' and value.self
-                        if value.type then new Relationship this, value
-                        else new Node this, value
-                    else
-                        value
-            return {columns, data}
+            # Success: build result maps, and transform nodes/relationships
+            body = response.body    # JSON already parsed by request
+            columns = body.columns
+            results = for row in body.data
+                map = {}
+                for value, i in row
+                    map[columns[i]] =
+                        if typeof value is 'object' and value.self
+                            if value.type then new Relationship this, value
+                            else new Node this, value
+                        else
+                            value
+                map
+            return results
 
         catch error
             throw adjustError error

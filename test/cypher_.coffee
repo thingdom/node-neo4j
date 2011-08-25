@@ -30,28 +30,20 @@ user2 = users[2]
 user3 = users[3]
 
 # test: can query a single user
-{columns, data} = db.query _, "start n=(#{user0.id}) return n"
-assert.ok columns instanceof Array
-assert.equal columns.length, 1
-assert.equal columns[0], 'n'
-assert.ok data instanceof Array
-assert.equal data.length, 1
-assert.ok data[0] instanceof Array
-assert.equal data[0].length, 1
-assert.equal typeof data[0][0], 'object'
-assert.equal data[0][0].data.name, user0.name
+results = db.query _, "start n=(#{user0.id}) return n"
+assert.ok results instanceof Array
+assert.equal results.length, 1
+assert.equal typeof results[0], 'object'
+assert.ok results[0].hasOwnProperty 'n'
+assert.equal typeof results[0]['n'], 'object'
+assert.equal results[0]['n'].data.name, user0.name
 
 # test: can query multiple users
-{columns, data} = db.query _,
-    "start n=(#{user0.id},#{user1.id},#{user2.id}) return n"
-assert.equal columns.length, 1
-assert.equal data.length, 3
-assert.equal data[0].length, 1
-assert.equal data[1].length, 1
-assert.equal data[2].length, 1
-assert.equal data[0][0].data.name, user0.name
-assert.equal data[1][0].data.name, user1.name
-assert.equal data[2][0].data.name, user2.name
+results = db.query _, "start n=(#{user0.id},#{user1.id},#{user2.id}) return n"
+assert.equal results.length, 3
+assert.equal results[0]['n'].data.name, user0.name
+assert.equal results[1]['n'].data.name, user1.name
+assert.equal results[2]['n'].data.name, user2.name
 
 # give some confidence that these tests actually passed ;)
 console.log 'passed the shit out of the cypher tests'

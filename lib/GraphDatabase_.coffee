@@ -187,7 +187,7 @@ module.exports = class GraphDatabase
                 map = {}
                 for value, i in row
                     map[columns[i]] =
-                        if typeof value is 'object' and value.self
+                        if value and typeof value is 'object' and value.self
                             if value.type then new Relationship this, value
                             else new Node this, value
                         else

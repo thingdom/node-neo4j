@@ -197,3 +197,25 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+
+    # executes a query against the given node index. lucene syntax reference:
+    # http://lucene.apache.org/java/3_1_0/queryparsersyntax.html
+    queryNodeIndex: (index, query, _) ->
+        try
+            services = @getServices _
+            url = "#{services.node_index}/#{index}?query=#{encodeURIComponent query}"
+
+            response = request.get url, _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response.statusCode
+
+            # Success
+            nodeArray = JSON.parse response.body
+            nodes = nodeArray.map (node) =>
+                new Node this, node
+            return nodes
+
+        catch error
+            throw adjustError error

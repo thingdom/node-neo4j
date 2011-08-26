@@ -126,7 +126,7 @@ module.exports = class Node extends PropertyContainer
 
                 # success
                 # note that JSON has already been parsed by request.
-                relationship = new Relationship @db, from, to, type, response.body
+                relationship = new Relationship @db, response.body, from, to
                 return relationship
             else
                 throw new Error 'Failed to create relationship'
@@ -177,14 +177,11 @@ module.exports = class Node extends PropertyContainer
             # success
             data = JSON.parse resp.body
             relationships = data.map (data) =>
-                # XXX constructing a fake Node object for other node
+                # other node will automatically get filled in by Relationship
                 if @self is data.start
-                    start = this
-                    end = new Node @db, {self: data.end}
+                    new Relationship @db, data, this, null
                 else
-                    start = new Node @db, {self: data.start}
-                    end = this
-                return new Relationship @db, start, end, type, data
+                    new Relationship @db, data, null, this
             return relationships
 
         catch error
@@ -238,7 +235,7 @@ module.exports = class Node extends PropertyContainer
             nodes = data.nodes.map (url) =>
                 new Node this, {self: url}
             relationships = data.relationships.map (url) =>
-                new Relationship this, null, null, type, {self: url}
+                new Relationship this, {self: url, type}
 
             # Return path
             path = new Path start, end, length, nodes, relationships

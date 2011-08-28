@@ -8,13 +8,13 @@ constants = require 'constants'
 
 exports.adjustError = (error) ->
     # Neo4j server error
-    if error?.statusCode >= 400 and error.body?
-        try
-            serverError = JSON.parse error?.body
-            error = new Error
-            error.message = serverError.exception
-            error.stack = serverError.stacktrace
-        catch e
+    if error.statusCode >= 400 and error.body
+        serverError = error.body
+        if typeof error.body is 'string'
+            serverError = JSON.parse error.body
+        error = new Error
+        error.message = serverError.exception
+        error.stack = serverError.stacktrace
 
     if typeof error isnt 'object'
         error = new Error error

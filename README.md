@@ -5,9 +5,7 @@ This driver let's you access the [Neo4j graph database][neo4j] from Node.
 
 ## Installation
 
-    git clone git@github.com:gasi/node-neo4j.git neo4j
-    cd neo4j
-    npm link
+    npm install neo4j
 
 
 ## Development
@@ -45,7 +43,8 @@ To run the tests:
         console.log(err || res);
     }
 
-    db.createNode({hello: 'world'}, print);
+    var node = db.createNode({hello: 'world'});
+    node.save(print);
 
 ## License
 

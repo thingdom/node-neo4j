@@ -7,14 +7,18 @@ constants = require 'constants'
 #-----------------------------------------------------------------------------
 
 exports.adjustError = (error) ->
-    # Neo4j server error
-    if error?.statusCode >= 400 and error.body?
-        try
-            serverError = JSON.parse error?.body
-            error = new Error
-            error.message = serverError.exception
-            error.stack = serverError.stacktrace
-        catch e
+    # Neo4j server error (error is a response object)
+    if error.statusCode >= 400 and error.body
+        serverError = error.body
+
+        # in some cases, node-request hasn't parsed response JSON yet, so do.
+        # XXX protect against neo4j incorrectly sending HTML instead of JSON.
+        if typeof serverError is 'string'
+            try
+                serverError = JSON.parse serverError
+
+        error = new Error
+        error.message = serverError.message or serverError
 
     if typeof error isnt 'object'
         error = new Error error

@@ -34,7 +34,7 @@ module.exports = class GraphDatabase
             response = request.get @url, _
 
             if response.statusCode isnt status.OK
-                throw response.statusCode
+                throw response
 
             @_root = JSON.parse response.body
             return @_root
@@ -51,7 +51,7 @@ module.exports = class GraphDatabase
             response = request.get root.data, _
 
             if response.statusCode isnt status.OK
-                throw response.statusCode
+                throw response
 
             @_services = JSON.parse response.body
             return @_services
@@ -108,7 +108,7 @@ module.exports = class GraphDatabase
 
             if response.statusCode isnt status.OK
                 # Database error
-                throw response.statusCode
+                throw response
 
             # Success
             nodeArray = JSON.parse response.body
@@ -178,7 +178,7 @@ module.exports = class GraphDatabase
 
             if response.statusCode isnt status.OK
                 # Database error
-                throw response.statusCode
+                throw response
 
             # Success: build result maps, and transform nodes/relationships
             body = response.body    # JSON already parsed by request
@@ -209,7 +209,7 @@ module.exports = class GraphDatabase
 
             if response.statusCode isnt status.OK
                 # Database error
-                throw response.statusCode
+                throw response
 
             # Success
             nodeArray = JSON.parse response.body

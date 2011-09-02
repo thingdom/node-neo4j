@@ -1,7 +1,7 @@
 {
     "name": "neo4j",
     "description": "Neo4j driver for Node",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "author": "Daniel Gasienica <daniel@gasienica.ch>",
     "contributors": [
         {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"},

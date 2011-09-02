@@ -1,5 +1,11 @@
 # Changelog: Neo4j driver for Node
 
+## Version 0.2.1 – September 2, 2011
+
+  - Updated `request` dependency. ([@aseemk][])
+  - Added Cypher querying and tests. ([@aseemk][])
+  - Better error handling. ([@aseemk][])
+
 ## Version 0.2.0 – July 14, 2011
 
   - Massive overhaul of the entire library:

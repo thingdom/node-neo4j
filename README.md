@@ -40,11 +40,19 @@ To run the tests:
     var db = new neo4j.GraphDatabase('http://localhost:7474');
 
     function print(err, res) {
-        console.log(err || res);
+        console.log(err || (res && res.self) || res);
     }
 
+    // Create node
     var node = db.createNode({hello: 'world'});
     node.save(print);
+
+    // Get node
+    node = db.getNodeById(1, print);
+
+    // Get relationship
+    rel = db.getRelationshipById(1, print)
+
 
 ## License
 

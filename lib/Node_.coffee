@@ -271,10 +271,10 @@ module.exports = class Node extends PropertyContainer
             , _
 
             if resp.statusCode is 404
-                throw new Error 'Node not found.'
+                throw new Error resp.body?.message or 'Node not found.'
 
             if resp.statusCode isnt 200
-                throw new Error "Unrecognized response code: #{resp.statusCode}"
+                throw new Error resp.body?.message or "Unrecognized response code: #{resp.statusCode}"
 
             # success
             # note that JSON has already been parsed by request.

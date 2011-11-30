@@ -1,4 +1,7 @@
 .DS_Store
 
+# for npm 1.0:
+node_modules/
+
 db/
 support/

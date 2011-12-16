@@ -8,8 +8,9 @@ constants = require 'constants'
 
 exports.adjustError = (error) ->
     # Neo4j server error (error is a response object)
-    if error.statusCode >= 400 and error.body
-        serverError = error.body
+    if error.statusCode
+        serverError = error.body or
+            message: 'Unknown Neo4j error.'
 
         # in some cases, node-request hasn't parsed response JSON yet, so do.
         # XXX protect against neo4j incorrectly sending HTML instead of JSON.

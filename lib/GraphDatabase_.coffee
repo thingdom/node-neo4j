@@ -176,6 +176,15 @@ module.exports = class GraphDatabase
                 json: {query}
             , _
 
+            # XXX workaround for neo4j silent failures for invalid queries:
+            if response.statusCode is status.NO_CONTENT
+                throw new Error """
+                    Unknown Neo4j error for query:
+
+                    #{query}
+
+                """
+
             if response.statusCode isnt status.OK
                 # Database error
                 throw response

@@ -158,6 +158,57 @@ module.exports = class GraphDatabase
         url = "#{relationshipURL}/#{id}"
         @getRelationship url, _
 
+    
+    gremlin: (_, query) ->
+        try
+            services = @getServices _
+            endpoint = services.extensions?.GremlinPlugin?['execute_script']
+            
+            
+            if not endpoint
+                throw new Error 'Gremlin plugin not installed'
+
+            response = request.post
+                uri: endpoint
+                json: {script: query}
+            , _
+            
+            
+            
+            
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response
+
+            # Success: build result maps, and transform nodes/relationships
+            body = response.body
+            
+            if body.match
+                # Database error
+                throw response
+            
+            
+            
+            if body.data
+                body = [body]
+       
+            results = for row in body
+                map = {}
+                map['data'] = row.data
+                map['self'] = row.self
+               
+                if /\/node\//.test row.self then new Node this, map
+                else if /\/relationship\//.test row.self then new Relationship this, map
+                else row
+                
+            return results
+            
+            
+                
+        catch error
+    	    throw adjustError error
+    
+    
     # wrapper around the Cypher plugin, which comes bundled w/ Neo4j.
     # pass in the Cypher query as a string (can be multi-line).
     # http://docs.neo4j.org/chunked/stable/cypher-query-lang.html

@@ -312,7 +312,7 @@ module.exports = class Node extends PropertyContainer
                         value: value
                         uri: @self
                 , _
-
+			
             if response.statusCode isnt status.CREATED
                 # database error
                 throw response

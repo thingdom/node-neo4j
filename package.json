@@ -1,11 +1,12 @@
 {
     "name": "neo4j",
-    "description": "Neo4j driver for Node",
-    "version": "0.2.1",
-    "author": "Daniel Gasienica <daniel@gasienica.ch>",
+    "description": "Neo4j driver (REST API client) for Node.js",
+    "version": "0.2.2",
+    "author": "The Thingdom <info@thethingdom.com>",
     "contributors": [
-        {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"},
-        {"name": "Aseem Kishore", "email": "aseem.kishore@gmail.com"}
+        {"name": "Daniel Gasienica", "email": "daniel@gasienica.ch"},
+        {"name": "Aseem Kishore", "email": "aseem.kishore@gmail.com"},
+        {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"}
     ],
     "main": "./lib",
     "dependencies": {
@@ -19,7 +20,9 @@
         "graph",
         "database",
         "driver",
-        "rest"
+        "rest",
+        "api",
+        "client"
     ],
     "licenses": [
         {
@@ -29,7 +32,7 @@
     ],
     "repository" : {
         "type" : "git",
-        "url" : "https://github.com/gasi/node-neo4j.git"
+        "url" : "https://github.com/thingdom/node-neo4j.git"
     },
     "scripts": {
         "test": "node test"

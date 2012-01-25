@@ -59,6 +59,17 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    getVersion: (_) ->
+        try
+            services = @getServices _
+
+            # Neo4j 1.5 onwards report their version number here;
+            # if it's not there, assume Neo4j 1.4.
+            parseFloat services['neo4j_version'] or '1.4'
+
+        catch error
+            throw adjustError
+
     # Nodes
     createNode: (data) ->
         data = data || {}

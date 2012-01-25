@@ -90,4 +90,4 @@ assert.equal results[1]['m.name'], user8.name
 assert.equal results[2]['m.name'], user9.name
 
 # give some confidence that these tests actually passed ;)
-console.log 'passed the shit out of the cypher tests'
+console.log 'passed cypher tests'

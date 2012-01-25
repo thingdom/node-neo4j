@@ -113,4 +113,4 @@ node = db.getIndexedNode 'users', 'name', 'Daniel', _
 assert.ok node
 
 # just to ensure that no sorts of silent transformation errors plagued us
-console.log 'passed the shit out of the tests'
+console.log 'passed CRUD tests'

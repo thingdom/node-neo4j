@@ -1,5 +1,10 @@
 # Changelog: Neo4j driver for Node
 
+## Version 0.2.2 – January 25, 2012
+
+  - Updated `streamline` dependency to get sync stack traces!
+  - Improve handling of error responses from Neo4j.
+
 ## Version 0.2.1 – September 2, 2011
 
   - Updated `request` dependency. ([@aseemk][])

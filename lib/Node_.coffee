@@ -302,7 +302,7 @@ module.exports = class Node extends PropertyContainer
 
             if response.statusCode isnt status.CREATED
                 # database error
-                throw new Error response.statusCode
+                throw response
 
             # success
             return

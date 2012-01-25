@@ -290,15 +290,28 @@ module.exports = class Node extends PropertyContainer
                 throw new Error 'Node must exists before indexing properties'
 
             services = @db.getServices _
+            version = @db.getVersion _
 
-            encodedKey = encodeURIComponent key
-            encodedValue = encodeURIComponent value
-            url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}"
+            # old API:
+            if version <= 1.4
+                encodedKey = encodeURIComponent key
+                encodedValue = encodeURIComponent value
+                url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}"
 
-            response = request.post
-                url: url
-                json: @self
-            , _
+                response = request.post
+                    url: url
+                    json: @self
+                , _
+
+            # new API:
+            else
+                response = request.post
+                    url: "#{services.node_index}/#{index}"
+                    json:
+                        key: key
+                        value: value
+                        uri: @self
+                , _
 
             if response.statusCode isnt status.CREATED
                 # database error

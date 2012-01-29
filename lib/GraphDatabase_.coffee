@@ -178,7 +178,9 @@ module.exports = class GraphDatabase
     query: (_, query) ->
         try
             services = @getServices _
-            endpoint = services.extensions?.CypherPlugin?['execute_query']
+            endpoint = services.cypher or
+                services.extensions?.CypherPlugin?['execute_query']
+
             if not endpoint
                 throw new Error 'Cypher plugin not installed'
 

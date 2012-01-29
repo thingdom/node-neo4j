@@ -3,8 +3,7 @@
 This driver lets you access [Neo4j][neo4j], a graph database, from Node.js.
 It uses Neo4j's [REST API][neo4j-rest-api].
 
-**Important:** This library currently only formally supports Neo4j 1.4 & 1.5.
-We are in the process of upgrading this library to support Neo4j 1.6.
+This library supports and has been tested against Neo4j 1.4, 1.5 and 1.6.
 
 
 ## Installation
@@ -20,9 +19,9 @@ We are in the process of upgrading this library to support Neo4j 1.6.
 
 You'll also need a local Neo4j database instance for the tests:
 
-    curl http://dist.neo4j.org/neo4j-community-1.5-unix.tar.gz --O neo4j-community-1.5-unix.tar.gz
-    tar -zxvf neo4j-community-1.5-unix.tar.gz
-    mv neo4j-community-1.5 db
+    curl http://dist.neo4j.org/neo4j-community-1.6-unix.tar.gz --O neo4j-community-1.6-unix.tar.gz
+    tar -zxvf neo4j-community-1.6-unix.tar.gz
+    mv neo4j-community-1.6 db
 
 If you're new to Neo4j, read the [Getting Started][neo4j-getting-started] page.
 Start the server:
@@ -37,7 +36,7 @@ To run the tests:
 
     npm test
 
-**Important:** The tests are written assuming Neo4j 1.5 and will now fail on
+**Important:** The tests are written assuming Neo4j >=1.5 and will now fail on
 Neo4j 1.4, but the library supports Neo4j 1.4 fine.
 
 
@@ -73,7 +72,7 @@ If you encounter any bugs or other issues, please file them in the
 
 
 [neo4j]: http://neo4j.org/
-[neo4j-rest-api]: http://docs.neo4j.org/chunked/1.5/rest-api.html
+[neo4j-rest-api]: http://docs.neo4j.org/chunked/1.6/rest-api.html
 [neo4j-getting-started]: http://wiki.neo4j.org/content/Getting_Started_With_Neo4j_Server
 [issue-tracker]: https://github.com/thingdom/node-neo4j/issues
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html

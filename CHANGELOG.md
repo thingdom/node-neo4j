@@ -1,3 +1,9 @@
+## Version 0.2.4 — January 29, 2012
+
+  - Updated library to support Neo4j 1.6. Still supports 1.5 and 1.4. No
+    changes were actually needed, but uses the new official Cypher endpoint
+    now instead of the deprecated plugin endpoint, if it's available.
+
 ## Version 0.2.3 — January 25, 2012
 
   - Updated library to support Neo4j 1.5. Still supports 1.4.

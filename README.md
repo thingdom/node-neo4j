@@ -11,6 +11,26 @@ This library supports and has been tested against Neo4j 1.4, 1.5 and 1.6.
     npm install neo4j
 
 
+## Usage
+
+    var neo4j = require('neo4j');
+    var db = new neo4j.GraphDatabase('http://localhost:7474');
+
+    function print(err, res) {
+        console.log(err || (res && res.self) || res);
+    }
+
+    // Create node
+    var node = db.createNode({hello: 'world'});
+    node.save(print);   // this will be async
+
+    // Get node
+    node = db.getNodeById(1, print);    // this will be async
+
+    // Get relationship
+    rel = db.getRelationshipById(1, print)  // this will be async
+
+
 ## Development
 
     git clone git@github.com:thingdom/node-neo4j.git
@@ -38,26 +58,6 @@ To run the tests:
 
 **Important:** The tests are written assuming Neo4j >=1.5 and will now fail on
 Neo4j 1.4, but the library supports Neo4j 1.4 fine.
-
-
-## Usage
-
-    var neo4j = require('neo4j');
-    var db = new neo4j.GraphDatabase('http://localhost:7474');
-
-    function print(err, res) {
-        console.log(err || (res && res.self) || res);
-    }
-
-    // Create node
-    var node = db.createNode({hello: 'world'});
-    node.save(print);   // this will be async
-
-    // Get node
-    node = db.getNodeById(1, print);    // this will be async
-
-    // Get relationship
-    rel = db.getRelationshipById(1, print)  // this will be async
 
 
 ## License

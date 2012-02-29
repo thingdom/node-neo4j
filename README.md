@@ -88,6 +88,6 @@ If you encounter any bugs or other issues, please file them in the
 
 [neo4j]: http://neo4j.org/
 [neo4j-rest-api]: http://docs.neo4j.org/chunked/1.6/rest-api.html
-[neo4j-getting-started]: http://wiki.neo4j.org/content/Getting_Started_With_Neo4j_Server
+[neo4j-getting-started]: http://docs.neo4j.org/chunked/stable/
 [issue-tracker]: https://github.com/thingdom/node-neo4j/issues
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html

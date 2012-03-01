@@ -1,5 +1,4 @@
 status = require 'http-status'
-request = require 'request'
 
 util = require './util_'
 adjustError = util.adjustError
@@ -26,7 +25,7 @@ module.exports = class Relationship extends PropertyContainer
         try
             # TODO: check for actual modification
             if @exists
-                response = request.put
+                response = @_request.put
                     uri: "#{@self}/properties"
                     json: @data
                 , _

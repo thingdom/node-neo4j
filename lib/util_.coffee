@@ -1,4 +1,62 @@
 constants = require 'constants'
+request = require 'request'
+URL = require 'url'
+
+#-----------------------------------------------------------------------------
+#
+#  HTTP Basic Auth support
+#
+#-----------------------------------------------------------------------------
+
+# wrapping request methods to support HTTP Basic Auth, since Neo4j doesn't
+# preserve the username and password in the URLs! This code derived from:
+# https://github.com/thingdom/node-neo4j/issues/7 (by @anatoliychakkaev)
+# returns a minimal wrapper (HTTP methods only) around request so that each
+# method ensures that URLs include HTTP Basic Auth usernames/passwords.
+exports.wrapRequestForAuth = (url) ->
+    # parse auth info, and short-circuit if we have none:
+    auth = URL.parse(url).auth
+    return request if not auth
+
+    # updates the args to ensure that the URL arg has username/password:
+    fixArgs = (args) ->
+        # the URL may be the first arg alone, as a string, or an options obj:
+        # update: it may also be called 'uri' instead of 'url'!
+        if typeof args[0] is 'string'
+            url = args[0]
+        else
+            url = args[0].url or args[0].uri
+
+        if not url
+            console.log 'UH OH:'
+            console.log args
+
+        # ensure auth info is included in the URL:
+        url = URL.parse url
+        if not url.auth
+            # XXX argh, just setting url.auth isn't picked up by URL.format()!
+            # it relies first on just url.host, so update that instead:
+            # TODO account for case where url.auth is set, but different?
+            url.host = "#{auth}@#{url.host}"
+        url = URL.format url
+
+        # then update the original args:
+        if typeof args[0] is 'string'
+            args[0] = url
+        else
+            args[0].url = args[0].uri = url
+
+        return args
+
+    # wrap each method to fix its args before calling real method:
+    wrapper = {}
+    for verb in ['get', 'post', 'put', 'del', 'head']
+        do (verb) ->    # freaking closures!
+            wrapper[verb] = (args...) ->
+                request[verb].apply request, fixArgs args
+
+    # and return this set of wrapped methods:
+    return wrapper
 
 #-----------------------------------------------------------------------------
 #

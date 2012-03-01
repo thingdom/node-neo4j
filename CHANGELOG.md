@@ -1,3 +1,9 @@
+## Version 0.2.5 — March 1, 2012
+
+  - Added support for HTTP Basic Auth by working around the fact that Neo4j
+    doesn't maintain the username and password in the URLs it returns (#7).
+    Many thanks to @anatoliychakkaev for finding this and suggesting the fix.
+
 ## Version 0.2.4 — January 29, 2012
 
   - Updated library to support Neo4j 1.6. Still supports 1.5 and 1.4. No

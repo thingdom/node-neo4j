@@ -78,9 +78,7 @@ module.exports = class Node extends PropertyContainer
             throw adjustError error
 
         # *Then* delete the node
-        # XXX need to explicitly relay arguments to super since streamline
-        # needs to see the underscore parameter currently.
-        super _
+        super
 
     # Alias
     del: @::delete

@@ -177,7 +177,7 @@ module.exports = class GraphDatabase
     # returns an array of "rows" (matches), where each row is a map from
     # variable name (as given in the passed in query) to value. any values
     # that represent nodes or relationships are transformed to instances.
-    query: (_, query) ->
+    query: (query, _) ->
         try
             services = @getServices _
             endpoint = services.cypher or
@@ -221,6 +221,19 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+
+    # XXX temporary backwards compatibility shim for query() argument order:
+    do (actual = @::query) =>
+        @::query = (a, b) ->
+            if typeof a is 'function'
+                # instantiate a new error to derive the current stack, and
+                # show the relevant source line in a warning:
+                console.warn 'neo4j.GraphDatabase::query()’s signature is ' +
+                    'now (query, callback). Please update your code!\n' +
+                    new Error().stack.split('\n')[2]    # includes indentation
+                actual.call @, b, a
+            else
+                actual.apply @, arguments
 
     # executes a query against the given node index. lucene syntax reference:
     # http://lucene.apache.org/java/3_1_0/queryparsersyntax.html

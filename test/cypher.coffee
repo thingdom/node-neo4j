@@ -38,10 +38,10 @@ user8 = users[8]
 user9 = users[9]
 
 # test: can query a single user
-results = db.query _, """
+results = db.query """
     START n=node(#{user0.id})
     RETURN n
-"""
+""", _
 assert.ok results instanceof Array
 assert.equal results.length, 1
 assert.equal typeof results[0], 'object'
@@ -50,10 +50,10 @@ assert.equal typeof results[0]['n'], 'object'
 assert.equal results[0]['n'].data.name, user0.name
 
 # test: can query multiple users
-results = db.query _, """
+results = db.query """
     START n=node(#{user0.id},#{user1.id},#{user2.id})
     RETURN n
-"""
+""", _
 assert.equal results.length, 3
 assert.equal results[0]['n'].data.name, user0.name
 assert.equal results[1]['n'].data.name, user1.name
@@ -84,11 +84,11 @@ futures = (createFollowRelationships(i) for user, i in users)
 future _ for future in futures
 
 # test: can query relationships and return multiple values
-results = db.query _, """
+results = db.query """
     START n=node(#{user6.id})
     MATCH (n) -[r:follows]-> (m)
     RETURN r, m.name
-"""
+""", _
 assert.equal results.length, 3
 assert.ok typeof results[0]['r'], 'object'
 assert.ok typeof results[0]['m.name'], 'string'

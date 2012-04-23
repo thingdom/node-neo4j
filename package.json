@@ -39,7 +39,7 @@
     "scripts": {
         "build": "cake build",
         "clean": "cake clean",
-        "test": "node test"
+        "test": "coffee-streamline test"
     },
     "engines": {
         "node": ">= 0.4.5"

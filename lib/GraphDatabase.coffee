@@ -177,7 +177,7 @@ module.exports = class GraphDatabase
     # returns an array of "rows" (matches), where each row is a map from
     # variable name (as given in the passed in query) to value. any values
     # that represent nodes or relationships are transformed to instances.
-    query: (_, query) ->
+    query: (query, _) ->
         try
             services = @getServices _
             endpoint = services.cypher or

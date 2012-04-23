@@ -104,7 +104,7 @@ you want the code compiled on-the-fly during development, you can create an
 
     require('coffee-script');
     require('streamline');
-    module.exports = require('index.coffee');
+    module.exports = require('./index.coffee');
 
 But don't check this in! That would cause all clients to compile the code
 on-the-fly every time, which isn't desirable in production.

@@ -1,3 +1,10 @@
+## Version 0.2.7 — April 22, 2012
+
+  - Reversed the order of `GraphDatabase::query()` from `(callback, query)` to
+    `(query, callback)`, to be consistent with our other methods (#20), but
+    retained backwards-compatibility -- the old style still works (it just
+    logs a warning to the console). Thanks @sprjr for the nudge!
+
 ## Version 0.2.6 — April 22, 2012
 
   - Upgraded from CoffeeScript 1.1 to 1.3 and from Streamline 0.1 to 0.2.

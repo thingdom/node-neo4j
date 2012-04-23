@@ -1,4 +1,4 @@
-/*
+###
 
     Neo4j driver for Node
 
@@ -17,16 +17,12 @@
     License for the specific language governing permissions and limitations
     under the License.
 
-*/
+###
 
-require('coffee-script');
-require('streamline');
-require('streamline/lib/util/flows');   // to get sync stack traces in 0.1.40!
+exports.GraphDatabase = require './GraphDatabase'
 
-exports.GraphDatabase = require('./GraphDatabase_');
-
-// XXX serialize functions not used internally right now, but used by outside
-// clients, e.g. the scrapedb script. TODO formalize these better?
-var util = require('./util_');
-exports.serialize = util.serialize;
-exports.deserialize = util.deserialize;
+# XXX serialize functions not used internally right now, but used by outside
+# clients, e.g. the scrapedb script. TODO formalize these better?
+util = require './util'
+exports.serialize = util.serialize
+exports.deserialize = util.deserialize

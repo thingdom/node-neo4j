@@ -1,6 +1,8 @@
+return if not require('streamline/module')(module)
+
 status = require 'http-status'
 
-util = require './util_'
+util = require './util'
 adjustError = util.adjustError
 
 module.exports = class PropertyContainer

@@ -1,11 +1,13 @@
+return if not require('streamline/module')(module)
+
 status = require 'http-status'
 
-util = require './util_'
+util = require './util'
 adjustError = util.adjustError
 
-PropertyContainer = require './PropertyContainer_'
-Relationship = require './Relationship_'
-Path = require './Path_'
+PropertyContainer = require './PropertyContainer'
+Relationship = require './Relationship'
+Path = require './Path'
 
 module.exports = class Node extends PropertyContainer
     constructor: (db, data) ->

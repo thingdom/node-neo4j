@@ -10,8 +10,8 @@
     ],
     "main": "./lib",
     "dependencies": {
-        "http-status": "0.1.0",
-        "request": "2.1.x",
+        "http-status": "~0.1.0",
+        "request": "~2.1.1",
         "streamline": "~0.2.4"
     },
     "devDependencies": {
@@ -26,12 +26,10 @@
         "api",
         "client"
     ],
-    "licenses": [
-        {
-            "type": "Apache License, Version 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-        }
-    ],
+    "licenses": [{
+        "type": "Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }],
     "repository" : {
         "type" : "git",
         "url" : "https://github.com/thingdom/node-neo4j.git"

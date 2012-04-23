@@ -1,6 +1,8 @@
+return if not require('streamline/module')(module)
+
 status = require 'http-status'
 
-util = require './util_'
+util = require './util'
 adjustError = util.adjustError
 
 module.exports = class PropertyContainer
@@ -18,7 +20,6 @@ module.exports = class PropertyContainer
                 null
             else
                 match = /(?:node|relationship)\/(\d+)$/.exec @self
-                #/ XXX slash to unbreak broken coda coffee plugin (which chokes on the regex with a slash)
                 parseInt match[1]
 
         @getter 'data', -> @_data.data or null

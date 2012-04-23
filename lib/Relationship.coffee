@@ -1,16 +1,18 @@
+return if not require('streamline/module')(module)
+
 status = require 'http-status'
 
-util = require './util_'
+util = require './util'
 adjustError = util.adjustError
 
-PropertyContainer = require './PropertyContainer_'
+PropertyContainer = require './PropertyContainer'
 
 module.exports = class Relationship extends PropertyContainer
     constructor: (db, data, start, end) ->
         super db, data
 
         # require Node inline to prevent circular require dependency:
-        Node = require './Node_'
+        Node = require './Node'
 
         # TODO relationship "start" and "end" are inconsistent with
         # creating relationships "to" and "from". consider renaming.

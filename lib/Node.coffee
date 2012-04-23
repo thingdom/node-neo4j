@@ -1,11 +1,13 @@
+return if not require('streamline/module')(module)
+
 status = require 'http-status'
 
-util = require './util_'
+util = require './util'
 adjustError = util.adjustError
 
-PropertyContainer = require './PropertyContainer_'
-Relationship = require './Relationship_'
-Path = require './Path_'
+PropertyContainer = require './PropertyContainer'
+Relationship = require './Relationship'
+Path = require './Path'
 
 module.exports = class Node extends PropertyContainer
     constructor: (db, data) ->
@@ -78,9 +80,7 @@ module.exports = class Node extends PropertyContainer
             throw adjustError error
 
         # *Then* delete the node
-        # XXX need to explicitly relay arguments to super since streamline
-        # needs to see the underscore parameter currently.
-        super _
+        super
 
     # Alias
     del: @::delete

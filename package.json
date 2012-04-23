@@ -1,7 +1,7 @@
 {
     "name": "neo4j",
     "description": "Neo4j driver (REST API client) for Node.js",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "author": "The Thingdom <info@thethingdom.com>",
     "contributors": [
         {"name": "Daniel Gasienica", "email": "daniel@gasienica.ch"},
@@ -10,10 +10,12 @@
     ],
     "main": "./lib",
     "dependencies": {
-        "coffee-script": "1.1.3",
-        "http-status": "0.1.0",
-        "request": "2.1.x",
-        "streamline": "0.1.43"
+        "http-status": "~0.1.0",
+        "request": "~2.1.1",
+        "streamline": "~0.2.4"
+    },
+    "devDependencies": {
+        "coffee-script": "~1.3.1"
     },
     "keywords": [
         "neo4j",
@@ -24,18 +26,20 @@
         "api",
         "client"
     ],
-    "licenses": [
-        {
-            "type": "Apache License, Version 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-        }
-    ],
+    "licenses": [{
+        "type": "Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }],
     "repository" : {
         "type" : "git",
         "url" : "https://github.com/thingdom/node-neo4j.git"
     },
     "scripts": {
-        "test": "node test"
+        "build": "cake build",
+        "clean": "cake clean",
+        "prepublish": "cake build",
+        "postpublish": "cake clean",
+        "test": "coffee-streamline test"
     },
     "engines": {
         "node": ">= 0.4.5"

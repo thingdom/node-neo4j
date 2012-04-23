@@ -1,3 +1,5 @@
+return if not require('streamline/module')(module)
+
 # we'll be creating a somewhat complex graph and testing that cypher queries
 # on it return expected results.
 

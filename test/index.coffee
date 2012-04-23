@@ -1,3 +1,3 @@
 require 'streamline'
-require './crud_'
-require './cypher_'
+require './crud'
+require './cypher'

@@ -18,7 +18,6 @@ module.exports = class PropertyContainer
                 null
             else
                 match = /(?:node|relationship)\/(\d+)$/.exec @self
-                #/ XXX slash to unbreak broken coda coffee plugin (which chokes on the regex with a slash)
                 parseInt match[1]
 
         @getter 'data', -> @_data.data or null

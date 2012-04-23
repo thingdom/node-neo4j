@@ -1,6 +1,6 @@
 # Neo4j driver (REST API client) for Node.js
 
-This driver lets you access [Neo4j][neo4j], a graph database, from Node.js.
+This driver lets you access [Neo4j][], a graph database, from [Node.js][].
 It uses Neo4j's [REST API][neo4j-rest-api].
 
 This library supports and has been tested against Neo4j 1.4, 1.5 and 1.6.
@@ -45,6 +45,16 @@ Fetching an existing node or relationship, by ID:
 
 And so on.
 
+For a complete example of usage, take a look at [@aseemk][aseemk]'s
+[node-neo4j-template][] app. The `models/User.js` file in particular is the
+one that interacts with this library.
+
+**A note on package.json dependencies:**
+
+Future breaking changes to this library are likely! But the version numbers
+will respect [semantic versioning][semver]. So **please specify something like
+`0.2.x` or `~0.2.6`, *not* `>=0.2.6`**. Thank you.
+
 
 ## Development
 
@@ -74,6 +84,31 @@ To run the tests:
 **Important:** The tests are written assuming Neo4j >=1.5 and will now fail on
 Neo4j 1.4, but the library supports Neo4j 1.4 fine.
 
+This library is written in [CoffeeScript][], using [Streamline.js][] syntax.
+The tests automatically compile the code on-the-fly, but you can also generate
+compiled `.js` files from the source `.coffee` files manually:
+
+    npm run build
+
+This is in fact what's run when this library is published to npm. But please
+don't check the generated `.js` files in; to remove:
+
+    npm run clean
+
+When compiled `.js` files exist, changes to the source `.coffee` files will
+*not* be picked up automatically; you'll need to rebuild.
+
+If you link this module into another app (like [node-neo4j-template][]) and
+you want the code compiled on-the-fly during development, you can create an
+`index.js` file under `lib/` with the following:
+
+    require('coffee-script');
+    require('streamline');
+    module.exports = require('index.coffee');
+
+But don't check this in! That would cause all clients to compile the code
+on-the-fly every time, which isn't desirable in production.
+
 
 ## License
 
@@ -87,7 +122,16 @@ If you encounter any bugs or other issues, please file them in the
 
 
 [neo4j]: http://neo4j.org/
+[node.js]: http://nodejs.org/
 [neo4j-rest-api]: http://docs.neo4j.org/chunked/1.6/rest-api.html
-[neo4j-getting-started]: http://docs.neo4j.org/chunked/stable/
+
+[aseemk]: https://github.com/aseemk
+[node-neo4j-template]: https://github.com/aseemk/node-neo4j-template
+[semver]: http://semver.org/
+
+[neo4j-getting-started]: http://wiki.neo4j.org/content/Getting_Started_With_Neo4j_Server
+[coffeescript]: http://coffeescript.org/
+[streamline.js]: https://github.com/Sage/streamlinejs
+
 [issue-tracker]: https://github.com/thingdom/node-neo4j/issues
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html

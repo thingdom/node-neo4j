@@ -1,3 +1,13 @@
+## Version 0.2.6 — April 22, 2012
+
+  - Upgraded from CoffeeScript 1.1 to 1.3 and from Streamline 0.1 to 0.2.
+  - More importantly, the published module on npm is now compiled JS! (#17)
+    This means better startup performance (no just-in-time compilation) and
+    more robustness (no CoffeeScript/Streamline version conflicts). This was
+    achieved thanks to Streamline 0.2's new in-file directive, allowing us to
+    remove the underscores from our filenames and thus `require()` calls.
+    Thanks to @vjeux for bringing this to our attention.
+
 ## Version 0.2.5 — March 1, 2012
 
   - Added support for HTTP Basic Auth by working around the fact that Neo4j

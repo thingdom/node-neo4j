@@ -39,6 +39,8 @@
     "scripts": {
         "build": "cake build",
         "clean": "cake clean",
+        "prepublish": "cake build",
+        "postpublish": "cake clean",
         "test": "coffee-streamline test"
     },
     "engines": {

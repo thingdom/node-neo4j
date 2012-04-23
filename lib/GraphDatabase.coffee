@@ -222,6 +222,19 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    # XXX temporary backwards compatibility shim for query() argument order:
+    do (actual = @::query) =>
+        @::query = (a, b) ->
+            if typeof a is 'function'
+                # instantiate a new error to derive the current stack, and
+                # show the relevant source line in a warning:
+                console.warn 'neo4j.GraphDatabase::query()’s signature is ' +
+                    'now (query, callback). Please update your code!\n' +
+                    new Error().stack.split('\n')[2]    # includes indentation
+                actual.call @, b, a
+            else
+                actual.apply @, arguments
+
     # executes a query against the given node index. lucene syntax reference:
     # http://lucene.apache.org/java/3_1_0/queryparsersyntax.html
     queryNodeIndex: (index, query, _) ->

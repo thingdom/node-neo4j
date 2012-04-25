@@ -19,10 +19,18 @@ module.exports = class Relationship extends PropertyContainer
         @_start = start or new Node db, {self: data.start}
         @_end = end or new Node db, {self: data.end}
 
-        @getter 'start', -> @_start or null
-        @getter 'end', -> @_end or null
-        @getter 'type', -> data.type
+    # Language helpers:
+    get = (props) =>
+        @::__defineGetter__ name, getter for name, getter of props
+    set = (props) =>
+        @::__defineSetter__ name, setter for name, setter of props
 
+    # Properties:
+    get start: -> @_start or null
+    get end: -> @_end or null
+    get type: -> @_data.type
+
+    # Methods:
     save: (_) ->
         try
             # TODO: check for actual modification

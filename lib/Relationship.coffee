@@ -19,10 +19,12 @@ module.exports = class Relationship extends PropertyContainer
         @_start = start or new Node db, {self: data.start}
         @_end = end or new Node db, {self: data.end}
 
-        @getter 'start', -> @_start or null
-        @getter 'end', -> @_end or null
-        @getter 'type', -> data.type
+    # Properties:
+    @::getter 'start', -> @_start or null
+    @::getter 'end', -> @_end or null
+    @::getter 'type', -> @_data.type
 
+    # Methods:
     save: (_) ->
         try
             # TODO: check for actual modification

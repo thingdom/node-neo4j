@@ -8,11 +8,15 @@ module.exports = class Path
         @_relationships = relationships
         @_end = end
 
-        @getter 'start', -> @_start || null
-        @getter 'end', -> @_end || null
-        @getter 'length', -> @_length || 0
-        @getter 'nodes', -> @_nodes || []
-        @getter 'relationships', -> @_relationships || []
+    # Language helpers:
+    get = (props) =>
+        @::__defineGetter__ name, getter for name, getter of props
+    set = (props) =>
+        @::__defineSetter__ name, setter for name, setter of props
 
-    getter: @__defineGetter__
-    setter: @__defineSetter__
+    # Properties:
+    get start: -> @_start || null
+    get end: -> @_end || null
+    get length: -> @_length || 0
+    get nodes: -> @_nodes || []
+    get relationships: -> @_relationships || []

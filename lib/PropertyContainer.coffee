@@ -13,21 +13,26 @@ module.exports = class PropertyContainer
         @_data = data or {}
         @_data.self = data?.self or null
 
-        @getter 'self', -> @_data.self or null
-        @getter 'exists', -> @self?
-        @getter 'id', ->
-            if not @exists
-                null
-            else
-                match = /(?:node|relationship)\/(\d+)$/.exec @self
-                parseInt match[1]
+    # Language helpers:
+    get = (props) =>
+        @::__defineGetter__ name, getter for name, getter of props
+    set = (props) =>
+        @::__defineSetter__ name, setter for name, setter of props
 
-        @getter 'data', -> @_data.data or null
-        @setter 'data', (value) -> @_data.data = value
+    # Properties:
+    get self: -> @_data.self or null
+    get exists: -> @self?
+    get id: ->
+        if not @exists
+            null
+        else
+            match = /(?:node|relationship)\/(\d+)$/.exec @self
+            parseInt match[1]
 
-    getter: @::__defineGetter__
-    setter: @::__defineSetter__
+    get data: -> @_data.data or null
+    set data: (value) -> @_data.data = value
 
+    # Methods:
     equals: (other) ->
         @self is other?.self
 

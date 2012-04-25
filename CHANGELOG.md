@@ -1,3 +1,8 @@
+## Version 0.2.8 — April 25, 2012
+
+  - Optimized the construction of new object instances in our code. This shows
+    >50x improvement when creating or fetching many nodes or relationships.
+
 ## Version 0.2.7 — April 22, 2012
 
   - Reversed the order of `GraphDatabase::query()` from `(callback, query)` to

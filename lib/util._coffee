@@ -1,5 +1,3 @@
-return if not require('streamline/module')(module)
-
 constants = require 'constants'
 request = require 'request'
 URL = require 'url'

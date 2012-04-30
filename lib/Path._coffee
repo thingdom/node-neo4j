@@ -1,5 +1,3 @@
-return if not require('streamline/module')(module)
-
 module.exports = class Path
     constructor: (start, end, length, nodes, relationships) ->
         @_start = start

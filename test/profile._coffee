@@ -1,5 +1,3 @@
-return if not require('streamline/module')(module)
-
 # this file is in streamline syntax!
 # https://github.com/Sage/streamlinejs
 

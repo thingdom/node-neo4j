@@ -39,8 +39,8 @@
         "clean": "cake clean",
         "prepublish": "cake build",
         "postpublish": "cake clean",
-        "profile": "coffee-streamline test/profile",
-        "test": "coffee-streamline test"
+        "profile": "_coffee test/profile",
+        "test": "_coffee test"
     },
     "engines": {
         "node": ">= 0.6"

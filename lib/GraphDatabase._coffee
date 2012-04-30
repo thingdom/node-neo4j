@@ -1,5 +1,3 @@
-return if not require('streamline/module')(module)
-
 # TODO many of these functions take a callback but, in some cases, call the
 # callback immediately (e.g. if a value is cached). we should probably make
 # sure to always call callbacks asynchronously, to prevent race conditions.

@@ -1,5 +1,3 @@
-return if not require('streamline/module')(module)
-
 status = require 'http-status'
 
 util = require './util'

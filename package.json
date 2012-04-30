@@ -35,10 +35,10 @@
         "url" : "https://github.com/thingdom/node-neo4j.git"
     },
     "scripts": {
-        "build": "cake build",
-        "clean": "cake clean",
-        "prepublish": "cake build",
-        "postpublish": "cake clean",
+        "build": "_coffee -c lib/",
+        "clean": "rm lib/*.js",
+        "prepublish": "npm run build",
+        "postpublish": "npm run clean",
         "profile": "_coffee test/profile",
         "test": "_coffee test"
     },

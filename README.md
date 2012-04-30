@@ -86,7 +86,7 @@ Neo4j 1.4, but the library supports Neo4j 1.4 fine.
 
 This library is written in [CoffeeScript][], using [Streamline.js][] syntax.
 The tests automatically compile the code on-the-fly, but you can also generate
-compiled `.js` files from the source `.coffee` files manually:
+compiled `.js` files from the source `._coffee` files manually:
 
     npm run build
 
@@ -95,7 +95,7 @@ don't check the generated `.js` files in; to remove:
 
     npm run clean
 
-When compiled `.js` files exist, changes to the source `.coffee` files will
+When compiled `.js` files exist, changes to the source `._coffee` files will
 *not* be picked up automatically; you'll need to rebuild.
 
 If you link this module into another app (like [node-neo4j-template][]) and
@@ -103,8 +103,8 @@ you want the code compiled on-the-fly during development, you can create an
 `index.js` file under `lib/` with the following:
 
     require('coffee-script');
-    require('streamline');
-    module.exports = require('./index.coffee');
+    require('streamline').register();
+    module.exports = require('./index._coffee');
 
 But don't check this in! That would cause all clients to compile the code
 on-the-fly every time, which isn't desirable in production.

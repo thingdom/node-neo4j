@@ -1,3 +1,13 @@
+## Version 0.2.9 — April 30, 2012
+
+  - Upgraded from Streamline 0.2 to 0.3. This allows us to take advantage of
+    the new `._coffee` file extension for a bit cleaner code.
+  - Unfortunately, Streamline 0.3 requires Node 0.6, and the compiled code
+    requires Streamline's runtime, so even though the runtime itself doesn't
+    require Node 0.6, our package won't correctly install on Node 0.4 anymore.
+    So we now require Node 0.6, but hopefully that's not a big deal. Let us
+    know via the issue tracker if this affects you.
+
 ## Version 0.2.8 — April 25, 2012
 
   - Optimized the construction of new object instances in our code. This shows

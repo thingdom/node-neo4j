@@ -1,4 +1,3 @@
-constants = require 'constants'
 request = require 'request'
 URL = require 'url'
 
@@ -82,8 +81,11 @@ exports.adjustError = (error) ->
     if typeof error isnt 'object'
         error = new Error error
 
-    if error.errno is constants.ECONNREFUSED
-        error.message = "Couldn’t reach database (Connection refused)"
+    # XXX Node 0.6 seems to break error.errno -- doesn't match constants
+    # anymore -- so don't use it! instead, use the string code directly.
+    # see: http://stackoverflow.com/a/9254101/132978
+    if error.code is 'ECONNREFUSED'
+        error.message = "Couldn’t reach database (connection refused)"
 
     return error
 

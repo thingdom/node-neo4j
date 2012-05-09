@@ -1,3 +1,12 @@
+## Version 0.2.10 — May 8, 2012
+
+  - Fixed a minor Node 0.6 bug when the database isn't available.
+  - Changed our structure to compile the CoffeeScript-Streamline source into
+    regular JS on *your* computer now as part of installation, instead of on
+    *mine* as part of publishing. This way, bugfixes in the compilers can be
+    picked up by you without this module needing to be republished.
+
+
 ## Version 0.2.9 — April 30, 2012
 
   - Upgraded from Streamline 0.2 to 0.3. This allows us to take advantage of

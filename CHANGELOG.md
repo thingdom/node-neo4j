@@ -1,3 +1,13 @@
+## Version 0.2.11 — May 13, 2012
+
+  - Tweaked the compile-on-install to be robust to the possibility that this
+    library is installed alongside Streamline but not CoffeeScript. See commit
+    [4df4944][] for details, and issue [isaacs/npm#2443][] for an npm change
+    request that would fix this problem the proper way.
+
+[4df4944]: https://github.com/thingdom/node-neo4j/commit/4df4944eca079d9678aebcbf2ffb57c57bf2b17b
+[isaacs/npm#2443]: https://github.com/isaacs/npm/issues/2443
+
 ## Version 0.2.10 — May 8, 2012
 
   - Fixed a minor Node 0.6 bug when the database isn't available.

@@ -1,7 +1,7 @@
 {
     "name": "neo4j",
     "description": "Neo4j driver (REST API client) for Node.js",
-    "version": "0.2.11",
+    "version": "0.2.12",
     "author": "The Thingdom <info@thethingdom.com>",
     "contributors": [
         {"name": "Daniel Gasienica", "email": "daniel@gasienica.ch"},

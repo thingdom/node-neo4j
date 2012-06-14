@@ -16,8 +16,10 @@ This library supports and has been tested against Neo4j 1.4, 1.5 and 1.6.
 To start, create a new instance of the `GraphDatabase` class pointing to your
 Neo4j instance:
 
-    var neo4j = require('neo4j');
-    var db = new neo4j.GraphDatabase('http://localhost:7474');
+```js
+var neo4j = require('neo4j');
+var db = new neo4j.GraphDatabase('http://localhost:7474');
+```
 
 Node.js is asynchronous, which means this library is too: most functions take
 callbacks and return immediately, with the callbacks being invoked when the
@@ -25,23 +27,29 @@ HTTP request-response finishes.
 
 Here's a simple callback for exploring and learning this library:
 
-    function callback(err, result) {
-        if (err) {
-            console.error(err);
-        } else {
-            console.log(result);    // if an object, inspects the object
-        }
+```js
+function callback(err, result) {
+    if (err) {
+        console.error(err);
+    } else {
+        console.log(result);    // if an object, inspects the object
     }
+}
+```
 
 Creating a new node:
 
-    var node = db.createNode({hello: 'world'});     // instantaneous, but...
-    node.save(callback);    // ...this is what actually persists it in the db.
+```js
+var node = db.createNode({hello: 'world'});     // instantaneous, but...
+node.save(callback);    // ...this is what actually persists it in the db.
+```
 
 Fetching an existing node or relationship, by ID:
 
-    db.getNodeById(1, callback);
-    db.getRelationshipById(1, callback);
+```js
+db.getNodeById(1, callback);
+db.getRelationshipById(1, callback);
+```
 
 And so on.
 

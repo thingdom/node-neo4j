@@ -170,7 +170,8 @@ module.exports = class GraphDatabase
         @getRelationship url, _
 
     # wrapper around the Cypher plugin, which comes bundled w/ Neo4j.
-    # pass in the Cypher query as a string (can be multi-line).
+    # pass in the Cypher query as a string (can be multi-line), and optionally
+    # query parameters as a map -- recommended for both perf and security!
     # http://docs.neo4j.org/chunked/stable/cypher-query-lang.html
     # returns an array of "rows" (matches), where each row is a map from
     # variable name (as given in the passed in query) to value. any values
@@ -227,7 +228,7 @@ module.exports = class GraphDatabase
                 # instantiate a new error to derive the current stack, and
                 # show the relevant source line in a warning:
                 console.warn 'neo4j.GraphDatabase::query()’s signature is ' +
-                    'now (query, callback). Please update your code!\n' +
+                    'now (query, params, callback). Please update your code!\n' +
                     new Error().stack.split('\n')[2]    # includes indentation
                 callback = query
                 query = params

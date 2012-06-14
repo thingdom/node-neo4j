@@ -95,18 +95,19 @@ assert.equal results[0]['m.name'], user7.name
 assert.equal results[1]['m.name'], user8.name
 assert.equal results[2]['m.name'], user9.name
 
-parameterizedQueryResults = db.query """
+# test: sending query parameters instead of literals
+results = db.query '''
     START n=node({userId})
     MATCH (n) -[r:follows]-> (m)
     RETURN r, m.name
-""", userId: user6.id, _
+''', {userId: user3.id}, _
 assert.equal results.length, 3
 assert.ok typeof results[0]['r'], 'object'
 assert.ok typeof results[0]['m.name'], 'string'
 assert.equal results[0]['r'].type, 'follows'
-assert.equal results[0]['m.name'], user7.name
-assert.equal results[1]['m.name'], user8.name
-assert.equal results[2]['m.name'], user9.name
+assert.equal results[0]['m.name'], user4.name
+assert.equal results[1]['m.name'], user5.name
+assert.equal results[2]['m.name'], user6.name
 
 # give some confidence that these tests actually passed ;)
 console.log 'passed cypher tests'

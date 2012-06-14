@@ -170,12 +170,13 @@ module.exports = class GraphDatabase
         @getRelationship url, _
 
     # wrapper around the Cypher plugin, which comes bundled w/ Neo4j.
-    # pass in the Cypher query as a string (can be multi-line).
+    # pass in the Cypher query as a string (can be multi-line), and optionally
+    # query parameters as a map -- recommended for both perf and security!
     # http://docs.neo4j.org/chunked/stable/cypher-query-lang.html
     # returns an array of "rows" (matches), where each row is a map from
     # variable name (as given in the passed in query) to value. any values
     # that represent nodes or relationships are transformed to instances.
-    query: (query, _) ->
+    query: (query, params, _) ->
         try
             services = @getServices _
             endpoint = services.cypher or
@@ -186,7 +187,7 @@ module.exports = class GraphDatabase
 
             response = @_request.post
                 uri: endpoint
-                json: {query}
+                json: if params then {query, params} else {query}
             , _
 
             # XXX workaround for neo4j silent failures for invalid queries:
@@ -222,16 +223,21 @@ module.exports = class GraphDatabase
 
     # XXX temporary backwards compatibility shim for query() argument order:
     do (actual = @::query) =>
-        @::query = (a, b) ->
-            if typeof a is 'function'
+        @::query = (query, params, callback) ->
+            if typeof query is 'function' and typeof params is 'string'
                 # instantiate a new error to derive the current stack, and
                 # show the relevant source line in a warning:
                 console.warn 'neo4j.GraphDatabase::query()’s signature is ' +
-                    'now (query, callback). Please update your code!\n' +
+                    'now (query, params, callback). Please update your code!\n' +
                     new Error().stack.split('\n')[2]    # includes indentation
-                actual.call @, b, a
-            else
-                actual.apply @, arguments
+                callback = query
+                query = params
+                params = null
+            else if typeof params is 'function'
+                callback = params
+                params = null
+
+            actual.call @, query, params, callback
 
     # executes a query against the given node index. lucene syntax reference:
     # http://lucene.apache.org/java/3_1_0/queryparsersyntax.html

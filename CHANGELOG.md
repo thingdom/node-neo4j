@@ -1,4 +1,4 @@
-## Version 0.2.12 — May 13, 2012
+## Version 0.2.12 — June 14, 2012
 
   - HTTP Basic Auth support was broken on Node 0.6 due to a [node-request][]
     bug that's since been fixed; upgraded and indeed fixed.

@@ -1,3 +1,21 @@
+## Version 0.2.12 — May 13, 2012
+
+  - HTTP Basic Auth support was broken on Node 0.6 due to a [node-request][]
+    bug that's since been fixed; upgraded and indeed fixed.
+    (Issue [#27][]; thanks [@flipside][] for the heads-up!)
+
+  - Cypher queries can (and should) now be [parameterized][]! This improves
+    both perf and security, especially w/ mutable Cypher coming in Neo4j 1.8.
+    (Pull [#25][]; thanks [@jonpacker][]!)
+
+[node-request]: https://github.com/mikeal/request
+[#27]: https://github.com/thingdom/node-neo4j/issues/27
+[@flipside]: https://github.com/flipside
+
+[parameterized]: http://docs.neo4j.org/chunked/stable/cypher-plugin.html#cypher-plugin-api-send-queries-with-parameters
+[#25]: https://github.com/thingdom/node-neo4j/pull/25
+[@jonpacker]: https://github.com/jonpacker
+
 ## Version 0.2.11 — May 13, 2012
 
   - Tweaked the compile-on-install to be robust to the possibility that this

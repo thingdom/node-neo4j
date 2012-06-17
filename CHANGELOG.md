@@ -1,3 +1,9 @@
+## Version 0.2.13 — June 17, 2012
+
+  - Upgraded from Streamline 0.3 to the stable Streamline 0.4. This update
+    lets us remove our 0.2.11 workaround (commit [4df4944][]) and simplify our
+    package.json install script.
+
 ## Version 0.2.12 — June 14, 2012
 
   - HTTP Basic Auth support was broken on Node 0.6 due to a [node-request][]

@@ -12,7 +12,7 @@
     "dependencies": {
         "http-status": "~0.1.0",
         "request": "~2.9.202",
-        "streamline": "~0.3.4"
+        "streamline": "~0.4.0"
     },
     "devDependencies": {
         "coffee-script": "~1.3.1"
@@ -37,7 +37,7 @@
     "scripts": {
         "build": "_coffee -c lib/",
         "clean": "rm lib/*.js",
-        "preinstall": "npm install coffee-script@~1.3.1 && npm install streamline@~0.3.4",
+        "preinstall": "npm install coffee-script@~1.3.1",
         "postinstall": "npm run build",
         "profile": "_coffee test/profile",
         "test": "_coffee test"

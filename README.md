@@ -1,4 +1,4 @@
-# Neo4j driver (REST API client) for Node.js
+# Node-Neo4j
 
 This driver lets you access [Neo4j][], a graph database, from [Node.js][].
 It uses Neo4j's [REST API][neo4j-rest-api].
@@ -110,9 +110,11 @@ If you link this module into another app (like [node-neo4j-template][]) and
 you want the code compiled on-the-fly during development, you can create an
 `index.js` file under `lib/` with the following:
 
-    require('coffee-script');
-    require('streamline').register();
-    module.exports = require('./index._coffee');
+```js
+require('coffee-script');
+require('streamline').register();
+module.exports = require('./index._coffee');
+```
 
 But don't check this in! That would cause all clients to compile the code
 on-the-fly every time, which isn't desirable in production.

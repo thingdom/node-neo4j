@@ -4,9 +4,9 @@
     "version": "0.2.12",
     "author": "The Thingdom <info@thethingdom.com>",
     "contributors": [
-        {"name": "Daniel Gasienica", "email": "daniel@gasienica.ch"},
-        {"name": "Aseem Kishore", "email": "aseem.kishore@gmail.com"},
-        {"name": "Sergio Haro", "email": "sergio.haro.jr@gmail.com"}
+        "Daniel Gasienica <daniel@gasienica.ch>",
+        "Aseem Kishore <aseem.kishore@gmail.com>",
+        "Sergio Haro <sergio.haro.jr@gmail.com>"
     ],
     "main": "./lib",
     "dependencies": {
@@ -16,22 +16,8 @@
         "streamline": "~0.4.0"
     },
     "devDependencies": {},
-    "keywords": [
-        "neo4j",
-        "graph",
-        "database",
-        "driver",
-        "rest",
-        "api",
-        "client"
-    ],
-    "licenses": [{
-        "type": "Apache License, Version 2.0",
-        "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-    }],
-    "repository" : {
-        "type" : "git",
-        "url" : "https://github.com/thingdom/node-neo4j.git"
+    "engines": {
+        "node": ">= 0.6"
     },
     "scripts": {
         "build": "_coffee -c lib/",
@@ -40,7 +26,15 @@
         "profile": "_coffee test/profile",
         "test": "_coffee test"
     },
-    "engines": {
-        "node": ">= 0.6"
+    "keywords": [
+        "neo4j", "graph", "database", "driver", "rest", "api", "client"
+    ],
+    "licenses": [{
+        "type": "Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }],
+    "repository" : {
+        "type" : "git",
+        "url" : "https://github.com/thingdom/node-neo4j.git"
     }
 }

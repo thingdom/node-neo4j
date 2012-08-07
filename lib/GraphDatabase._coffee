@@ -161,6 +161,41 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+    
+    getIndexedRelationship: (index, property, value, _) ->
+        try
+            relationships = @getIndexedRelationships index, property, value, _
+
+            relationship = null
+            if relationships and relationships.length > 0
+                relationship = relationships[0]
+            return relationship
+
+        catch error
+            throw adjustError error
+
+    getIndexedRelationships: (index, property, value, _) ->
+        try
+            services = @getServices _
+
+            key = encodeURIComponent property
+            val = encodeURIComponent value
+            url = "#{services.relationship_index}/#{index}/#{key}/#{val}"
+
+            response = @_request.get url, _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response
+
+            # Success
+            relationshipArray = JSON.parse response.body
+            relationships = relationshipArray.map (relationship) =>
+                new Relationship this, relationship
+            return relationships
+
+        catch error
+            throw adjustError error
 
     getRelationshipById: (id, _) ->
         services = @getServices _

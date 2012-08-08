@@ -112,5 +112,9 @@ daniel.index 'users', 'name', 'Daniel', _
 node = db.getIndexedNode 'users', 'name', 'Daniel', _
 assert.ok node
 
+relationship.index 'follows', 'name', 'Daniel', _
+rel = db.getIndexedRelationship 'follows', 'name', 'Daniel', _
+assert.ok rel
+
 # just to ensure that no sorts of silent transformation errors plagued us
 console.log 'passed CRUD tests'

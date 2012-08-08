@@ -161,6 +161,41 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+    
+    getIndexedRelationship: (index, property, value, _) ->
+        try
+            relationships = @getIndexedRelationships index, property, value, _
+
+            relationship = null
+            if relationships and relationships.length > 0
+                relationship = relationships[0]
+            return relationship
+
+        catch error
+            throw adjustError error
+
+    getIndexedRelationships: (index, property, value, _) ->
+        try
+            services = @getServices _
+
+            key = encodeURIComponent property
+            val = encodeURIComponent value
+            url = "#{services.relationship_index}/#{index}/#{key}/#{val}"
+
+            response = @_request.get url, _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response
+
+            # Success
+            relationshipArray = JSON.parse response.body
+            relationships = relationshipArray.map (relationship) =>
+                new Relationship this, relationship
+            return relationships
+
+        catch error
+            throw adjustError error
 
     getRelationshipById: (id, _) ->
         services = @getServices _
@@ -213,6 +248,13 @@ module.exports = class GraphDatabase
                         if value and typeof value is 'object' and value.self
                             if value.type then new Relationship this, value
                             else new Node this, value
+                        else if value and typeof value is 'object' and value instanceof Array
+                            for val in value
+                                if val and typeof val is 'object' and val.self
+                                    if val.type then new Relationship this, val
+                                    else new Node this, val
+                                else
+                                    val
                         else
                             value
                 map

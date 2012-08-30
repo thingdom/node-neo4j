@@ -246,7 +246,7 @@ module.exports = class GraphDatabase
     # parameters as a map -- recommended for both perf and security!
     # http://docs.neo4j.org/chunked/snapshot/gremlin-plugin.html
     # returns...
-    gremlin: (script, params, _) ->
+    execute: (script, params, _) ->
         try
             services = @getServices _
             endpoint = services.gremlin or
@@ -275,16 +275,16 @@ module.exports = class GraphDatabase
 
             # Success: build result maps, and transform nodes/relationships
             body = response.body    # JSON already parsed by request
-            results = for row in body
-                for value, i in row
-                        if value and typeof value is 'object' and value.self
-                            if value.type then new Relationship this, value
-                            else new Node this, value
-                        else
-                            value
-                row
-
-            return results
+            #results = for row in body
+            #    for value, i in row
+            #            if value and typeof value is 'object' and value.self
+            #                if value.type then new Relationship this, value
+            #                else new Node this, value
+            #            else
+            #                value
+            #    row
+            
+            return body
 
         catch error
             throw adjustError error

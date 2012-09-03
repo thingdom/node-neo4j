@@ -109,5 +109,16 @@ assert.equal results[0]['m.name'], user4.name
 assert.equal results[1]['m.name'], user5.name
 assert.equal results[2]['m.name'], user6.name
 
+# test: can return nodes in an array
+results = db.query """
+    START n=node(#{user0.id},#{user1.id},#{user2.id})
+    RETURN collect(n)
+""", _
+assert.equal results.length, 1
+assert.ok results[0]['collect(n)'] instanceof Array
+assert.ok typeof results[0]['collect(n)'][0] 'object'
+assert.equal results[0]['collect(n)'][0].id, user0.id
+assert.equal results[0]['collect(n)'][0].data.name, user0.name
+
 # give some confidence that these tests actually passed ;)
 console.log 'passed cypher tests'

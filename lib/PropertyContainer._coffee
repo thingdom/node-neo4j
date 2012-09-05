@@ -3,7 +3,21 @@ status = require 'http-status'
 util = require './util'
 adjustError = util.adjustError
 
+#
+# The abstract class corresponding to a Neo4j property container.
+#
+# @abstract
+#
 module.exports = class PropertyContainer
+
+    #
+    # Construct a new wrapper around a Neo4j property container with the given
+    # data directly from the server at the given Neo4j {GraphDatabase}.
+    #
+    # @private
+    # @param db {GraphDatbase}
+    # @param data {Object}
+    #
     constructor: (db, data) ->
         @db = db
         @_request = db._request     # convenience alias
@@ -11,15 +25,33 @@ module.exports = class PropertyContainer
         @_data = data or {}
         @_data.self = data?.self or null
 
-    # Language helpers:
+    ### Language helpers: ###
+
     get = (props) =>
         @::__defineGetter__ name, getter for name, getter of props
     set = (props) =>
         @::__defineSetter__ name, setter for name, setter of props
 
-    # Properties:
+    ### Properties: ###
+
+    #
+    # @property {String} The URL of this property container.
+    #
+    # @todo This might be an implementation detail; should we remove it?
+    #   If not, should it at least be renamed to just URL?
+    #
     get self: -> @_data.self or null
+
+    #
+    # @property {Boolean} Whether this property container exists in
+    #   (has been persisted to) the Neo4j database.
+    #
     get exists: -> @self?
+
+    #
+    # @property {Number} If this property container exists, its Neo4j
+    #   integer ID.
+    #
     get id: ->
         if not @exists
             null
@@ -27,13 +59,30 @@ module.exports = class PropertyContainer
             match = /(?:node|relationship)\/(\d+)$/.exec @self
             parseInt match[1]
 
+    #
+    # @property {Object} This property container's properties. This is a map
+    #   of key-value pairs.
+    #
     get data: -> @_data.data or null
     set data: (value) -> @_data.data = value
 
-    # Methods:
+    ### Methods: ###
+
+    #
+    # Test whether the given object represents the same property container as
+    # this one. They can be separate instances with separate data.
+    #
+    # @param other {Object}
+    # @return {Boolean}
+    #
     equals: (other) ->
         @self is other?.self
 
+    #
+    # Delete this property container from the database.
+    #
+    # @param callback {Function}
+    #
     delete: (_) ->
         if not @exists
             return

@@ -15,13 +15,16 @@
         "request": "~2.9.202",
         "streamline": "~0.4.0"
     },
-    "devDependencies": {},
+    "devDependencies": {
+        "codo": "~1.4.4"
+    },
     "engines": {
         "node": ">= 0.6"
     },
     "scripts": {
         "build": "_coffee -c lib/",
         "clean": "rm lib/*.js",
+        "codo": "codo --title 'Node-Neo4j API Documentation' ./lib",
         "postinstall": "npm run build",
         "profile": "_coffee test/profile",
         "test": "_coffee test"

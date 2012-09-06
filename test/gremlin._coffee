@@ -39,4 +39,44 @@ assert.ok typeof results, 'object'
 assert.ok typeof results.data.name, 'string' # dislike this because it will throw for the wrong reasons possibly 
 assert.equal results.data.name, user0.name
 
-console.log "Single Result Gremlin Test Passed."
+# test: create relationships between users (same as cypher tests), then query by relationships
+createFollowRelationships = (i, _) ->
+	user = users[i]
+	i1 = (i + 1) % users.length
+	i2 = (i + 2) % users.length
+	i3 = (i + 3) % users.length
+	f1 = user.createRelationshipTo users[i1], 'gremlin_follows', {}
+	f2 = user.createRelationshipTo users[i2], 'gremlin_follows', {}
+	f3 = user.createRelationshipTo users[i3], 'gremlin_follows', {}
+	f1 _
+	f2 _
+	f3 _
+
+# create follow relationships for each user in parallel
+futures = (createFollowRelationships(i) for user, i in users)
+future _ for future in futures
+
+relationships = db.execute """
+	g.v(#{user0.id}).in('gremlin_follows')
+""", {} , _
+
+# above is working, but lib should support returning instances of Node and Relationship if possible
+
+
+# handle multiple types of data return
+traversals = db.execute """
+	g.v(#{user0.id}).transform{ [it, it.out.toList(), it.in.count()] }
+""", {}, _
+
+assert.ok traversals instanceof Array
+assert.equal traversals.length, 1
+
+assert.ok traversals[0] instanceof Array
+assert.equal traversals[0].length, 3
+
+assert.ok typeof traversals[0][0], 'object'
+assert.ok traversals[0][1] instanceof Array
+assert.ok typeof traversals[0][2], 'number'
+
+# Should be relatively clear at this point the .execute() function is working with gremlin on some level
+console.log 'Passed initial Gremlin tests'

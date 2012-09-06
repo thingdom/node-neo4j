@@ -78,5 +78,15 @@ assert.ok typeof traversals[0][0], 'object'
 assert.ok traversals[0][1] instanceof Array
 assert.ok typeof traversals[0][2], 'number'
 
+
+# ensure you can call without params
+
+params_test = db.execute """
+	g.v(#{user0.id})
+""", _
+
+assert.ok typeof params_test, 'object'
+assert.equal params_test.data.name, user0.name
+
 # Should be relatively clear at this point the .execute() function is working with gremlin on some level
 console.log 'Passed initial Gremlin tests'

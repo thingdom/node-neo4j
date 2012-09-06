@@ -307,6 +307,16 @@ module.exports = class GraphDatabase
 
             actual.call @, query, params, callback
 
+
+    #
+    do (actual = @::execute) =>
+        @::execute = (script, params, callback) ->
+            if typeof params is 'function'
+                callback = params
+                params = null
+
+            actual.call @, script, params, callback
+
     # executes a query against the given node index. lucene syntax reference:
     # http://lucene.apache.org/java/3_1_0/queryparsersyntax.html
     queryNodeIndex: (index, query, _) ->

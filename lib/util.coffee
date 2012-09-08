@@ -95,6 +95,47 @@ exports.adjustError = (error) ->
 #
 #-----------------------------------------------------------------------------
 
+# deep inspects the given value -- object, array, primitive, whatever -- and
+# transforms it or its subvalues into the appropriate Node/Relationship/Path
+# instances. returns the transformed value.
+exports.transform = transform = (val, db) ->
+    # arrays should be recursed:
+    if val instanceof Array
+        return val.map (val) ->
+            transform val, db
+
+    # ignore non-neo4j objects:
+    # (XXX this means we aren't recursing hash maps for now! fine for now.)
+    if not val or typeof val isnt 'object' or not val.self
+        return val
+
+    # inline requires to prevent circular dependencies:
+    Path = require './Path'
+    Node = require './Node'
+    Relationship = require './Relationship'
+
+    # relationships have a type property:
+    if typeof val.type is 'string'
+        return new Relationship db, val
+
+    # paths have nodes and relationships:
+    # (XXX this doesn't handle fullpaths, but we don't return those yet.)
+    if val.nodes and val.relationships
+        # XXX the path's nodes and relationships are just URLs for now!
+        start = new Node db, {self: val.start}
+        end = new Node db, {self: val.end}
+        length = val.length
+        nodes = val.nodes.map (url) ->
+            new Node db, {self: url}
+        relationships = val.relationships.map (url) ->
+            new Relationship db, {self: url}
+
+        return new Path start, end, length, nodes, relationships
+
+    # the only other type of neo4j object is a node:
+    else
+        return new Node db, val
+
 exports.serialize = (o, separator) ->
     JSON.stringify flatten(o, separator)
 

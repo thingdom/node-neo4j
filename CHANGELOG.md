@@ -1,3 +1,21 @@
+## Version 0.2.14 — September 10, 2012
+
+  - Support returning arrays of nodes/relationships in Cypher (via `COLLECT`).
+    (Pull [#33][]; thanks [@flipside][]!)
+
+  - Relationships can now be indexed too, via `Relationship::index()` and
+    `GraphDatabase::getIndexedRelationships()`.
+    (Pull [#40][]; thanks [@flipside][]!)
+
+  - `Node::save()` now returns the same `Node` instance via its callback.
+    (Issue [#42][]; thanks [@blevine][].)
+
+[#33]: https://github.com/thingdom/node-neo4j/pull/33
+[#40]: https://github.com/thingdom/node-neo4j/pull/40
+[#42]: https://github.com/thingdom/node-neo4j/issues/42
+
+[@blevine]: https://github.com/blevine
+
 ## Version 0.2.13 — June 17, 2012
 
   - Upgraded from Streamline 0.3 to the stable Streamline 0.4. This update

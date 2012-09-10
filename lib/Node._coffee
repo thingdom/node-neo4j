@@ -49,8 +49,8 @@ module.exports = class Node extends PropertyContainer
                 # note that JSON has already been parsed by request.
                 @_data = response.body
 
-            # explicitly not returning any value; making this a "void" method.
-            return
+            # either way, "return" (callback) this created or updated node:
+            return @
 
         catch error
             throw adjustError error

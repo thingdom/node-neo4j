@@ -68,7 +68,7 @@ will respect [semantic versioning][semver]. So **please specify something like
 
     git clone git@github.com:thingdom/node-neo4j.git
     cd node-neo4j
-    npm link
+    npm install && npm run clean
 
 You'll also need a local Neo4j database instance for the tests:
 
@@ -98,7 +98,7 @@ compiled `.js` files from the source `._coffee` files manually:
 
     npm run build
 
-This is in fact what's run when this library is published to npm. But please
+This is in fact what's run when this library is installed by npm. But please
 don't check the generated `.js` files in; to remove:
 
     npm run clean
@@ -106,9 +106,9 @@ don't check the generated `.js` files in; to remove:
 When compiled `.js` files exist, changes to the source `._coffee` files will
 *not* be picked up automatically; you'll need to rebuild.
 
-If you link this module into another app (like [node-neo4j-template][]) and
-you want the code compiled on-the-fly during development, you can create an
-`index.js` file under `lib/` with the following:
+If you `npm link` this module into another app (like [node-neo4j-template][])
+and you want the code compiled on-the-fly during development, you can create
+an `index.js` file under `lib/` with the following:
 
 ```js
 require('coffee-script');

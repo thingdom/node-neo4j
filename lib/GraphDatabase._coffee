@@ -89,8 +89,7 @@ module.exports = class GraphDatabase
 
                 throw response
 
-            node = new Node this, JSON.parse response.body
-            return node
+            return new Node this, JSON.parse response.body
 
         catch error
             throw adjustError error
@@ -153,15 +152,11 @@ module.exports = class GraphDatabase
                 throw response
 
             data = JSON.parse response.body
-
-            # Construct relationship
-            relationship = new Relationship this, data
-
-            return relationship
+            return new Relationship this, data
 
         catch error
             throw adjustError error
-    
+
     getIndexedRelationship: (index, property, value, _) ->
         try
             relationships = @getIndexedRelationships index, property, value, _

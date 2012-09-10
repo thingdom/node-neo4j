@@ -244,19 +244,7 @@ module.exports = class GraphDatabase
             results = for row in body.data
                 map = {}
                 for value, i in row
-                    map[columns[i]] =
-                        if value and typeof value is 'object' and value.self
-                            if value.type then new Relationship this, value
-                            else new Node this, value
-                        else if value and typeof value is 'object' and value instanceof Array
-                            for val in value
-                                if val and typeof val is 'object' and val.self
-                                    if val.type then new Relationship this, val
-                                    else new Node this, val
-                                else
-                                    val
-                        else
-                            value
+                    map[columns[i]] = util.transform value, this
                 map
             return results
 

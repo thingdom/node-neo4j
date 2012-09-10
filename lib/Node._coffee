@@ -123,8 +123,7 @@ module.exports = class Node extends PropertyContainer
 
                 # success
                 # note that JSON has already been parsed by request.
-                relationship = new Relationship @db, response.body, from, to
-                return relationship
+                return new Relationship @db, response.body, from, to
             else
                 throw new Error 'Failed to create relationship'
 
@@ -226,6 +225,9 @@ module.exports = class Node extends PropertyContainer
             # Note that JSON has already been parsed by request.
             data = res.body
 
+            # parsing manually (instead of using util.transform) in order to
+            # preserve relationship type info (which we know but isn't in the
+            # response):
             start = new Node this, {self: data.start}
             end = new Node this, {self: data.end}
             length = data.length
@@ -235,8 +237,7 @@ module.exports = class Node extends PropertyContainer
                 new Relationship this, {self: url, type}
 
             # Return path
-            path = new Path start, end, length, nodes, relationships
-            return path
+            return new Path start, end, length, nodes, relationships
 
         catch error
             throw adjustError error
@@ -275,7 +276,8 @@ module.exports = class Node extends PropertyContainer
 
             # success
             # note that JSON has already been parsed by request.
-            return resp.body.map (data) => new Node @db, data
+            return resp.body.map (data) =>
+                new Node @db, data
 
         catch error
             throw adjustError error

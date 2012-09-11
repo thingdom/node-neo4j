@@ -48,8 +48,8 @@ module.exports = class Relationship extends PropertyContainer
                             message = 'Relationship not found'
                     throw new Error message
 
-                # explicitly returning nothing to make this a "void" method.
-                return
+                # either way, "return" (callback) this updated relationship:
+                return @
 
         catch error
             throw adjustError error

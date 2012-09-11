@@ -78,6 +78,7 @@ assert.ok typeof traversals[0][0], 'object'
 assert.ok traversals[0][1] instanceof Array
 assert.ok typeof traversals[0][2], 'number'
 
+console.log 'Multiple data types appear to have worked with .execute() and util.transform()'
 
 # ensure you can call without params
 

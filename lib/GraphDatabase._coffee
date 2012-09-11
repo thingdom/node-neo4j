@@ -275,16 +275,15 @@ module.exports = class GraphDatabase
 
             # Success: build result maps, and transform nodes/relationships
             body = response.body    # JSON already parsed by request
-            #results = for row in body
-            #    for value, i in row
-            #            if value and typeof value is 'object' and value.self
-            #                if value.type then new Relationship this, value
-            #                else new Node this, value
-            #            else
-            #                value
-            #    row
-            
-            return body
+
+            if body instanceof Array
+                results = for row in body
+                    map = util.transform row, this
+                    map
+            else
+                results = util.transform body, this
+
+            return results
 
         catch error
             throw adjustError error

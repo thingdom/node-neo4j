@@ -1,3 +1,21 @@
+## Version 0.2.15 — September 10, 2012
+
+  - Refactor internal code to centralize JSON transformation logic for Cypher
+    queries. This adds support for returning paths now, too!
+    (Issue [#22][])
+
+  - Requests now send a User-Agent header that identifies this library and its
+    version. This feature was requested by the Neo4j team so that they can
+    track and analyze library usage. Cool!
+
+  - You can now set a proxy URL for all requests. This is done by passing in
+    an options hash of `{url, proxy}` to the `GraphDatabase` constructor,
+    instead of just a string `url`.
+    (Issue [#34][])
+
+[#22]: https://github.com/thingdom/node-neo4j/issues/22
+[#34]: https://github.com/thingdom/node-neo4j/issues/34
+
 ## Version 0.2.14 — September 10, 2012
 
   - Support returning arrays of nodes/relationships in Cypher (via `COLLECT`).
@@ -8,13 +26,11 @@
     (Pull [#40][]; thanks [@flipside][]!)
 
   - `Node::save()` now returns the same `Node` instance via its callback.
-    (Issue [#42][]; thanks [@blevine][].)
+    (Issue [#42][])
 
 [#33]: https://github.com/thingdom/node-neo4j/pull/33
 [#40]: https://github.com/thingdom/node-neo4j/pull/40
 [#42]: https://github.com/thingdom/node-neo4j/issues/42
-
-[@blevine]: https://github.com/blevine
 
 ## Version 0.2.13 — June 17, 2012
 

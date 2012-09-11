@@ -1,3 +1,4 @@
+flows = require 'streamline/lib/util/flows'
 status = require 'http-status'
 
 util = require './util'
@@ -12,7 +13,8 @@ module.exports = class Node extends PropertyContainer
         super db, data
 
     toString: ->
-        "node @#{@id}"
+        if @exists then "node @#{@id}"
+        else "unsaved node (#{JSON.stringify @data, null, 4})"
 
     save: (_) ->
         try
@@ -25,7 +27,6 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.NO_CONTENT
                     # database error
-                    # note that JSON has already been parsed by request.
                     message = response.body?.message
                     switch response.statusCode
                         when status.BAD_REQUEST then message or= 'Invalid data sent'
@@ -41,12 +42,10 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.CREATED
                     # database error
-                    # note that JSON has already been parsed by request.
                     message = response.body?.message or 'Invalid data sent'
                     throw new Error message
 
                 # only update our copy of the data when it is POSTed.
-                # note that JSON has already been parsed by request.
                 @_data = response.body
 
             # either way, "return" (callback) this created or updated node:
@@ -62,17 +61,13 @@ module.exports = class Node extends PropertyContainer
             return
 
         try
-            # Does this node have any relationships on it?
-            relationships = @all null, _
-
-            # If so, and it's not expected, prevent mistakes!
-            if relationships.length and not force
-                throw new Error "Could not delete #{@}; still has relationships."
-
-            # Otherwise, if there are any, delete the relationships
-            # TODO parallelize using Streamline
-            for relationship in relationships
-                relationship.delete _
+            # Should we force-delete all relationships on this node?
+            # If so, fetch and delete in parallel:
+            if force
+                relationships = @all null, _
+                flows.collect _,
+                    for relationship in relationships
+                        relationship.delete()
 
         catch error
             throw adjustError error
@@ -113,7 +108,6 @@ module.exports = class Node extends PropertyContainer
                     message = ''
                     switch response.statusCode
                         when status.BAD_REQUEST
-                            # note that JSON has already been parsed by request.
                             message = response.body?.message or
                                       response.body?.exception or
                                       "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
@@ -122,9 +116,7 @@ module.exports = class Node extends PropertyContainer
                     throw new Error message
 
                 # success
-                # note that JSON has already been parsed by request.
-                relationship = new Relationship @db, response.body, from, to
-                return relationship
+                return new Relationship @db, response.body, from, to
             else
                 throw new Error 'Failed to create relationship'
 
@@ -172,14 +164,12 @@ module.exports = class Node extends PropertyContainer
                 throw new Error "Unrecognized response code: #{resp.statusCode}"
 
             # success
-            data = JSON.parse resp.body
-            relationships = data.map (data) =>
+            return resp.body.map (data) =>
                 # other node will automatically get filled in by Relationship
                 if @self is data.start
                     new Relationship @db, data, this, null
                 else
                     new Relationship @db, data, null, this
-            return relationships
 
         catch error
             throw adjustError error
@@ -223,9 +213,11 @@ module.exports = class Node extends PropertyContainer
                 throw new Error "Unrecognized response code: #{res.statusCode}"
 
             # Parse result
-            # Note that JSON has already been parsed by request.
             data = res.body
 
+            # parsing manually (instead of using util.transform) in order to
+            # preserve relationship type info (which we know but isn't in the
+            # response):
             start = new Node this, {self: data.start}
             end = new Node this, {self: data.end}
             length = data.length
@@ -235,8 +227,7 @@ module.exports = class Node extends PropertyContainer
                 new Relationship this, {self: url, type}
 
             # Return path
-            path = new Path start, end, length, nodes, relationships
-            return path
+            return new Path start, end, length, nodes, relationships
 
         catch error
             throw adjustError error
@@ -274,8 +265,8 @@ module.exports = class Node extends PropertyContainer
                 throw new Error resp.body?.message or "Unrecognized response code: #{resp.statusCode}"
 
             # success
-            # note that JSON has already been parsed by request.
-            return resp.body.map (data) => new Node @db, data
+            return resp.body.map (data) =>
+                new Node @db, data
 
         catch error
             throw adjustError error

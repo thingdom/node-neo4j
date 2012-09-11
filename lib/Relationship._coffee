@@ -31,32 +31,29 @@ module.exports = class Relationship extends PropertyContainer
     # Methods:
     save: (_) ->
         try
-            # TODO: check for actual modification
-            if @exists
-                response = @_request.put
-                    uri: "#{@self}/properties"
-                    json: @data
-                , _
+            # XXX assume this relationship already exists in the db; this
+            # library doesn't provide unsaved Relationship instances.
+            response = @_request.put
+                uri: "#{@self}/properties"
+                json: @data
+            , _
 
-                if response.statusCode isnt status.NO_CONTENT
-                    # database error
-                    message = ''
-                    switch response.statusCode
-                        when status.BAD_REQUEST
-                            message = 'Invalid data sent'
-                        when status.NOT_FOUND
-                            message = 'Relationship not found'
-                    throw new Error message
+            if response.statusCode isnt status.NO_CONTENT
+                # database error
+                message = ''
+                switch response.statusCode
+                    when status.BAD_REQUEST
+                        message = 'Invalid data sent'
+                    when status.NOT_FOUND
+                        message = 'Relationship not found'
+                throw new Error message
 
-                # explicitly returning nothing to make this a "void" method.
-                return
+            # either way, "return" (callback) this updated relationship:
+            return @
 
         catch error
             throw adjustError error
 
-    # Alias
-    del: @::delete
-    
     # Index
     index: (index, key, value, _) ->
         try

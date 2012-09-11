@@ -1,58 +1,63 @@
+lib = require '../package.json'
 request = require 'request'
 URL = require 'url'
 
 #-----------------------------------------------------------------------------
 #
-#  HTTP Basic Auth support
+#  HTTP Requests
 #
 #-----------------------------------------------------------------------------
 
-# wrapping request methods to support HTTP Basic Auth, since Neo4j doesn't
-# preserve the username and password in the URLs! This code derived from:
-# https://github.com/thingdom/node-neo4j/issues/7 (by @anatoliychakkaev)
-# returns a minimal wrapper (HTTP methods only) around request so that each
-# method ensures that URLs include HTTP Basic Auth usernames/passwords.
-exports.wrapRequestForAuth = (url) ->
-    # parse auth info, and short-circuit if we have none:
+USER_AGENT = "node-neo4j/#{lib.version}"
+
+# wrapping request methods to:
+# - support HTTP Basic Auth, since Neo4j deosn't preserve auth info in URLs.
+# - add a user-agent header with this library's info.
+# - auto-set all requests and auto-parse all responses as JSON.
+# returns a minimal wrapper (HTTP methods only) around request.
+exports.wrapRequest = ({url, proxy}) ->
+    # default request opts where possible (no headers since the whole headers
+    # collection will be overridden if any one header is provided):
+    req = request.defaults
+        json: true
+        proxy: proxy
+
+    # parse auth info:
     auth = URL.parse(url).auth
-    return request if not auth
 
-    # updates the args to ensure that the URL arg has username/password:
-    fixArgs = (args) ->
-        # the URL may be the first arg alone, as a string, or an options obj:
-        # update: it may also be called 'uri' instead of 'url'!
-        if typeof args[0] is 'string'
-            url = args[0]
-        else
-            url = args[0].url or args[0].uri
-
-        if not url
-            console.log 'UH OH:'
-            console.log args
+    # helper function to modify args to request where defaults not possible:
+    modifyArgs = (args) ->
+        # the main arg may be just a string URL, or an options object.
+        # normalize it to an options object, and derive URL:
+        arg = args[0]
+        opts =
+            if typeof arg is 'string' then {url: arg}
+            else arg
+        url = opts.url or opts.uri
 
         # ensure auth info is included in the URL:
         url = URL.parse url
-        if not url.auth
+        if url.auth isnt auth
             # XXX argh, just setting url.auth isn't picked up by URL.format()!
             # it relies first on just url.host, so update that instead:
-            # TODO account for case where url.auth is set, but different?
             url.host = "#{auth}@#{url.host}"
         url = URL.format url
 
-        # then update the original args:
-        if typeof args[0] is 'string'
-            args[0] = url
-        else
-            args[0].url = args[0].uri = url
+        # now update the url arg and other options:
+        opts.url = opts.uri = url
+        opts.headers or= {}     # preserve existing headers
+        opts.headers['User-Agent'] = USER_AGENT
 
+        # finally, update and return the modified args:
+        args[0] = opts
         return args
 
-    # wrap each method to fix its args before calling real method:
+    # wrap each method to modify its args before calling that method:
     wrapper = {}
     for verb in ['get', 'post', 'put', 'del', 'head']
         do (verb) ->    # freaking closures!
             wrapper[verb] = (args...) ->
-                request[verb].apply request, fixArgs args
+                req[verb].apply req, modifyArgs args
 
     # and return this set of wrapped methods:
     return wrapper
@@ -85,7 +90,7 @@ exports.adjustError = (error) ->
     # anymore -- so don't use it! instead, use the string code directly.
     # see: http://stackoverflow.com/a/9254101/132978
     if error.code is 'ECONNREFUSED'
-        error.message = "Couldn’t reach database (connection refused)"
+        error.message = "Couldn't reach database (connection refused)"
 
     return error
 
@@ -94,6 +99,64 @@ exports.adjustError = (error) ->
 #  Serialization / Deserialization
 #
 #-----------------------------------------------------------------------------
+
+# deep inspects the given value -- object, array, primitive, whatever -- and
+# transforms it or its subvalues into the appropriate Node/Relationship/Path
+# instances. returns the transformed value.
+exports.transform = transform = (val, db) ->
+    # ignore non-objects:
+    if not val or typeof val isnt 'object'
+        return val
+
+    # arrays should be recursed:
+    if val instanceof Array
+        return val.map (val) ->
+            transform val, db
+
+    # inline requires to prevent circular dependencies:
+    Path = require './Path'
+    Node = require './Node'
+    Relationship = require './Relationship'
+
+    # we want to transform neo4j objects but also recurse non-neo4j objects,
+    # since they may be maps/dictionaries. so we detect neo4j objects via
+    # duck typing, and assume all other objects are maps. helper:
+    hasProps = (props) ->
+        for type, keys of props
+            for key in keys.split '|'
+                if typeof val[key] isnt type
+                    return false
+        return true
+
+    # nodes:
+    if hasProps {string: 'self|traverse', object:'data'}
+        return new Node db, val
+
+    # relationships:
+    if hasProps {string: 'self|type|start|end', object:'data'}
+        return new Relationship db, val
+
+    # paths:
+    # XXX this doesn't handle fullpaths for now, but we don't return those
+    # anywhere yet AFAIK. TODO detect and support fullpaths too?
+    if hasProps {string: 'start|end', number: 'length', object:'nodes|relationships'}
+        # XXX the path's nodes and relationships are just URLs for now!
+        start = new Node db, {self: val.start}
+        end = new Node db, {self: val.end}
+        length = val.length
+        nodes = val.nodes.map (url) ->
+            new Node db, {self: url}
+        relationships = val.relationships.map (url) ->
+            new Relationship db, {self: url}
+
+        return new Path start, end, length, nodes, relationships
+
+    # all other objects -- treat as maps:
+    else
+        map = {}
+        for key, subval of val
+            map[key] = transform subval, db
+        return map
 
 exports.serialize = (o, separator) ->
     JSON.stringify flatten(o, separator)

@@ -13,9 +13,14 @@ Relationship = require './Relationship'
 Node = require './Node'
 
 module.exports = class GraphDatabase
-    constructor: (url) ->
-        @url = url
-        @_request = util.wrapRequestForAuth url
+    constructor: (opts) ->
+        # normalize arg:
+        opts =
+            if typeof opts is 'string' then {url: opts}
+            else opts
+
+        {@url} = opts
+        @_request = util.wrapRequest opts
 
         # Cache
         @_root = null
@@ -36,8 +41,7 @@ module.exports = class GraphDatabase
             if response.statusCode isnt status.OK
                 throw response
 
-            @_root = JSON.parse response.body
-            return @_root
+            return response.body
 
         catch error
             throw adjustError error
@@ -53,8 +57,7 @@ module.exports = class GraphDatabase
             if response.statusCode isnt status.OK
                 throw response
 
-            @_services = JSON.parse response.body
-            return @_services
+            return response.body
 
         catch error
             throw adjustError error
@@ -87,10 +90,10 @@ module.exports = class GraphDatabase
                 if response.statusCode is status.NOT_FOUND
                     throw new Error "No node at #{url}"
 
+                # Other unknown errors
                 throw response
 
-            node = new Node this, JSON.parse response.body
-            return node
+            return new Node this, response.body
 
         catch error
             throw adjustError error
@@ -122,10 +125,8 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            nodeArray = JSON.parse response.body
-            nodes = nodeArray.map (node) =>
+            return response.body.map (node) =>
                 new Node this, node
-            return nodes
 
         catch error
             throw adjustError error
@@ -152,24 +153,15 @@ module.exports = class GraphDatabase
                 # TODO: Handle 404
                 throw response
 
-            data = JSON.parse response.body
-
-            # Construct relationship
-            relationship = new Relationship this, data
-
-            return relationship
+            return new Relationship this, response.body
 
         catch error
             throw adjustError error
-    
+
     getIndexedRelationship: (index, property, value, _) ->
         try
             relationships = @getIndexedRelationships index, property, value, _
-
-            relationship = null
-            if relationships and relationships.length > 0
-                relationship = relationships[0]
-            return relationship
+            return relationships?[0] or null
 
         catch error
             throw adjustError error
@@ -189,10 +181,8 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            relationshipArray = JSON.parse response.body
-            relationships = relationshipArray.map (relationship) =>
+            return response.body.map (relationship) =>
                 new Relationship this, relationship
-            return relationships
 
         catch error
             throw adjustError error
@@ -239,24 +229,12 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success: build result maps, and transform nodes/relationships
-            body = response.body    # JSON already parsed by request
+            body = response.body
             columns = body.columns
             results = for row in body.data
                 map = {}
                 for value, i in row
-                    map[columns[i]] =
-                        if value and typeof value is 'object' and value.self
-                            if value.type then new Relationship this, value
-                            else new Node this, value
-                        else if value and typeof value is 'object' and value instanceof Array
-                            for val in value
-                                if val and typeof val is 'object' and val.self
-                                    if val.type then new Relationship this, val
-                                    else new Node this, val
-                                else
-                                    val
-                        else
-                            value
+                    map[columns[i]] = util.transform value, this
                 map
             return results
 
@@ -295,10 +273,8 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            nodeArray = JSON.parse response.body
-            nodes = nodeArray.map (node) =>
+            return response.body.map (node) =>
                 new Node this, node
-            return nodes
 
         catch error
             throw adjustError error

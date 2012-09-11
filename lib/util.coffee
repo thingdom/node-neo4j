@@ -13,6 +13,7 @@ USER_AGENT = "node-neo4j/#{lib.version}"
 # wrapping request methods to:
 # - support HTTP Basic Auth, since Neo4j deosn't preserve auth info in URLs.
 # - add a user-agent header with this library's info.
+# - auto-set all requests and auto-parse all responses as JSON.
 # returns a minimal wrapper (HTTP methods only) around request.
 exports.wrapRequest = (url) ->
     # parse auth info:
@@ -37,8 +38,9 @@ exports.wrapRequest = (url) ->
             url.host = "#{auth}@#{url.host}"
         url = URL.format url
 
-        # now update the url arg and add our user-agent header:
+        # now update the url arg and other options:
         opts.url = opts.uri = url
+        opts.json or= true      # preserve request data if present!
         opts.headers or= {}
         opts.headers['User-Agent'] = USER_AGENT
 

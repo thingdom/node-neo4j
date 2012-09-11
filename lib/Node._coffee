@@ -25,7 +25,6 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.NO_CONTENT
                     # database error
-                    # note that JSON has already been parsed by request.
                     message = response.body?.message
                     switch response.statusCode
                         when status.BAD_REQUEST then message or= 'Invalid data sent'
@@ -41,12 +40,10 @@ module.exports = class Node extends PropertyContainer
 
                 if response.statusCode isnt status.CREATED
                     # database error
-                    # note that JSON has already been parsed by request.
                     message = response.body?.message or 'Invalid data sent'
                     throw new Error message
 
                 # only update our copy of the data when it is POSTed.
-                # note that JSON has already been parsed by request.
                 @_data = response.body
 
             # either way, "return" (callback) this created or updated node:
@@ -113,7 +110,6 @@ module.exports = class Node extends PropertyContainer
                     message = ''
                     switch response.statusCode
                         when status.BAD_REQUEST
-                            # note that JSON has already been parsed by request.
                             message = response.body?.message or
                                       response.body?.exception or
                                       "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
@@ -122,7 +118,6 @@ module.exports = class Node extends PropertyContainer
                     throw new Error message
 
                 # success
-                # note that JSON has already been parsed by request.
                 return new Relationship @db, response.body, from, to
             else
                 throw new Error 'Failed to create relationship'
@@ -171,14 +166,12 @@ module.exports = class Node extends PropertyContainer
                 throw new Error "Unrecognized response code: #{resp.statusCode}"
 
             # success
-            data = JSON.parse resp.body
-            relationships = data.map (data) =>
+            return resp.body.map (data) =>
                 # other node will automatically get filled in by Relationship
                 if @self is data.start
                     new Relationship @db, data, this, null
                 else
                     new Relationship @db, data, null, this
-            return relationships
 
         catch error
             throw adjustError error
@@ -222,7 +215,6 @@ module.exports = class Node extends PropertyContainer
                 throw new Error "Unrecognized response code: #{res.statusCode}"
 
             # Parse result
-            # Note that JSON has already been parsed by request.
             data = res.body
 
             # parsing manually (instead of using util.transform) in order to
@@ -275,7 +267,6 @@ module.exports = class Node extends PropertyContainer
                 throw new Error resp.body?.message or "Unrecognized response code: #{resp.statusCode}"
 
             # success
-            # note that JSON has already been parsed by request.
             return resp.body.map (data) =>
                 new Node @db, data
 

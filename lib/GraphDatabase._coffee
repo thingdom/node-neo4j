@@ -36,8 +36,7 @@ module.exports = class GraphDatabase
             if response.statusCode isnt status.OK
                 throw response
 
-            @_root = JSON.parse response.body
-            return @_root
+            return response.body
 
         catch error
             throw adjustError error
@@ -53,8 +52,7 @@ module.exports = class GraphDatabase
             if response.statusCode isnt status.OK
                 throw response
 
-            @_services = JSON.parse response.body
-            return @_services
+            return response.body
 
         catch error
             throw adjustError error
@@ -87,9 +85,10 @@ module.exports = class GraphDatabase
                 if response.statusCode is status.NOT_FOUND
                     throw new Error "No node at #{url}"
 
+                # Other unknown errors
                 throw response
 
-            return new Node this, JSON.parse response.body
+            return new Node this, response.body
 
         catch error
             throw adjustError error
@@ -121,10 +120,8 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            nodeArray = JSON.parse response.body
-            nodes = nodeArray.map (node) =>
+            return response.body.map (node) =>
                 new Node this, node
-            return nodes
 
         catch error
             throw adjustError error
@@ -151,8 +148,7 @@ module.exports = class GraphDatabase
                 # TODO: Handle 404
                 throw response
 
-            data = JSON.parse response.body
-            return new Relationship this, data
+            return new Relationship this, response.body
 
         catch error
             throw adjustError error
@@ -160,11 +156,7 @@ module.exports = class GraphDatabase
     getIndexedRelationship: (index, property, value, _) ->
         try
             relationships = @getIndexedRelationships index, property, value, _
-
-            relationship = null
-            if relationships and relationships.length > 0
-                relationship = relationships[0]
-            return relationship
+            return relationships?[0] or null
 
         catch error
             throw adjustError error
@@ -184,10 +176,8 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            relationshipArray = JSON.parse response.body
-            relationships = relationshipArray.map (relationship) =>
+            return response.body.map (relationship) =>
                 new Relationship this, relationship
-            return relationships
 
         catch error
             throw adjustError error
@@ -234,7 +224,7 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success: build result maps, and transform nodes/relationships
-            body = response.body    # JSON already parsed by request
+            body = response.body
             columns = body.columns
             results = for row in body.data
                 map = {}
@@ -278,10 +268,8 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            nodeArray = JSON.parse response.body
-            nodes = nodeArray.map (node) =>
+            return response.body.map (node) =>
                 new Node this, node
-            return nodes
 
         catch error
             throw adjustError error

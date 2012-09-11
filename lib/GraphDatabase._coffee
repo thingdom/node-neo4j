@@ -41,7 +41,7 @@ module.exports = class GraphDatabase
             if response.statusCode isnt status.OK
                 throw response
 
-            return response.body
+            return @_root = response.body
 
         catch error
             throw adjustError error
@@ -57,7 +57,7 @@ module.exports = class GraphDatabase
             if response.statusCode isnt status.OK
                 throw response
 
-            return response.body
+            return @_services = response.body
 
         catch error
             throw adjustError error

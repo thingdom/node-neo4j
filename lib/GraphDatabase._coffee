@@ -13,9 +13,14 @@ Relationship = require './Relationship'
 Node = require './Node'
 
 module.exports = class GraphDatabase
-    constructor: (url) ->
-        @url = url
-        @_request = util.wrapRequest url
+    constructor: (opts) ->
+        # normalize arg:
+        opts =
+            if typeof opts is 'string' then {url: opts}
+            else opts
+
+        {@url} = opts
+        @_request = util.wrapRequest opts
 
         # Cache
         @_root = null

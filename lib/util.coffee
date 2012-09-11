@@ -15,11 +15,17 @@ USER_AGENT = "node-neo4j/#{lib.version}"
 # - add a user-agent header with this library's info.
 # - auto-set all requests and auto-parse all responses as JSON.
 # returns a minimal wrapper (HTTP methods only) around request.
-exports.wrapRequest = (url) ->
+exports.wrapRequest = ({url, proxy}) ->
+    # default request opts where possible (no headers since the whole headers
+    # collection will be overridden if any one header is provided):
+    req = request.defaults
+        json: true
+        proxy: proxy
+
     # parse auth info:
     auth = URL.parse(url).auth
 
-    # helper function to modify args to request:
+    # helper function to modify args to request where defaults not possible:
     modifyArgs = (args) ->
         # the main arg may be just a string URL, or an options object.
         # normalize it to an options object, and derive URL:
@@ -40,8 +46,7 @@ exports.wrapRequest = (url) ->
 
         # now update the url arg and other options:
         opts.url = opts.uri = url
-        opts.json or= true      # preserve request data if present!
-        opts.headers or= {}
+        opts.headers or= {}     # preserve existing headers
         opts.headers['User-Agent'] = USER_AGENT
 
         # finally, update and return the modified args:
@@ -53,7 +58,7 @@ exports.wrapRequest = (url) ->
     for verb in ['get', 'post', 'put', 'del', 'head']
         do (verb) ->    # freaking closures!
             wrapper[verb] = (args...) ->
-                request[verb].apply request, modifyArgs args
+                req[verb].apply req, modifyArgs args
 
     # and return this set of wrapped methods:
     return wrapper

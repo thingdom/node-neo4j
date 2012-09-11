@@ -37,10 +37,9 @@ exports.wrapRequest = ({url, proxy}) ->
 
         # ensure auth info is included in the URL:
         url = URL.parse url
-        if not url.auth
+        if url.auth isnt auth
             # XXX argh, just setting url.auth isn't picked up by URL.format()!
             # it relies first on just url.host, so update that instead:
-            # TODO account for case where url.auth is set, but different?
             url.host = "#{auth}@#{url.host}"
         url = URL.format url
 

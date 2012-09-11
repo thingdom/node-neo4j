@@ -105,28 +105,42 @@ exports.adjustError = (error) ->
 # transforms it or its subvalues into the appropriate Node/Relationship/Path
 # instances. returns the transformed value.
 exports.transform = transform = (val, db) ->
+    # ignore non-objects:
+    if not val or typeof val isnt 'object'
+        return val
+
     # arrays should be recursed:
     if val instanceof Array
         return val.map (val) ->
             transform val, db
-
-    # ignore non-neo4j objects:
-    # (XXX this means we aren't recursing hash maps for now! fine for now.)
-    if not val or typeof val isnt 'object' or not val.self
-        return val
 
     # inline requires to prevent circular dependencies:
     Path = require './Path'
     Node = require './Node'
     Relationship = require './Relationship'
 
-    # relationships have a type property:
-    if typeof val.type is 'string'
+    # we want to transform neo4j objects but also recurse non-neo4j objects,
+    # since they may be maps/dictionaries. so we detect neo4j objects via
+    # duck typing, and assume all other objects are maps. helper:
+    hasProps = (props) ->
+        for type, keys of props
+            for key in keys.split '|'
+                if typeof val[key] isnt type
+                    return false
+        return true
+
+    # nodes:
+    if hasProps {string: 'self|traverse', object:'data'}
+        return new Node db, val
+
+    # relationships:
+    if hasProps {string: 'self|type|start|end', object:'data'}
         return new Relationship db, val
 
-    # paths have nodes and relationships:
-    # (XXX this doesn't handle fullpaths, but we don't return those yet.)
-    if val.nodes and val.relationships
+    # paths:
+    # XXX this doesn't handle fullpaths for now, but we don't return those
+    # anywhere yet AFAIK. TODO detect and support fullpaths too?
+    if hasProps {string: 'start|end', number: 'length', object:'nodes|relationships'}
         # XXX the path's nodes and relationships are just URLs for now!
         start = new Node db, {self: val.start}
         end = new Node db, {self: val.end}
@@ -138,9 +152,12 @@ exports.transform = transform = (val, db) ->
 
         return new Path start, end, length, nodes, relationships
 
-    # the only other type of neo4j object is a node:
+    # all other objects -- treat as maps:
     else
-        return new Node db, val
+        map = {}
+        for key, subval of val
+            map[key] = transform subval, db
+        return map
 
 exports.serialize = (o, separator) ->
     JSON.stringify flatten(o, separator)

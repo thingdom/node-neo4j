@@ -120,5 +120,24 @@ assert.ok typeof results[0]['collect(n)'][0] 'object'
 assert.equal results[0]['collect(n)'][0].id, user0.id
 assert.equal results[0]['collect(n)'][0].data.name, user0.name
 
+# test: can return paths
+results = db.query """
+    START from=node({fromId}), to=node({toId})
+    MATCH path=shortestPath(from -[:follows*..3]-> to)
+    RETURN path
+""", {fromId: user0.id, toId: user6.id}, _
+assert.equal results.length, 1
+assert.ok typeof results[0]['path'], 'object'
+assert.ok typeof results[0]['path'].start, 'object'
+assert.ok typeof results[0]['path'].end, 'object'
+assert.ok results[0]['path'].nodes instanceof Array
+assert.ok results[0]['path'].relationships instanceof Array
+assert.equal results[0]['path'].length, 2
+assert.equal results[0]['path'].start.id, user0.id
+assert.equal results[0]['path'].end.id, user6.id
+assert.equal results[0]['path'].nodes.length, 3
+assert.equal results[0]['path'].nodes[1].id, user3.id
+assert.equal results[0]['path'].relationships.length, 2
+
 # give some confidence that these tests actually passed ;)
 console.log 'passed cypher tests'

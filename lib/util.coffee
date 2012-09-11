@@ -86,7 +86,7 @@ exports.adjustError = (error) ->
     # anymore -- so don't use it! instead, use the string code directly.
     # see: http://stackoverflow.com/a/9254101/132978
     if error.code is 'ECONNREFUSED'
-        error.message = "Couldn’t reach database (connection refused)"
+        error.message = "Couldn't reach database (connection refused)"
 
     return error
 

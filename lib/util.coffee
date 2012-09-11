@@ -14,6 +14,7 @@ USER_AGENT = "node-neo4j/#{lib.version}"
 # - support HTTP Basic Auth, since Neo4j deosn't preserve auth info in URLs.
 # - add a user-agent header with this library's info.
 # - auto-set all requests and auto-parse all responses as JSON.
+# - specify that Neo4j should stream its JSON responses.
 # returns a minimal wrapper (HTTP methods only) around request.
 exports.wrapRequest = ({url, proxy}) ->
     # default request opts where possible (no headers since the whole headers
@@ -47,6 +48,7 @@ exports.wrapRequest = ({url, proxy}) ->
         opts.url = opts.uri = url
         opts.headers or= {}     # preserve existing headers
         opts.headers['User-Agent'] = USER_AGENT
+        opts.headers['X-Stream'] = true
 
         # finally, update and return the modified args:
         args[0] = opts

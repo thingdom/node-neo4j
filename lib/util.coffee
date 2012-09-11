@@ -1,34 +1,32 @@
+lib = require '../package.json'
 request = require 'request'
 URL = require 'url'
 
 #-----------------------------------------------------------------------------
 #
-#  HTTP Basic Auth support
+#  HTTP Requests
 #
 #-----------------------------------------------------------------------------
 
-# wrapping request methods to support HTTP Basic Auth, since Neo4j doesn't
-# preserve the username and password in the URLs! This code derived from:
-# https://github.com/thingdom/node-neo4j/issues/7 (by @anatoliychakkaev)
-# returns a minimal wrapper (HTTP methods only) around request so that each
-# method ensures that URLs include HTTP Basic Auth usernames/passwords.
-exports.wrapRequestForAuth = (url) ->
-    # parse auth info, and short-circuit if we have none:
+USER_AGENT = "node-neo4j/#{lib.version}"
+
+# wrapping request methods to:
+# - support HTTP Basic Auth, since Neo4j deosn't preserve auth info in URLs.
+# - add a user-agent header with this library's info.
+# returns a minimal wrapper (HTTP methods only) around request.
+exports.wrapRequest = (url) ->
+    # parse auth info:
     auth = URL.parse(url).auth
-    return request if not auth
 
-    # updates the args to ensure that the URL arg has username/password:
-    fixArgs = (args) ->
-        # the URL may be the first arg alone, as a string, or an options obj:
-        # update: it may also be called 'uri' instead of 'url'!
-        if typeof args[0] is 'string'
-            url = args[0]
-        else
-            url = args[0].url or args[0].uri
-
-        if not url
-            console.log 'UH OH:'
-            console.log args
+    # helper function to modify args to request:
+    modifyArgs = (args) ->
+        # the main arg may be just a string URL, or an options object.
+        # normalize it to an options object, and derive URL:
+        arg = args[0]
+        opts =
+            if typeof arg is 'string' then {url: arg}
+            else arg
+        url = opts.url or opts.uri
 
         # ensure auth info is included in the URL:
         url = URL.parse url
@@ -39,20 +37,21 @@ exports.wrapRequestForAuth = (url) ->
             url.host = "#{auth}@#{url.host}"
         url = URL.format url
 
-        # then update the original args:
-        if typeof args[0] is 'string'
-            args[0] = url
-        else
-            args[0].url = args[0].uri = url
+        # now update the url arg and add our user-agent header:
+        opts.url = opts.uri = url
+        opts.headers or= {}
+        opts.headers['User-Agent'] = USER_AGENT
 
+        # finally, update and return the modified args:
+        args[0] = opts
         return args
 
-    # wrap each method to fix its args before calling real method:
+    # wrap each method to modify its args before calling that method:
     wrapper = {}
     for verb in ['get', 'post', 'put', 'del', 'head']
         do (verb) ->    # freaking closures!
             wrapper[verb] = (args...) ->
-                request[verb].apply request, fixArgs args
+                request[verb].apply request, modifyArgs args
 
     # and return this set of wrapped methods:
     return wrapper

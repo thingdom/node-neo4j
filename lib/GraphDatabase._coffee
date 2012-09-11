@@ -15,7 +15,7 @@ Node = require './Node'
 module.exports = class GraphDatabase
     constructor: (url) ->
         @url = url
-        @_request = util.wrapRequestForAuth url
+        @_request = util.wrapRequest url
 
         # Cache
         @_root = null

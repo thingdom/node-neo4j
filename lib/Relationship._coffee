@@ -54,9 +54,6 @@ module.exports = class Relationship extends PropertyContainer
         catch error
             throw adjustError error
 
-    # Alias
-    del: @::delete
-    
     # Index
     index: (index, key, value, _) ->
         try

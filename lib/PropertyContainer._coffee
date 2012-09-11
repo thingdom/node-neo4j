@@ -58,3 +58,6 @@ module.exports = class PropertyContainer
 
         catch error
             throw adjustError error
+
+    # Alias
+    del: @::delete

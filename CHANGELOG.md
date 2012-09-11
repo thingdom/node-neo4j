@@ -1,3 +1,18 @@
+## Version 0.2.16 — September 11, 2012
+
+  - Fix a regression introduced in v0.2.15 that added two extra round-trips to
+    every request! Sorry about that.
+
+  - But a major extra performance boost on top: instructs Neo4j 1.7+ to stream
+    its JSON responses back. This reduces the latency of each request as well
+    as Neo4j's memory usage. (Issue [#48][])
+
+    Note that this library still collects the full response before parsing and
+    returning it to your code, but this also means it requires no code changes
+    from your side.
+
+[#48]: https://github.com/thingdom/node-neo4j/issues/48
+
 ## Version 0.2.15 — September 10, 2012
 
   - Refactor internal code to centralize JSON transformation logic for Cypher

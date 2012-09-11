@@ -12,7 +12,8 @@ module.exports = class Node extends PropertyContainer
         super db, data
 
     toString: ->
-        "node @#{@id}"
+        if @exists then "node @#{@id}"
+        else "unsaved node (#{JSON.stringify @data, null, 4})"
 
     save: (_) ->
         try

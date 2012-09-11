@@ -1,3 +1,4 @@
+flows = require 'streamline/lib/util/flows'
 status = require 'http-status'
 
 util = require './util'
@@ -60,17 +61,13 @@ module.exports = class Node extends PropertyContainer
             return
 
         try
-            # Does this node have any relationships on it?
-            relationships = @all null, _
-
-            # If so, and it's not expected, prevent mistakes!
-            if relationships.length and not force
-                throw new Error "Could not delete #{@}; still has relationships."
-
-            # Otherwise, if there are any, delete the relationships
-            # TODO parallelize using Streamline
-            for relationship in relationships
-                relationship.delete _
+            # Should we force-delete all relationships on this node?
+            # If so, fetch and delete in parallel:
+            if force
+                relationships = @all null, _
+                flows.collect _,
+                    for relationship in relationships
+                        relationship.delete()
 
         catch error
             throw adjustError error

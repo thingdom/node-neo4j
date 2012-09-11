@@ -116,5 +116,7 @@ relationship.index 'follows', 'name', 'Daniel', _
 rel = db.getIndexedRelationship 'follows', 'name', 'Daniel', _
 assert.ok rel
 
+# TODO delete tests! that's the 'd' in 'crud'!
+
 # just to ensure that no sorts of silent transformation errors plagued us
 console.log 'passed CRUD tests'

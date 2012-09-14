@@ -241,6 +241,45 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    # wrapper around the Gremlin plugin to execute scripts bundled with
+    # Neo4j. Pass in the Gremlin script as a string, and optionally script
+    # parameters as a map -- recommended for both perf and security!
+    # http://docs.neo4j.org/chunked/snapshot/gremlin-plugin.html
+    # returns...
+    execute: (script, params, _) ->
+        try
+            services = @getServices _
+            endpoint = services.gremlin or
+                services.extensions?.GremlinPlugin?['execute_script']
+
+            if not endpoint
+                throw new Error 'Gremlin plugin not installed'
+
+            response = @_request.post
+                uri: endpoint
+                json: if params then {script, params} else {script}
+            , _
+
+            # XXX workaround for neo4j silent failures for invalid queries:
+            if response.statusCode is status.NO_CONTENT
+                throw new Error """
+                    Unknown Neo4j error for Gremlin script:
+
+                    #{script}
+
+                """
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response
+
+            # Success: transform nodes/relationships
+            results = util.transform response.body, this
+            return results
+
+        catch error
+            throw adjustError error
+
     # XXX temporary backwards compatibility shim for query() argument order:
     do (actual = @::query) =>
         @::query = (query, params, callback) ->
@@ -258,6 +297,16 @@ module.exports = class GraphDatabase
                 params = null
 
             actual.call @, query, params, callback
+
+
+    #
+    do (actual = @::execute) =>
+        @::execute = (script, params, callback) ->
+            if typeof params is 'function'
+                callback = params
+                params = null
+
+            actual.call @, script, params, callback
 
     # executes a query against the given node index. lucene syntax reference:
     # http://lucene.apache.org/java/3_1_0/queryparsersyntax.html

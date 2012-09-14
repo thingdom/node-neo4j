@@ -24,7 +24,8 @@
         "clean": "rm lib/*.js",
         "postinstall": "npm run build",
         "profile": "_coffee test/profile",
-        "test": "_coffee test"
+        "test": "_coffee test",
+        "gremlin": "_coffee test/gremlin"
     },
     "keywords": [
         "neo4j", "graph", "database", "driver", "rest", "api", "client"

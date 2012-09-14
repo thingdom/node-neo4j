@@ -273,16 +273,8 @@ module.exports = class GraphDatabase
                 # Database error
                 throw response
 
-            # Success: build result maps, and transform nodes/relationships
-            body = response.body    # JSON already parsed by request
-
-            if body instanceof Array
-                results = for row in body
-                    map = util.transform row, this
-                    map
-            else
-                results = util.transform body, this
-
+            # Success: transform nodes/relationships
+            results = util.transform response.body, this
             return results
 
         catch error

@@ -68,8 +68,8 @@ createFollowRelationships = (i, _) ->
     i2 = (i + 2) % users.length
     i3 = (i + 3) % users.length
     # create three relationships in parallel
-    # WARNING: don't freaking use a variable called futures!
-    # coffeescript's variable shadowing will FUCK. YOU. UP.
+    # WARNING: don't use a variable named futures here!
+    # coffeescript variable shadowing will kick in unexpectedly. =(
     f1 = user.createRelationshipTo users[i1], 'follows', {}
     f2 = user.createRelationshipTo users[i2], 'follows', {}
     f3 = user.createRelationshipTo users[i3], 'follows', {}

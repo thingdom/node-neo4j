@@ -241,16 +241,35 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
-    # wrapper around the Gremlin plugin to execute scripts bundled with
-    # Neo4j. Pass in the Gremlin script as a string, and optionally script
+    # XXX temporary backwards compatibility shim for query() argument order,
+    # and also to support overloaded method signature:
+    do (actual = @::query) =>
+        @::query = (query, params, callback) ->
+            if typeof query is 'function' and typeof params is 'string'
+                # instantiate a new error to derive the current stack, and
+                # show the relevant source line in a warning:
+                console.warn 'neo4j.GraphDatabase::query()’s signature is ' +
+                    'now (query, params, callback). Please update your code!\n' +
+                    new Error().stack.split('\n')[2]    # includes indentation
+                callback = query
+                query = params
+                params = null
+            else if typeof params is 'function'
+                callback = params
+                params = null
+
+            actual.call @, query, params, callback
+
+    # wrapper around the Gremlin plugin, which comes bundled with Neo4j.
+    # pass in the Gremlin script as a string, and optionally script
     # parameters as a map -- recommended for both perf and security!
     # http://docs.neo4j.org/chunked/snapshot/gremlin-plugin.html
-    # returns...
+    # returns whatever your script returns, but any values that represent
+    # nodes, relationships or paths are transformed to instances.
     execute: (script, params, _) ->
         try
             services = @getServices _
-            endpoint = services.gremlin or
-                services.extensions?.GremlinPlugin?['execute_script']
+            endpoint = services.extensions?.GremlinPlugin?['execute_script']
 
             if not endpoint
                 throw new Error 'Gremlin plugin not installed'
@@ -274,32 +293,12 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success: transform nodes/relationships
-            results = util.transform response.body, this
-            return results
+            return util.transform response.body, this
 
         catch error
             throw adjustError error
 
-    # XXX temporary backwards compatibility shim for query() argument order:
-    do (actual = @::query) =>
-        @::query = (query, params, callback) ->
-            if typeof query is 'function' and typeof params is 'string'
-                # instantiate a new error to derive the current stack, and
-                # show the relevant source line in a warning:
-                console.warn 'neo4j.GraphDatabase::query()’s signature is ' +
-                    'now (query, params, callback). Please update your code!\n' +
-                    new Error().stack.split('\n')[2]    # includes indentation
-                callback = query
-                query = params
-                params = null
-            else if typeof params is 'function'
-                callback = params
-                params = null
-
-            actual.call @, query, params, callback
-
-
-    #
+    # helper for overloaded execute() method:
     do (actual = @::execute) =>
         @::execute = (script, params, callback) ->
             if typeof params is 'function'

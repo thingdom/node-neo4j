@@ -1,3 +1,15 @@
+## Version 0.2.17 — September 21, 2012
+
+  - Add support for [Gremlin][] queries! This is done via a new
+    `GraphDatabase::execute()` method that's similar to the Cypher
+    `GraphDatabase::query()` method; see the [Gremlin tests][] for examples.
+    Credit and thanks to [@sprjr][] for the implementation! (Pull [#47][])
+
+[Gremlin]: http://gremlin.tinkerpop.com/
+[Gremlin tests]: https://github.com/thingdom/node-neo4j/blob/develop/test/gremlin._coffee
+[#47]: https://github.com/thingdom/node-neo4j/pull/47
+[@sprjr]: https://github.com/sprjr
+
 ## Version 0.2.16 — September 11, 2012
 
   - Fix a regression introduced in v0.2.15 that added two extra round-trips to

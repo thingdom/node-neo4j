@@ -8,14 +8,38 @@ PropertyContainer = require './PropertyContainer'
 Relationship = require './Relationship'
 Path = require './Path'
 
+#
+# The class corresponding to a Neo4j node.
+#
 module.exports = class Node extends PropertyContainer
+
+    #
+    # Construct a new wrapper around a Neo4j node with the given data directly
+    # from the server at the given Neo4j {GraphDatabase}.
+    #
+    # @private
+    # @param db {GraphDatbase}
+    # @param data {Object}
+    #
     constructor: (db, data) ->
         super db, data
 
+    #
+    # Return a string representation of this node.
+    #
+    # @return {String}
+    #
     toString: ->
         if @exists then "node @#{@id}"
         else "unsaved node (#{JSON.stringify @data, null, 4})"
 
+    #
+    # Persist or update this node in the database. "Returns" (via callback)
+    # this same instance after the save.
+    #
+    # @param callback {Function}
+    # @return {Node}
+    #
     save: (_) ->
         try
             # TODO: check for actual modification
@@ -54,8 +78,18 @@ module.exports = class Node extends PropertyContainer
         catch error
             throw adjustError error
 
-    # throws an error if this node has any relationships on it, unless force
-    # is true, in which case the relationships are also deleted.
+    #
+    # Delete this node from the database. This will throw an error if this
+    # node has any relationships on it, unless the `force` flag is passed in,
+    # in which case those relationships are also deleted.
+    #
+    # @note For safety, it's recommended to *not* pass the `force` flag and
+    #   instead manually and explicitly delete known relationships beforehand.
+    #
+    # @param callback {Function}
+    # @param force {Boolean} If this node has any relationships on it, whether
+    #   those relationships should be deleted as well.
+    #
     delete: (_, force=false) ->
         if not @exists
             return
@@ -75,15 +109,49 @@ module.exports = class Node extends PropertyContainer
         # *Then* delete the node
         super
 
-    # Alias
+    #
+    # @see #delete
+    #
     del: @::delete
 
+    #
+    # Create and "return" (via callback) a relationship of the given type and
+    # with the given properties from this node to another node.
+    #
+    # @param otherNode {Node}
+    # @param type {String}
+    # @param data {Object} The properties this relationship should have.
+    # @param callback {Function}
+    # @return {Relationship}
+    #
     createRelationshipTo: (otherNode, type, data, _) ->
         @_createRelationship this, otherNode, type, data, _
 
+    #
+    # Create and "return" (via callback) a relationship of the given type and
+    # with the given properties from another node to this node.
+    #
+    # @param otherNode {Node}
+    # @param type {String}
+    # @param data {Object} The properties this relationship should have.
+    # @param callback {Function}
+    # @return {Relationship}
+    #
     createRelationshipFrom: (otherNode, type, data, _) ->
         @_createRelationship otherNode, this, type, data, _
 
+    #
+    # Create and "return" (via callback) a relationship of the given type and
+    # with the given properties between one node and another node.
+    #
+    # @private
+    # @param from {Node}
+    # @param to {Node}
+    # @param type {String}
+    # @param data {Object} The properties this relationship should have.
+    # @param callback {Function}
+    # @return {Relationship}
+    #
     _createRelationship: (from, to, type, data, _) ->
         try
             # ensure this node exists
@@ -123,13 +191,25 @@ module.exports = class Node extends PropertyContainer
         catch error
             throw adjustError error
 
-    # TODO support passing in no type, e.g. for all types?
-    # TODO to be consistent with the REST and Java APIs, this returns an array
-    # of all returned relationships. it would certainly be more user-friendly
-    # though if it returned a dictionary of relationships mapped by type, no?
-    # XXX TODO this takes direction and type as separate parameters, while the
-    # getRelationshipNodes() method combines both as an object. inconsistent?
-    # unfortunately, the REST API is also inconsistent like this...
+    ##
+    # TODO Document
+    #
+    # @todo Support passing in no type, e.g. for all types?
+    # @todo To be consistent with the REST and Java APIs, this returns an
+    #   array of all returned relationships. It would certainly be more
+    #   user-friendly though if it returned a dictionary of relationships
+    #   mapped by type.
+    # @todo This takes direction and type as separate parameters, while the
+    #   {#getRelationshipNodes getRelationshipNodes()} method combines both
+    #   as an object. Should we change one or the other? Unfortunately, the
+    #   REST API is also inconsistent like this...
+    #
+    # @private
+    # @param direction {String} 'incoming', 'outgoing', or 'all'
+    # @param type {String} This can also be an array of types.
+    # @param callback {Function}
+    # @return {Array<Relationship>}
+    #
     _getRelationships: (direction, type, _) ->
         # Method overload: No type specified
         # XXX can't support method overloading right now, because Streamline
@@ -174,21 +254,65 @@ module.exports = class Node extends PropertyContainer
         catch error
             throw adjustError error
 
-    # TODO to be consistent with the REST and Java APIs, this returns an array
-    # of all returned relationships. it would certainly be more user-friendly
-    # though if it returned a dictionary of relationships mapped by type, no?
+    #
+    # Fetch and "return" (via callback) the relationships of the given type or
+    # types from or to this node.
+    #
+    # @param type {String} This can also be an array of types.
+    # @param callback {Function}
+    # @return {Array<Relationship>}
+    #
     getRelationships: (type, _) ->
         @all type, _
 
+    #
+    # Fetch and "return" (via callback) the relationships of the given type or
+    # types from this node.
+    #
+    # @param type {String} This can also be an array of types.
+    # @param callback {Function}
+    # @return {Array<Relationship>}
+    #
     outgoing: (type, _) ->
         @_getRelationships 'outgoing', type, _
 
+    #
+    # Fetch and "return" (via callback) the relationships of the given type or
+    # types to this node.
+    #
+    # @param type {String} This can also be an array of types.
+    # @param callback {Function}
+    # @return {Array<Relationship>}
+    #
     incoming: (type, _) ->
         @_getRelationships 'incoming', type, _
 
+    #
+    # Fetch and "return" (via callback) the relationships of the given type or
+    # types from or to this node.
+    #
+    # @see #getRelationships
+    #
     all: (type, _) ->
         @_getRelationships 'all', type, _
 
+    #
+    # Fetch and "return" (via callback) the shortest path, if there is one,
+    # from this node to the given node. Returns null if no path exists.
+    #
+    # @todo Support other algorithms, which may require extra parameters, by
+    #   changing this method to take an options object.
+    # @todo Support multiple relationship types/directions?
+    #
+    # @param to {Node}
+    # @param type {String} The type of relationship to follow.
+    # @param direction {String} One of `'in'`, `'out'`, or `'all'`.
+    # @param maxDepth {Number} The maximum number of relationships to follow
+    #   when searching for paths. The default is 1.
+    # @param algorithm {String} This needs to be `'shortestPath'` for now.
+    # @param callback {Function}
+    # @return {Path}
+    #
     path: (to, type, direction, maxDepth=1, algorithm='shortestPath', _) ->
         try
             pathURL = "#{@self}/path"
@@ -232,13 +356,20 @@ module.exports = class Node extends PropertyContainer
         catch error
             throw adjustError error
 
-    # XXX this is actually a traverse, but in lieu of defining a non-trivial
-    # traverse() method, exposing this for now for our simple use case.
-    # the rels parameter can be:
-    # - just a string, e.g. 'has' (both directions traversed)
-    # - an array of strings, e.g. 'has' and 'wants' (both directions traversed)
-    # - just an object, e.g. {type: 'has', direction: 'out'}
-    # - an array of objects, e.g. [{type: 'has', direction: 'out'}, ...]
+    #
+    # Fetch and "return" (via callback) the nodes adjacent to this one
+    # following only relationships of the given type(s) and/or direction(s).
+    #
+    # @todo This could/should probably be renamed e.g. `getAdjacentNodes()`.
+    #
+    # @param rels {String} This can be just a string, e.g. `'likes'`, in which
+    #   case both directions are traversed. Or it can be an array of strings,
+    #   e.g. `['likes', 'loves']`; again, both directions are traversed. It
+    #   can also be an object, e.g. `{type: 'likes', direction: 'out'}`, or an
+    #   array of objects, e.g. `[{type: 'likes', direction: 'out'}, ...]`.
+    # @param callback {Function}
+    # @return {Array<Node>}
+    #
     getRelationshipNodes: (rels, _) ->
 
         # support passing in both one rel and multiple rels, as array
@@ -271,6 +402,14 @@ module.exports = class Node extends PropertyContainer
         catch error
             throw adjustError error
 
+    #
+    # Add this node to the given index under the given key-value pair.
+    #
+    # @param index {String} The name of the index, e.g. `'users'`.
+    # @param key {String} The key to index under, e.g. `'username'`.
+    # @param value {Object} The value to index under, e.g. `'aseemk'`.
+    # @param callback {Function}
+    #
     index: (index, key, value, _) ->
         try
             # TODO

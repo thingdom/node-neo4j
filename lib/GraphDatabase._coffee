@@ -12,7 +12,29 @@ adjustError = util.adjustError
 Relationship = require './Relationship'
 Node = require './Node'
 
+#
+# The class corresponding to a Neo4j graph database. Start here.
+#
 module.exports = class GraphDatabase
+
+    #
+    # Construct a new client for the Neo4j graph database available at the
+    # given (root) URL.
+    #
+    # @overload constructor(url)
+    #   @param url {String} The root URL where the Neo4j graph database is
+    #     available, e.g. `'http://localhost:7474/'`. This URL should include
+    #     HTTP Basic Authentication info if needed, e.g.
+    #     `'http://user:password@example.com/'`.
+    #
+    # @overload constructor(opts)
+    #   @param opts {Object}
+    #   @option opts {String} url The root URL where the Neo4j graph database is
+    #     available, e.g. `'http://localhost:7474/'`. This URL should include
+    #     HTTP Basic Authentication info if needed, e.g.
+    #     `'http://user:password@example.com/'`.
+    #   @option opts {String} proxy An optional proxy URL for all requests.
+    #
     constructor: (opts) ->
         # normalize arg:
         opts =
@@ -26,11 +48,25 @@ module.exports = class GraphDatabase
         @_root = null
         @_services = null
 
-    # Database
+    ### Database: ###
+
+    #
+    # Purge this client's cache of API endpoints for this graph database.
+    #
+    # @private
+    #
     _purgeCache: ->
         @_root = null
         @_services = null
 
+    #
+    # Fetch, cache, and "return" (via callback) the API root data for this
+    # graph database.
+    #
+    # @private
+    # @param callback {Function}
+    # @return {Object}
+    #
     _getRoot: (_) ->
         if @_root?
             return @_root
@@ -46,6 +82,14 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch, cache, and "return" (via callback) the API services data for this
+    # graph database.
+    #
+    # @private
+    # @param callback {Function}
+    # @return {Object}
+    #
     getServices: (_) ->
         if @_services?
             return @_services
@@ -62,6 +106,14 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the Neo4j version as a float.
+    #
+    # @note This doesn't preserve "milestone" information, e.g. "M06".
+    #
+    # @param callback {Function}
+    # @return {Number}
+    #
     getVersion: (_) ->
         try
             services = @getServices _
@@ -73,13 +125,35 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError
 
-    # Nodes
+    ### Nodes: ###
+
+    #
+    # Create and immediately return a new, unsaved node with the given
+    # properties.
+    #
+    # @note This node will *not* be persisted to the database until and unless
+    #   its {Node#save save()} method is called.
+    #
+    # @param data {Object} The properties this new node should have.
+    # @return {Node}
+    #
     createNode: (data) ->
         data = data || {}
         node = new Node this,
             data: data
         return node
 
+    #
+    # Fetch and "return" (via callback) the node at the given URL.
+    # Throws an error if no node exists at this URL.
+    #
+    # @todo Should this indeed throw an error if no node exists at this URL?
+    #   Or should we be returning undefined?
+    #
+    # @param url {String}
+    # @param callback {Function}
+    # @return {Node}
+    #
     getNode: (url, _) ->
         try
             response = @_request.get url, _
@@ -98,6 +172,20 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the node indexed under the given
+    # property and value in the given index. If none exists, returns
+    # undefined.
+    #
+    # @note With this method, at most one node is returned. See
+    #   {#getIndexedNodes} for returning multiple nodes.
+    #
+    # @param index {String} The name of the index, e.g. `'node_auto_index'`.
+    # @param property {String} The name of the property, e.g. `'username'`.
+    # @param value {Object} The value of the property, e.g. `'aseemk'`.
+    # @param callback {Function}
+    # @return {Node}
+    #
     getIndexedNode: (index, property, value, _) ->
         try
             nodes = @getIndexedNodes index, property, value, _
@@ -110,6 +198,20 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the nodes indexed under the given
+    # property and value in the given index. If no such nodes exist, an
+    # empty array is returned.
+    #
+    # @note This method will return multiple nodes if there are multiple hits.
+    #   See {#getIndexedNode} for returning at most one node.
+    #
+    # @param index {String} The name of the index, e.g. `'node_auto_index'`.
+    # @param property {String} The name of the property, e.g. `'platform'`.
+    # @param value {Object} The value of the property, e.g. `'xbox'`.
+    # @param callback {Function}
+    # @return {Array<Node>}
+    #
     getIndexedNodes: (index, property, value, _) ->
         try
             services = @getServices _
@@ -131,6 +233,17 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the node with the given Neo4j ID.
+    # Throws an error if no node exists with this ID.
+    #
+    # @todo Should this indeed throw an error if no node exists with this ID?
+    #   Or should we be returning undefined?
+    #
+    # @param id {Number} The integer ID of the node, e.g. `1234`.
+    # @param callback {Function}
+    # @return {Node}
+    #
     getNodeById: (id, _) ->
         try
             services = @getServices _
@@ -141,10 +254,23 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
-    # Relationships
-    createRelationship: (startNode, endNode, type, _) ->
-        # TODO: Implement
+    ### Relationships: ###
 
+    # @private
+    createRelationship: (startNode, endNode, type, _) ->
+        # TODO: Implement?
+
+    #
+    # Fetch and "return" (via callback) the relationship at the given URL.
+    # Throws an error if no relationship exists at this URL.
+    #
+    # @todo Should this indeed throw an error if no relationship exists at
+    #   this URL? Or should we be returning undefined?
+    #
+    # @param url {String}
+    # @param callback {Function}
+    # @return {Relationship}
+    #
     getRelationship: (url, _) ->
         try
             response = @_request.get url, _
@@ -158,6 +284,20 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the relationship indexed under the
+    # given property and value in the given index. If none exists, returns
+    # undefined.
+    #
+    # @note With this method, at most one relationship is returned. See
+    #   {#getIndexedRelationships} for returning multiple relationships.
+    #
+    # @param index {String} The name of the index, e.g. `'relationship_auto_index'`.
+    # @param property {String} The name of the property, e.g. `'created'`.
+    # @param value {Object} The value of the property, e.g. `1346713658393`.
+    # @param callback {Function}
+    # @return {Relationship}
+    #
     getIndexedRelationship: (index, property, value, _) ->
         try
             relationships = @getIndexedRelationships index, property, value, _
@@ -166,6 +306,21 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the relationships indexed under the
+    # given property and value in the given index. If no such relationships
+    # exist, an empty array is returned.
+    #
+    # @note This method will return multiple relationships if there are
+    #   multiple hits. See {#getIndexedRelationship} for returning at most one
+    #   relationship.
+    #
+    # @param index {String} The name of the index, e.g. `'relationship_auto_index'`.
+    # @param property {String} The name of the property, e.g. `'favorite'`.
+    # @param value {Object} The value of the property, e.g. `true`.
+    # @param callback {Function}
+    # @return {Array<Relationship>}
+    #
     getIndexedRelationships: (index, property, value, _) ->
         try
             services = @getServices _
@@ -187,6 +342,17 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the relationship with the given Neo4j
+    # ID. Throws an error if no relationship exists with this ID.
+    #
+    # @todo Should this indeed throw an error if no relationship exists with
+    #   this ID? Or should we be returning undefined?
+    #
+    # @param id {Number} The integer ID of the relationship, e.g. `1234`.
+    # @param callback {Function}
+    # @return {Relationship}
+    #
     getRelationshipById: (id, _) ->
         services = @getServices _
         # FIXME: Neo4j doesn't expose the path to relationships
@@ -194,13 +360,45 @@ module.exports = class GraphDatabase
         url = "#{relationshipURL}/#{id}"
         @getRelationship url, _
 
-    # wrapper around the Cypher plugin, which comes bundled w/ Neo4j.
-    # pass in the Cypher query as a string (can be multi-line), and optionally
-    # query parameters as a map -- recommended for both perf and security!
-    # http://docs.neo4j.org/chunked/stable/cypher-query-lang.html
-    # returns an array of "rows" (matches), where each row is a map from
-    # variable name (as given in the passed in query) to value. any values
-    # that represent nodes or relationships are transformed to instances.
+    ### Misc/Other: ###
+
+    #
+    # Fetch and "return" (via callback) the results of the given
+    # {http://docs.neo4j.org/chunked/stable/cypher-query-lang.html Cypher}
+    # query, optionally passing along the given query parameters (recommended
+    # to avoid Cypher injection security vulnerabilities). The returned
+    # results are an array of "rows" (matches), where each row is a map from
+    # key name (as given in the query) to value. Any values that represent
+    # nodes, relationships or paths are returned as {Node}, {Relationship} or
+    # {Path} instances.
+    #
+    # @overload query(query, callback)
+    #   @param query {String} The Cypher query. Can be multi-line.
+    #   @param callback {Function}
+    #   @return {Array<Object>}
+    #
+    # @overload query(query, params, callback)
+    #   @param query {String} The Cypher query. Can be multi-line.
+    #   @param params {Object} A map of parameters for the Cypher query.
+    #   @param callback {Function}
+    #   @return {Array<Object>}
+    #   @example Fetch a user's likes.
+    #     var query = [
+    #       'START user=node({userId})',
+    #       'MATCH (user) -[:likes]-> (other)',
+    #       'RETURN other'
+    #     ].join('\n');
+    #     var params = {
+    #       userId: currentUser.id
+    #     };
+    #     db.query(query, params, function (err, results) {
+    #       if (err) throw err;
+    #       var likes = results.map(function (result) {
+    #         return result['other'];
+    #       });
+    #       // ...
+    #     });
+    #
     query: (query, params, _) ->
         try
             services = @getServices _
@@ -260,12 +458,36 @@ module.exports = class GraphDatabase
 
             actual.call @, query, params, callback
 
-    # wrapper around the Gremlin plugin, which comes bundled with Neo4j.
-    # pass in the Gremlin script as a string, and optionally script
-    # parameters as a map -- recommended for both perf and security!
-    # http://docs.neo4j.org/chunked/snapshot/gremlin-plugin.html
-    # returns whatever your script returns, but any values that represent
-    # nodes, relationships or paths are transformed to instances.
+    #
+    # Execute and "return" (via callback) the results of the given
+    # {http://docs.neo4j.org/chunked/snapshot/gremlin-plugin.html Gremlin}
+    # script, optionally passing along the given script parameters
+    # (recommended to avoid Gremlin injection security vulnerabilities). Any
+    # values in the returned results that represent nodes, relationships or
+    # paths are returned as {Node}, {Relationship} or {Path} instances.
+    #
+    # @overload execute(script, callback)
+    #   @param script {String} The Gremlin script. Can be multi-line.
+    #   @param callback {Function}
+    #   @return {Object}
+    #
+    # @overload execute(script, params, callback)
+    #   @param script {String} The Gremlin script. Can be multi-line.
+    #   @param params {Object} A map of parameters for the Gremlin script.
+    #   @param callback {Function}
+    #   @return {Object}
+    #   @example Fetch a user's likes.
+    #     var script = "g.v(userId).out('likes')";
+    #     var params = {
+    #       userId: currentUser.id
+    #     };
+    #     db.execute(script, params, function (err, likes) {
+    #       if (err) throw err;
+    #       likes.forEach(function (node) {
+    #         // ...
+    #       });
+    #     });
+    #
     execute: (script, params, _) ->
         try
             services = @getServices _
@@ -307,8 +529,19 @@ module.exports = class GraphDatabase
 
             actual.call @, script, params, callback
 
-    # executes a query against the given node index. lucene syntax reference:
-    # http://lucene.apache.org/java/3_1_0/queryparsersyntax.html
+    #
+    # Fetch and "return" (via callback) the nodes matching the given query (in
+    # {http://lucene.apache.org/java/3_1_0/queryparsersyntax.html Lucene
+    # syntax}) from the given index. If no such nodes exist, an empty array is
+    # returned.
+    #
+    # @todo Implement a similar method for relationships?
+    #
+    # @param index {String} The name of the index, e.g. `node_auto_index`.
+    # @param query {String} The Lucene query, e.g. `foo:bar AND hello:world`.
+    # @param callback {Function}
+    # @return {Array<Node>}
+    #
     queryNodeIndex: (index, query, _) ->
         try
             services = @getServices _

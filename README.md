@@ -1,9 +1,11 @@
 # Node-Neo4j
 
-This driver lets you access [Neo4j][], a graph database, from [Node.js][].
-It uses Neo4j's [REST API][neo4j-rest-api].
+This is a client library for accessing [Neo4j][], a graph database, from
+[Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api].
 
-This library supports and has been tested against Neo4j 1.4, 1.5 and 1.6.
+This library supports and has been tested against Neo4j 1.4, 1.5 and 1.6. We
+need to formally test 1.7 and 1.8, but it's being used in the wild against
+those versions of Neo4j seemingly without any issues.
 
 
 ## Installation
@@ -23,45 +25,40 @@ var db = new neo4j.GraphDatabase('http://localhost:7474');
 
 Node.js is asynchronous, which means this library is too: most functions take
 callbacks and return immediately, with the callbacks being invoked when the
-HTTP request-response finishes.
+corresponding HTTP requests and responses finish.
 
-Here's a simple callback for exploring and learning this library:
-
-```js
-function callback(err, result) {
-    if (err) {
-        console.error(err);
-    } else {
-        console.log(result);    // if an object, inspects the object
-    }
-}
-```
-
-Creating a new node:
+Here's a simple example:
 
 ```js
 var node = db.createNode({hello: 'world'});     // instantaneous, but...
-node.save(callback);    // ...this is what actually persists it in the db.
+node.save(function (err, node) {    // ...this is what actually persists.
+    if (err) {
+        console.err('Error saving new node to database:', err);
+    } else {
+        console.log('Node saved to database with id:', node.id);
+    }
+});
 ```
 
-Fetching an existing node or relationship, by ID:
+Because async flow in Node.js can be significantly tricky to handle, we
+strongly recommend using a flow control tool or library to help.
+Our personal favorite is [Streamline.js][], but other popular choices are
+[async](https://github.com/caolan/async),
+[Step](https://github.com/creationix/step),
+[Seq](https://github.com/substack/node-seq), [TameJS](http://tamejs.org/) and
+[IcedCoffeeScript](http://maxtaco.github.com/coffee-script/).
 
-```js
-db.getNodeById(1, callback);
-db.getRelationshipById(1, callback);
-```
+Once you've gotten the basics down, skim through the full
+**[API documentation][api-docs]** to see what this library can do, and take a
+look at [@aseemk][aseemk]'s [node-neo4j-template][] app for a complete usage
+example. (The `models/User.js` file in particular is the one that interacts
+with this library.)
 
-And so on.
-
-For a complete example of usage, take a look at [@aseemk][aseemk]'s
-[node-neo4j-template][] app. The `models/User.js` file in particular is the
-one that interacts with this library.
-
-**A note on package.json dependencies:**
-
-Future breaking changes to this library are likely! But the version numbers
-will respect [semantic versioning][semver]. So **please specify something like
-`0.2.x` or `~0.2.6`, *not* `>=0.2.6`**. Thank you.
+Please note that **breaking changes to this library are *very* likely** in the
+near future as we consider an API overhaul, but the version number will always
+respect [semantic versioning][semver]. So if you specify this library as a
+dependency in your package.json, ***please* specify something like `0.2.x` or
+`~0.2.6`, *not* `>=0.2.6`**. Thanks. =)
 
 
 ## Development
@@ -89,8 +86,8 @@ To run the tests:
 
     npm test
 
-**Important:** The tests are written assuming Neo4j >=1.5 and will now fail on
-Neo4j 1.4, but the library supports Neo4j 1.4 fine.
+**Important:** The tests are written assuming Neo4j >=1.7 and will now fail on
+prior Neo4j versions, but the library supports prior Neo4j versions just fine.
 
 This library is written in [CoffeeScript][], using [Streamline.js][] syntax.
 The tests automatically compile the code on-the-fly, but you can also generate
@@ -135,6 +132,7 @@ If you encounter any bugs or other issues, please file them in the
 [node.js]: http://nodejs.org/
 [neo4j-rest-api]: http://docs.neo4j.org/chunked/1.6/rest-api.html
 
+[api-docs]: http://coffeedoc.info/github/thingdom/node-neo4j/master/
 [aseemk]: https://github.com/aseemk
 [node-neo4j-template]: https://github.com/aseemk/node-neo4j-template
 [semver]: http://semver.org/

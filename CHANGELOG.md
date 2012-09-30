@@ -1,3 +1,13 @@
+## Version 0.2.18 — September 30, 2012
+
+  - **[API documentation][api-docs]** has finally been added! Many thanks to
+    [@netzpirat][] for the excellent [Codo][] tool and support. (Issue [#6][])
+
+[api-docs]: http://coffeedoc.info/github/thingdom/node-neo4j/master/
+[@netzpirat]: https://github.com/netzpirat
+[Codo]: https://github.com/netzpirat/codo
+[#6]: https://github.com/thingdom/node-neo4j/issues/6
+
 ## Version 0.2.17 — September 21, 2012
 
   - Add support for [Gremlin][] queries! This is done via a new

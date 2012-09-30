@@ -24,7 +24,7 @@
     "scripts": {
         "build": "_coffee -c lib/",
         "clean": "rm lib/*.js",
-        "codo": "codo --title 'Node-Neo4j API Documentation' ./lib",
+        "codo": "codo -r API.md --title 'Node-Neo4j API Documentation' ./lib",
         "postinstall": "npm run build",
         "profile": "_coffee test/profile",
         "test": "_coffee test"

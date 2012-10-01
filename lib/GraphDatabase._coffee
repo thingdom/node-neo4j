@@ -29,11 +29,11 @@ module.exports = class GraphDatabase
     #
     # @overload constructor(opts)
     #   @param opts {Object}
-    #   @option opts {String} url The root URL where the Neo4j graph database is
-    #     available, e.g. `'http://localhost:7474/'`. This URL should include
-    #     HTTP Basic Authentication info if needed, e.g.
+    #   @option opts url {String} The root URL where the Neo4j graph database
+    #     is available, e.g. `'http://localhost:7474/'`. This URL should
+    #     include HTTP Basic Authentication info if needed, e.g.
     #     `'http://user:password@example.com/'`.
-    #   @option opts {String} proxy An optional proxy URL for all requests.
+    #   @option opts proxy {String} An optional proxy URL for all requests.
     #
     constructor: (opts) ->
         # normalize arg:
@@ -145,7 +145,6 @@ module.exports = class GraphDatabase
 
     #
     # Fetch and "return" (via callback) the node at the given URL.
-    # Throws an error if no node exists at this URL.
     #
     # @todo Should this indeed throw an error if no node exists at this URL?
     #   Or should we be returning undefined?
@@ -153,6 +152,7 @@ module.exports = class GraphDatabase
     # @param url {String}
     # @param callback {Function}
     # @return {Node}
+    # @throw {Error} If no node exists at this URL.
     #
     getNode: (url, _) ->
         try
@@ -235,7 +235,6 @@ module.exports = class GraphDatabase
 
     #
     # Fetch and "return" (via callback) the node with the given Neo4j ID.
-    # Throws an error if no node exists with this ID.
     #
     # @todo Should this indeed throw an error if no node exists with this ID?
     #   Or should we be returning undefined?
@@ -243,6 +242,7 @@ module.exports = class GraphDatabase
     # @param id {Number} The integer ID of the node, e.g. `1234`.
     # @param callback {Function}
     # @return {Node}
+    # @throw {Error} If no node exists with this ID.
     #
     getNodeById: (id, _) ->
         try
@@ -262,7 +262,6 @@ module.exports = class GraphDatabase
 
     #
     # Fetch and "return" (via callback) the relationship at the given URL.
-    # Throws an error if no relationship exists at this URL.
     #
     # @todo Should this indeed throw an error if no relationship exists at
     #   this URL? Or should we be returning undefined?
@@ -270,6 +269,7 @@ module.exports = class GraphDatabase
     # @param url {String}
     # @param callback {Function}
     # @return {Relationship}
+    # @throw {Error} If no relationship exists at this URL.
     #
     getRelationship: (url, _) ->
         try
@@ -344,7 +344,7 @@ module.exports = class GraphDatabase
 
     #
     # Fetch and "return" (via callback) the relationship with the given Neo4j
-    # ID. Throws an error if no relationship exists with this ID.
+    # ID.
     #
     # @todo Should this indeed throw an error if no relationship exists with
     #   this ID? Or should we be returning undefined?
@@ -352,6 +352,7 @@ module.exports = class GraphDatabase
     # @param id {Number} The integer ID of the relationship, e.g. `1234`.
     # @param callback {Function}
     # @return {Relationship}
+    # @throw {Error} If no relationship exists with this ID.
     #
     getRelationshipById: (id, _) ->
         services = @getServices _

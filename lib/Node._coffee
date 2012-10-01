@@ -206,7 +206,7 @@ module.exports = class Node extends PropertyContainer
     #
     # @private
     # @param direction {String} 'incoming', 'outgoing', or 'all'
-    # @param type {String} This can also be an array of types.
+    # @param type {String, Array<String>}
     # @param callback {Function}
     # @return {Array<Relationship>}
     #
@@ -258,7 +258,7 @@ module.exports = class Node extends PropertyContainer
     # Fetch and "return" (via callback) the relationships of the given type or
     # types from or to this node.
     #
-    # @param type {String} This can also be an array of types.
+    # @param type {String, Array<String>}
     # @param callback {Function}
     # @return {Array<Relationship>}
     #
@@ -269,7 +269,7 @@ module.exports = class Node extends PropertyContainer
     # Fetch and "return" (via callback) the relationships of the given type or
     # types from this node.
     #
-    # @param type {String} This can also be an array of types.
+    # @param type {String, Array<String>}
     # @param callback {Function}
     # @return {Array<Relationship>}
     #
@@ -280,7 +280,7 @@ module.exports = class Node extends PropertyContainer
     # Fetch and "return" (via callback) the relationships of the given type or
     # types to this node.
     #
-    # @param type {String} This can also be an array of types.
+    # @param type {String, Array<String>}
     # @param callback {Function}
     # @return {Array<Relationship>}
     #
@@ -362,11 +362,13 @@ module.exports = class Node extends PropertyContainer
     #
     # @todo This could/should probably be renamed e.g. `getAdjacentNodes()`.
     #
-    # @param rels {String} This can be just a string, e.g. `'likes'`, in which
-    #   case both directions are traversed. Or it can be an array of strings,
-    #   e.g. `['likes', 'loves']`; again, both directions are traversed. It
-    #   can also be an object, e.g. `{type: 'likes', direction: 'out'}`, or an
-    #   array of objects, e.g. `[{type: 'likes', direction: 'out'}, ...]`.
+    # @param rels {String, Array<String>, Object, Array<Object>}
+    #   This can be a string type, e.g. `'likes'`, in which case both
+    #   directions are traversed.
+    #   Or it can be an array of string types, e.g. `['likes', 'loves']`.
+    #   It can also be an object, e.g. `{type: 'likes', direction: 'out'}`.
+    #   Finally, it can be an array of objects, e.g.
+    #   `[{type: 'likes', direction: 'out'}, ...]`.
     # @param callback {Function}
     # @return {Array<Node>}
     #

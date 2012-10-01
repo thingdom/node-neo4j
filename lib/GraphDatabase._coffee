@@ -173,6 +173,27 @@ module.exports = class GraphDatabase
             throw adjustError error
 
     #
+    # Fetch and "return" (via callback) the node with the given Neo4j ID.
+    #
+    # @todo Should this indeed throw an error if no node exists with this ID?
+    #   Or should we be returning undefined?
+    #
+    # @param id {Number} The integer ID of the node, e.g. `1234`.
+    # @param callback {Function}
+    # @return {Node}
+    # @throw {Error} If no node exists with this ID.
+    #
+    getNodeById: (id, _) ->
+        try
+            services = @getServices _
+            url = "#{services.node}/#{id}"
+            node = @getNode url, _
+            return node
+
+        catch error
+            throw adjustError error
+
+    #
     # Fetch and "return" (via callback) the node indexed under the given
     # property and value in the given index. If none exists, returns
     # undefined.
@@ -234,22 +255,32 @@ module.exports = class GraphDatabase
             throw adjustError error
 
     #
-    # Fetch and "return" (via callback) the node with the given Neo4j ID.
+    # Fetch and "return" (via callback) the nodes matching the given query (in
+    # {http://lucene.apache.org/core/old_versioned_docs/versions/3_1_0/queryparsersyntax.html Lucene
+    # syntax}) from the given index. If no such nodes exist, an empty array is
+    # returned.
     #
-    # @todo Should this indeed throw an error if no node exists with this ID?
-    #   Or should we be returning undefined?
+    # @todo Implement a similar method for relationships?
     #
-    # @param id {Number} The integer ID of the node, e.g. `1234`.
+    # @param index {String} The name of the index, e.g. `node_auto_index`.
+    # @param query {String} The Lucene query, e.g. `foo:bar AND hello:world`.
     # @param callback {Function}
-    # @return {Node}
-    # @throw {Error} If no node exists with this ID.
+    # @return {Array<Node>}
     #
-    getNodeById: (id, _) ->
+    queryNodeIndex: (index, query, _) ->
         try
             services = @getServices _
-            url = "#{services.node}/#{id}"
-            node = @getNode url, _
-            return node
+            url = "#{services.node_index}/#{index}?query=#{encodeURIComponent query}"
+
+            response = @_request.get url, _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response
+
+            # Success
+            return response.body.map (node) =>
+                new Node this, node
 
         catch error
             throw adjustError error
@@ -283,6 +314,25 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+
+    #
+    # Fetch and "return" (via callback) the relationship with the given Neo4j
+    # ID.
+    #
+    # @todo Should this indeed throw an error if no relationship exists with
+    #   this ID? Or should we be returning undefined?
+    #
+    # @param id {Number} The integer ID of the relationship, e.g. `1234`.
+    # @param callback {Function}
+    # @return {Relationship}
+    # @throw {Error} If no relationship exists with this ID.
+    #
+    getRelationshipById: (id, _) ->
+        services = @getServices _
+        # FIXME: Neo4j doesn't expose the path to relationships
+        relationshipURL = services.node.replace('node', 'relationship')
+        url = "#{relationshipURL}/#{id}"
+        @getRelationship url, _
 
     #
     # Fetch and "return" (via callback) the relationship indexed under the
@@ -341,25 +391,6 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
-
-    #
-    # Fetch and "return" (via callback) the relationship with the given Neo4j
-    # ID.
-    #
-    # @todo Should this indeed throw an error if no relationship exists with
-    #   this ID? Or should we be returning undefined?
-    #
-    # @param id {Number} The integer ID of the relationship, e.g. `1234`.
-    # @param callback {Function}
-    # @return {Relationship}
-    # @throw {Error} If no relationship exists with this ID.
-    #
-    getRelationshipById: (id, _) ->
-        services = @getServices _
-        # FIXME: Neo4j doesn't expose the path to relationships
-        relationshipURL = services.node.replace('node', 'relationship')
-        url = "#{relationshipURL}/#{id}"
-        @getRelationship url, _
 
     ### Misc/Other: ###
 
@@ -529,34 +560,3 @@ module.exports = class GraphDatabase
                 params = null
 
             actual.call @, script, params, callback
-
-    #
-    # Fetch and "return" (via callback) the nodes matching the given query (in
-    # {http://lucene.apache.org/core/old_versioned_docs/versions/3_1_0/queryparsersyntax.html Lucene
-    # syntax}) from the given index. If no such nodes exist, an empty array is
-    # returned.
-    #
-    # @todo Implement a similar method for relationships?
-    #
-    # @param index {String} The name of the index, e.g. `node_auto_index`.
-    # @param query {String} The Lucene query, e.g. `foo:bar AND hello:world`.
-    # @param callback {Function}
-    # @return {Array<Node>}
-    #
-    queryNodeIndex: (index, query, _) ->
-        try
-            services = @getServices _
-            url = "#{services.node_index}/#{index}?query=#{encodeURIComponent query}"
-
-            response = @_request.get url, _
-
-            if response.statusCode isnt status.OK
-                # Database error
-                throw response
-
-            # Success
-            return response.body.map (node) =>
-                new Node this, node
-
-        catch error
-            throw adjustError error

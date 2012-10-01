@@ -531,7 +531,7 @@ module.exports = class GraphDatabase
 
     #
     # Fetch and "return" (via callback) the nodes matching the given query (in
-    # {http://lucene.apache.org/java/3_1_0/queryparsersyntax.html Lucene
+    # {http://lucene.apache.org/core/old_versioned_docs/versions/3_1_0/queryparsersyntax.html Lucene
     # syntax}) from the given index. If no such nodes exist, an empty array is
     # returned.
     #

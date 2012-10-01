@@ -110,11 +110,6 @@ module.exports = class Node extends PropertyContainer
         super
 
     #
-    # @see #delete
-    #
-    del: @::delete
-
-    #
     # Create and "return" (via callback) a relationship of the given type and
     # with the given properties from this node to another node.
     #

@@ -108,5 +108,11 @@ module.exports = class PropertyContainer
         catch error
             throw adjustError error
 
-    # Alias
-    del: @::delete
+    #
+    # A convenience alias for {#delete} since `delete` is a reserved keyword
+    # in JavaScript.
+    #
+    # @see #delete
+    #
+    del: ->
+        @delete.apply @, arguments

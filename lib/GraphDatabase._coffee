@@ -133,6 +133,10 @@ module.exports = class GraphDatabase
     #
     # @note This node will *not* be persisted to the database until and unless
     #   its {Node#save save()} method is called.
+    # @todo We should consider changing this method to persist the node (i.e.
+    #   call its {Node#save save()} method) as well in the next version of
+    #   this library. That'd be a breaking change, but it'd simplify both this
+    #   API and its usage (e.g. the node's `id` will be known then).
     #
     # @param data {Object} The properties this new node should have.
     # @return {Node}
@@ -201,6 +205,10 @@ module.exports = class GraphDatabase
     #
     # @note With this method, at most one node is returned. See
     #   {#getIndexedNodes} for returning multiple nodes.
+    # @todo We should consider removing this method in the next version of
+    #   this library. Client code should be aware of multiple hits instead of
+    #   this library hiding that information and arbitrarily returning only
+    #   the first hit.
     #
     # @param index {String} The name of the index, e.g. `'node_auto_index'`.
     # @param property {String} The name of the property, e.g. `'username'`.
@@ -343,6 +351,10 @@ module.exports = class GraphDatabase
     #
     # @note With this method, at most one relationship is returned. See
     #   {#getIndexedRelationships} for returning multiple relationships.
+    # @todo We should consider removing this method in the next version of
+    #   this library. Client code should be aware of multiple hits instead of
+    #   this library hiding that information and arbitrarily returning only
+    #   the first hit.
     #
     # @param index {String} The name of the index, e.g. `'relationship_auto_index'`.
     # @param property {String} The name of the property, e.g. `'created'`.
@@ -406,34 +418,31 @@ module.exports = class GraphDatabase
     # nodes, relationships or paths are returned as {Node}, {Relationship} or
     # {Path} instances.
     #
-    # @overload query(query, callback)
-    #   @param query {String} The Cypher query. Can be multi-line.
-    #   @param callback {Function}
-    #   @return {Array<Object>}
+    # @param query {String} The Cypher query. Can be multi-line.
+    # @param params {Object} A map of parameters for the Cypher query.
+    # @param callback {Function}
+    # @return {Array<Object>}
+    # @example Fetch a user's likes.
     #
-    # @overload query(query, params, callback)
-    #   @param query {String} The Cypher query. Can be multi-line.
-    #   @param params {Object} A map of parameters for the Cypher query.
-    #   @param callback {Function}
-    #   @return {Array<Object>}
-    #   @example Fetch a user's likes.
-    #     var query = [
-    #       'START user=node({userId})',
-    #       'MATCH (user) -[:likes]-> (other)',
-    #       'RETURN other'
-    #     ].join('\n');
-    #     var params = {
-    #       userId: currentUser.id
-    #     };
-    #     db.query(query, params, function (err, results) {
-    #       if (err) throw err;
-    #       var likes = results.map(function (result) {
-    #         return result['other'];
-    #       });
-    #       // ...
+    #   var query = [
+    #     'START user=node({userId})',
+    #     'MATCH (user) -[:likes]-> (other)',
+    #     'RETURN other'
+    #   ].join('\n');
+    #
+    #   var params = {
+    #     userId: currentUser.id
+    #   };
+    #
+    #   db.query(query, params, function (err, results) {
+    #     if (err) throw err;
+    #     var likes = results.map(function (result) {
+    #       return result['other'];
     #     });
+    #     // ...
+    #   });
     #
-    query: (query, params, _) ->
+    query: (query, params={}, _) ->
         try
             services = @getServices _
             endpoint = services.cypher or
@@ -444,7 +453,7 @@ module.exports = class GraphDatabase
 
             response = @_request.post
                 uri: endpoint
-                json: if params then {query, params} else {query}
+                json: {query, params}
             , _
 
             # XXX workaround for neo4j silent failures for invalid queries:
@@ -500,29 +509,26 @@ module.exports = class GraphDatabase
     # values in the returned results that represent nodes, relationships or
     # paths are returned as {Node}, {Relationship} or {Path} instances.
     #
-    # @overload execute(script, callback)
-    #   @param script {String} The Gremlin script. Can be multi-line.
-    #   @param callback {Function}
-    #   @return {Object}
+    # @param script {String} The Gremlin script. Can be multi-line.
+    # @param params {Object} A map of parameters for the Gremlin script.
+    # @param callback {Function}
+    # @return {Object}
+    # @example Fetch a user's likes.
     #
-    # @overload execute(script, params, callback)
-    #   @param script {String} The Gremlin script. Can be multi-line.
-    #   @param params {Object} A map of parameters for the Gremlin script.
-    #   @param callback {Function}
-    #   @return {Object}
-    #   @example Fetch a user's likes.
-    #     var script = "g.v(userId).out('likes')";
-    #     var params = {
-    #       userId: currentUser.id
-    #     };
-    #     db.execute(script, params, function (err, likes) {
-    #       if (err) throw err;
-    #       likes.forEach(function (node) {
-    #         // ...
-    #       });
+    #   var script = "g.v(userId).out('likes')";
+    #
+    #   var params = {
+    #     userId: currentUser.id
+    #   };
+    #
+    #   db.execute(script, params, function (err, likes) {
+    #     if (err) throw err;
+    #     likes.forEach(function (node) {
+    #       // ...
     #     });
+    #   });
     #
-    execute: (script, params, _) ->
+    execute: (script, params={}, _) ->
         try
             services = @getServices _
             endpoint = services.extensions?.GremlinPlugin?['execute_script']
@@ -532,7 +538,7 @@ module.exports = class GraphDatabase
 
             response = @_request.post
                 uri: endpoint
-                json: if params then {script, params} else {script}
+                json: {script, params}
             , _
 
             # XXX workaround for neo4j silent failures for invalid queries:

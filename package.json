@@ -16,7 +16,7 @@
         "streamline": "~0.4.0"
     },
     "devDependencies": {
-        "codo": "~1.4.4"
+        "codo": "~1.5.1"
     },
     "engines": {
         "node": ">= 0.6"

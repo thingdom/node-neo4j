@@ -149,6 +149,7 @@ module.exports = class GraphDatabase
     # @todo Should this indeed throw an error if no node exists at this URL?
     #   Or should we be returning undefined?
     #
+    # @private
     # @param url {String}
     # @param callback {Function}
     # @return {Node}
@@ -297,6 +298,7 @@ module.exports = class GraphDatabase
     # @todo Should this indeed throw an error if no relationship exists at
     #   this URL? Or should we be returning undefined?
     #
+    # @private
     # @param url {String}
     # @param callback {Function}
     # @return {Relationship}

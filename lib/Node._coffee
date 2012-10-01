@@ -110,9 +110,52 @@ module.exports = class Node extends PropertyContainer
         super
 
     #
-    # @see #delete
+    # Add this node to the given index under the given key-value pair.
     #
-    del: @::delete
+    # @param index {String} The name of the index, e.g. `'users'`.
+    # @param key {String} The key to index under, e.g. `'username'`.
+    # @param value {Object} The value to index under, e.g. `'aseemk'`.
+    # @param callback {Function}
+    #
+    index: (index, key, value, _) ->
+        try
+            # TODO
+            if not @exists
+                throw new Error 'Node must exists before indexing properties'
+
+            services = @db.getServices _
+            version = @db.getVersion _
+
+            # old API:
+            if version <= 1.4
+                encodedKey = encodeURIComponent key
+                encodedValue = encodeURIComponent value
+                url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}"
+
+                response = @_request.post
+                    url: url
+                    json: @self
+                , _
+
+            # new API:
+            else
+                response = @_request.post
+                    url: "#{services.node_index}/#{index}"
+                    json:
+                        key: key
+                        value: value
+                        uri: @self
+                , _
+
+            if response.statusCode isnt status.CREATED
+                # database error
+                throw response
+
+            # success
+            return
+
+        catch error
+            throw adjustError error
 
     #
     # Create and "return" (via callback) a relationship of the given type and
@@ -206,7 +249,7 @@ module.exports = class Node extends PropertyContainer
     #
     # @private
     # @param direction {String} 'incoming', 'outgoing', or 'all'
-    # @param type {String} This can also be an array of types.
+    # @param type {String, Array<String>}
     # @param callback {Function}
     # @return {Array<Relationship>}
     #
@@ -258,7 +301,7 @@ module.exports = class Node extends PropertyContainer
     # Fetch and "return" (via callback) the relationships of the given type or
     # types from or to this node.
     #
-    # @param type {String} This can also be an array of types.
+    # @param type {String, Array<String>}
     # @param callback {Function}
     # @return {Array<Relationship>}
     #
@@ -269,7 +312,7 @@ module.exports = class Node extends PropertyContainer
     # Fetch and "return" (via callback) the relationships of the given type or
     # types from this node.
     #
-    # @param type {String} This can also be an array of types.
+    # @param type {String, Array<String>}
     # @param callback {Function}
     # @return {Array<Relationship>}
     #
@@ -280,7 +323,7 @@ module.exports = class Node extends PropertyContainer
     # Fetch and "return" (via callback) the relationships of the given type or
     # types to this node.
     #
-    # @param type {String} This can also be an array of types.
+    # @param type {String, Array<String>}
     # @param callback {Function}
     # @return {Array<Relationship>}
     #
@@ -291,10 +334,62 @@ module.exports = class Node extends PropertyContainer
     # Fetch and "return" (via callback) the relationships of the given type or
     # types from or to this node.
     #
-    # @see #getRelationships
+    # @todo This aliases {#getRelationships}, but is that redundant?
+    #
+    # @param type {String, Array<String>}
+    # @param callback {Function}
+    # @return {Array<Relationship>}
     #
     all: (type, _) ->
         @_getRelationships 'all', type, _
+
+    #
+    # Fetch and "return" (via callback) the nodes adjacent to this one
+    # following only relationships of the given type(s) and/or direction(s).
+    #
+    # @todo This could/should probably be renamed e.g. `getAdjacentNodes()`.
+    #
+    # @param rels {String, Array<String>, Object, Array<Object>}
+    #   This can be a string type, e.g. `'likes'`, in which case both
+    #   directions are traversed.
+    #   Or it can be an array of string types, e.g. `['likes', 'loves']`.
+    #   It can also be an object, e.g. `{type: 'likes', direction: 'out'}`.
+    #   Finally, it can be an array of objects, e.g.
+    #   `[{type: 'likes', direction: 'out'}, ...]`.
+    # @param callback {Function}
+    # @return {Array<Node>}
+    #
+    getRelationshipNodes: (rels, _) ->
+
+        # support passing in both one rel and multiple rels, as array
+        rels = if rels instanceof Array then rels else [rels]
+
+        try
+            traverseURL = @_data['traverse']?.replace '{returnType}', 'node'
+
+            if not traverseURL
+                throw new Error 'Traverse not available.'
+
+            resp = @_request.post
+                url: traverseURL
+                json:
+                    'max_depth': 1
+                    'relationships': rels.map (rel) ->
+                        if typeof rel is 'string' then {'type': rel} else rel
+            , _
+
+            if resp.statusCode is 404
+                throw new Error resp.body?.message or 'Node not found.'
+
+            if resp.statusCode isnt 200
+                throw new Error resp.body?.message or "Unrecognized response code: #{resp.statusCode}"
+
+            # success
+            return resp.body.map (data) =>
+                new Node @db, data
+
+        catch error
+            throw adjustError error
 
     #
     # Fetch and "return" (via callback) the shortest path, if there is one,
@@ -352,100 +447,6 @@ module.exports = class Node extends PropertyContainer
 
             # Return path
             return new Path start, end, length, nodes, relationships
-
-        catch error
-            throw adjustError error
-
-    #
-    # Fetch and "return" (via callback) the nodes adjacent to this one
-    # following only relationships of the given type(s) and/or direction(s).
-    #
-    # @todo This could/should probably be renamed e.g. `getAdjacentNodes()`.
-    #
-    # @param rels {String} This can be just a string, e.g. `'likes'`, in which
-    #   case both directions are traversed. Or it can be an array of strings,
-    #   e.g. `['likes', 'loves']`; again, both directions are traversed. It
-    #   can also be an object, e.g. `{type: 'likes', direction: 'out'}`, or an
-    #   array of objects, e.g. `[{type: 'likes', direction: 'out'}, ...]`.
-    # @param callback {Function}
-    # @return {Array<Node>}
-    #
-    getRelationshipNodes: (rels, _) ->
-
-        # support passing in both one rel and multiple rels, as array
-        rels = if rels instanceof Array then rels else [rels]
-
-        try
-            traverseURL = @_data['traverse']?.replace '{returnType}', 'node'
-
-            if not traverseURL
-                throw new Error 'Traverse not available.'
-
-            resp = @_request.post
-                url: traverseURL
-                json:
-                    'max_depth': 1
-                    'relationships': rels.map (rel) ->
-                        if typeof rel is 'string' then {'type': rel} else rel
-            , _
-
-            if resp.statusCode is 404
-                throw new Error resp.body?.message or 'Node not found.'
-
-            if resp.statusCode isnt 200
-                throw new Error resp.body?.message or "Unrecognized response code: #{resp.statusCode}"
-
-            # success
-            return resp.body.map (data) =>
-                new Node @db, data
-
-        catch error
-            throw adjustError error
-
-    #
-    # Add this node to the given index under the given key-value pair.
-    #
-    # @param index {String} The name of the index, e.g. `'users'`.
-    # @param key {String} The key to index under, e.g. `'username'`.
-    # @param value {Object} The value to index under, e.g. `'aseemk'`.
-    # @param callback {Function}
-    #
-    index: (index, key, value, _) ->
-        try
-            # TODO
-            if not @exists
-                throw new Error 'Node must exists before indexing properties'
-
-            services = @db.getServices _
-            version = @db.getVersion _
-
-            # old API:
-            if version <= 1.4
-                encodedKey = encodeURIComponent key
-                encodedValue = encodeURIComponent value
-                url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}"
-
-                response = @_request.post
-                    url: url
-                    json: @self
-                , _
-
-            # new API:
-            else
-                response = @_request.post
-                    url: "#{services.node_index}/#{index}"
-                    json:
-                        key: key
-                        value: value
-                        uri: @self
-                , _
-
-            if response.statusCode isnt status.CREATED
-                # database error
-                throw response
-
-            # success
-            return
 
         catch error
             throw adjustError error

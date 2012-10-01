@@ -1,7 +1,7 @@
 {
     "name": "neo4j",
     "description": "Neo4j driver (REST API client) for Node.js",
-    "version": "0.2.18",
+    "version": "0.2.19",
     "author": "The Thingdom <info@thethingdom.com>",
     "contributors": [
         "Daniel Gasienica <daniel@gasienica.ch>",
@@ -16,7 +16,7 @@
         "streamline": "~0.4.0"
     },
     "devDependencies": {
-        "codo": "~1.4.4"
+        "codo": "~1.5.1"
     },
     "engines": {
         "node": ">= 0.6"

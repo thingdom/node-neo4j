@@ -7,6 +7,9 @@ link for general info, installation instructions, and more.
 
 This API documentation is fairly self-explanatory, but here are some notes:
 
+- When you `require('neo4j')`, all you get back is a reference to the
+  **[`GraphDatabase` class](classes/GraphDatabase.html)**, so start there.
+
 - The `_` parameter in all method signatures signifies an async callback.
   All async callbacks are of the standard Node form `(err, result)`.
 
@@ -15,10 +18,8 @@ This API documentation is fairly self-explanatory, but here are some notes:
   as standard "return" values.
 
 - But, all async methods actually do have true return values -- they all
-  return *[futures][]*. Futures are functions that take the same async
-  callback as the method, so you can choose to pass a callback (to handle the
-  async error or result) at a point later than when you call the method.
-  You don't need to worry about these at all if you don't want to.
+  return Streamline *[futures][]*. You don't need to worry about these at all
+  if you don't want to.
 
 [futures]: https://github.com/Sage/streamlinejs#futures
 

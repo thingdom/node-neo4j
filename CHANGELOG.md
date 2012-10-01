@@ -1,3 +1,8 @@
+## Version 0.2.19 — October 1, 2012
+
+  - No code changes, just improvements to the
+    **[API documentation][api-docs]**.
+
 ## Version 0.2.18 — September 30, 2012
 
   - **[API documentation][api-docs]** has finally been added! Many thanks to

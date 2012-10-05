@@ -51,6 +51,7 @@ assert.equal results[0]['n'].data.name, user0.name
 results = db.query """
     START n=node(#{user0.id},#{user1.id},#{user2.id})
     RETURN n
+    ORDER BY n.name
 """, _
 assert.equal results.length, 3
 assert.equal results[0]['n'].data.name, user0.name
@@ -86,10 +87,11 @@ results = db.query """
     START n=node(#{user6.id})
     MATCH (n) -[r:follows]-> (m)
     RETURN r, m.name
+    ORDER BY m.name
 """, _
 assert.equal results.length, 3
-assert.ok typeof results[0]['r'], 'object'
-assert.ok typeof results[0]['m.name'], 'string'
+assert.equal typeof results[0]['r'], 'object'
+assert.equal typeof results[0]['m.name'], 'string'
 assert.equal results[0]['r'].type, 'follows'
 assert.equal results[0]['m.name'], user7.name
 assert.equal results[1]['m.name'], user8.name
@@ -100,10 +102,11 @@ results = db.query '''
     START n=node({userId})
     MATCH (n) -[r:follows]-> (m)
     RETURN r, m.name
+    ORDER BY m.name
 ''', {userId: user3.id}, _
 assert.equal results.length, 3
-assert.ok typeof results[0]['r'], 'object'
-assert.ok typeof results[0]['m.name'], 'string'
+assert.equal typeof results[0]['r'], 'object'
+assert.equal typeof results[0]['m.name'], 'string'
 assert.equal results[0]['r'].type, 'follows'
 assert.equal results[0]['m.name'], user4.name
 assert.equal results[1]['m.name'], user5.name
@@ -116,7 +119,7 @@ results = db.query """
 """, _
 assert.equal results.length, 1
 assert.ok results[0]['collect(n)'] instanceof Array
-assert.ok typeof results[0]['collect(n)'][0] 'object'
+assert.equal typeof results[0]['collect(n)'][0], 'object'
 assert.equal results[0]['collect(n)'][0].id, user0.id
 assert.equal results[0]['collect(n)'][0].data.name, user0.name
 
@@ -127,9 +130,9 @@ results = db.query """
     RETURN path
 """, {fromId: user0.id, toId: user6.id}, _
 assert.equal results.length, 1
-assert.ok typeof results[0]['path'], 'object'
-assert.ok typeof results[0]['path'].start, 'object'
-assert.ok typeof results[0]['path'].end, 'object'
+assert.equal typeof results[0]['path'], 'object'
+assert.equal typeof results[0]['path'].start, 'object'
+assert.equal typeof results[0]['path'].end, 'object'
 assert.ok results[0]['path'].nodes instanceof Array
 assert.ok results[0]['path'].relationships instanceof Array
 assert.equal results[0]['path'].length, 2

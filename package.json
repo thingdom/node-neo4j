@@ -16,7 +16,8 @@
         "streamline": "~0.4.0"
     },
     "devDependencies": {
-        "codo": "~1.5.1"
+        "codo": "~1.5.1",
+        "expect.js": "~0.1.2"
     },
     "engines": {
         "node": ">= 0.6"

@@ -214,16 +214,16 @@ module.exports = class Node extends PropertyContainer
                         type: type
                 , _
 
+                # client or database error:
                 if response.statusCode isnt status.CREATED
-                    # database error
-                    message = ''
-                    switch response.statusCode
+                    {message, exception} = response.body or {}
+                    message or= exception or switch response.statusCode
                         when status.BAD_REQUEST
-                            message = response.body?.message or
-                                      response.body?.exception or
-                                      "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
+                            "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
                         when status.CONFLICT
-                            message = '"to" node, or the node specified by the URI not found'
+                            '"to" node, or the node specified by the URI not found'
+                        else
+                            throw response  # e.g. internal server error
                     throw new Error message
 
                 # success

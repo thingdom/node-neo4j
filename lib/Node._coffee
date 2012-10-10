@@ -114,7 +114,7 @@ module.exports = class Node extends PropertyContainer
     #
     # @param index {String} The name of the index, e.g. `'users'`.
     # @param key {String} The key to index under, e.g. `'username'`.
-    # @param value {Object} The value to index under, e.g. `'aseemk'`.
+    # @param value {String} The value to index under, e.g. `'aseemk'`.
     # @param callback {Function}
     #
     index: (index, key, value, _) ->
@@ -148,6 +148,40 @@ module.exports = class Node extends PropertyContainer
                 , _
 
             if response.statusCode isnt status.CREATED
+                # database error
+                throw response
+
+            # success
+            return
+
+        catch error
+            throw adjustError error
+    #
+    # Delete this node from the given index.
+    #
+    # @param index {String} The name of the index, e.g. `'users'`.
+    # @param callback {Function}
+    #
+    unindex: (index, _) ->
+        try
+            # TODO
+            if not @exists
+                throw new Error 'Node must exists before unindexing properties'
+
+            services = @db.getServices _
+            # version = @db.getVersion _
+
+            # encodedKey = encodeURIComponent key
+            # encodedValue = encodeURIComponent value
+            url = "#{services.node_index}/#{index}/#{@id}"
+
+            response = @_request.delete
+                url: url
+                json: @self
+            , _
+
+
+            if response.statusCode isnt status.NO_CONTENT
                 # database error
                 throw response
 

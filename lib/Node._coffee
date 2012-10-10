@@ -160,6 +160,40 @@ module.exports = class Node extends PropertyContainer
 
         catch error
             throw adjustError error
+    #
+    # Delete this node from the given index.
+    #
+    # @param index {String} The name of the index, e.g. `'users'`.
+    # @param callback {Function}
+    #
+    unindex: (index, _) ->
+        try
+            # TODO
+            if not @exists
+                throw new Error 'Node must exists before unindexing properties'
+
+            services = @db.getServices _
+            # version = @db.getVersion _
+
+            # encodedKey = encodeURIComponent key
+            # encodedValue = encodeURIComponent value
+            url = "#{services.node_index}/#{index}/#{@id}"
+
+            response = @_request.delete
+                url: url
+                json: @self
+            , _
+
+
+            if response.statusCode isnt status.NO_CONTENT
+                # database error
+                throw response
+
+            # success
+            return
+
+        catch error
+            throw adjustError error
 
     #
     # Uniquely add this node to the given index under the given key-value pair.

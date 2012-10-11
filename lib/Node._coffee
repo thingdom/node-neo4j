@@ -162,6 +162,40 @@ module.exports = class Node extends PropertyContainer
             throw adjustError error
 
     #
+    # Uniquely add this node to the given index under the given key-value pair.
+    #
+    # @param index {String} The name of the index, e.g. `'users'`.
+    # @param key {String} The key to index under, e.g. `'username'`.
+    # @param value {String} The value to index under, e.g. `'aseemk'`.
+    # @param callback {Function}
+    #
+    indexUniquely: (index, key, value, _) ->
+        try
+            # TODO
+            if not @exists
+                throw new Error 'Node must exist before indexing properties'
+
+            services = @db.getServices _
+
+            response = @_request.post
+                url: "#{services.node_index}/#{index}?unique"
+                json:
+                    key: key
+                    value: value
+                    uri: @self
+            , _
+
+            if response.statusCode isnt status.CREATED and response.statusCode isnt status.OK
+                # database error
+                throw response
+
+            # success
+            return response.body
+
+        catch error
+            throw adjustError error
+
+    #
     # Delete this node from the given index under the key (optional) and value (optional).
     #
     # @param index {String} The name of the index, e.g. `'users'`.
@@ -213,7 +247,7 @@ module.exports = class Node extends PropertyContainer
                 value = null
 
             actual.call @, index, key, value, callback
-    
+
     #
     # Create and "return" (via callback) a relationship of the given type and
     # with the given properties from this node to another node.

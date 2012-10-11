@@ -94,14 +94,14 @@ module.exports = class Relationship extends PropertyContainer
     #
     # @param index {String} The name of the index, e.g. `'likes'`.
     # @param key {String} The property key to index under, e.g. `'created'`.
-    # @param value {Object} The property value to index under, e.g. `1346713658393`.
+    # @param value {String} The property value to index under, e.g. `1346713658393`.
     # @param callback {Function}
     #
     index: (index, key, value, _) ->
         try
             # TODO
             if not @exists
-                throw new Error 'Relationship must exists before indexing properties'
+                throw new Error 'Relationship must exist before indexing properties'
 
             services = @db.getServices _
             version = @db.getVersion _
@@ -136,3 +136,90 @@ module.exports = class Relationship extends PropertyContainer
 
         catch error
             throw adjustError error
+
+    #
+    # Uniquely add this relationship to the given index under the given key-value pair.
+    #
+    # @param index {String} The name of the index, e.g. `'likes'`.
+    # @param key {String} The property key to index under, e.g. `'created'`.
+    # @param value {String} The property value to index under, e.g. `1346713658393`.
+    # @param callback {Function}
+    #
+    indexUniquely: (index, key, value, _) ->
+        try
+            # TODO
+            if not @exists
+                throw new Error 'Relationship must exist before indexing properties'
+
+            services = @db.getServices _
+
+            response = @_request.post
+                url: "#{services.relationship_index}/#{index}?unique"
+                json:
+                    key: key
+                    value: value
+                    uri: @self
+            , _
+
+            if response.statusCode isnt status.CREATED and response.statusCode isnt status.OK
+                # database error
+                throw response
+
+            # success
+            return response.body
+
+        catch error
+            throw adjustError error
+
+    #
+    # Delete this relationship from the given index under the key (optional) and value (optional).
+    #
+    # @param index {String} The name of the index, e.g. `'likes'`.
+    # @param key {String} The property key to index under, e.g. `'created'`.
+    # @param value {String} The property value to index under, e.g. `1346713658393`.
+    # @param callback {Function}
+    #
+    unindex: (index, key, value, _) ->
+        try
+            # TODO
+            if not @exists
+                throw new Error 'Relationship must exist before unindexing properties'
+
+            services = @db.getServices _
+
+            if key
+                encodedKey = encodeURIComponent key
+                
+                if value
+                    encodedValue = encodeURIComponent value
+                    url = "#{services.relationship_index}/#{index}/#{encodedKey}/#{encodedValue}/#{@id}"
+
+                else
+                    url = "#{services.relationship_index}/#{index}/#{encodedKey}/#{@id}"
+            else
+                url = "#{services.relationship_index}/#{index}/#{@id}"
+
+            response = @_request.del url, _
+
+            if response.statusCode isnt status.NO_CONTENT
+                # database error
+                throw response
+
+            # success
+            return
+
+        catch error
+            throw adjustError error
+    
+    # helper for overloaded unindex() method:
+    do (actual = @::unindex) =>
+        @::unindex = (index, key, value, callback) ->
+            if typeof key is 'function'
+                callback = key
+                key = null
+                value = null
+            else if typeof value is 'function'
+                callback = value
+                value = null
+
+            actual.call @, index, key, value, callback

@@ -178,11 +178,11 @@ module.exports = class Node extends PropertyContainer
             # encodedKey = encodeURIComponent key
             # encodedValue = encodeURIComponent value
             url = "#{services.node_index}/#{index}/#{@id}"
-
-            response = @_request.delete
-                url: url
-                json: @self
-            , _
+            console.log("unindex")
+            console.log status.NO_CONTENT
+            console.log url
+            console.log @self
+            response = @_request.del url, _
 
 
             if response.statusCode isnt status.NO_CONTENT

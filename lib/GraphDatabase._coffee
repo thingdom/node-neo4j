@@ -431,6 +431,55 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Create node index.
+    #
+    # @param index {String}
+    # @param callback {Function}
+    #
+    createNodeIndex: (index, _) ->
+        try
+            services = @getServices _
+
+            response = @_request.post
+                url: "#{services.node_index}/"
+                json:
+                    name: index
+            , _
+
+            if response.statusCode isnt status.CREATED
+                # Database error
+                throw response
+
+            # Success
+            return response.body
+
+        catch error
+            throw adjustError error
+
+    #
+    # Delete a node index.
+    #
+    # @param index {String}
+    # @param callback {Function}
+    #
+    deleteNodeIndex: (index, _) ->
+        try
+            services = @getServices _
+
+            url = "#{services.node_index}/#{index}"
+            response = @_request.del url, _
+
+            if response.statusCode isnt status.NO_CONTENT
+                # Database error
+                throw response
+
+            # Success
+            return response
+
+        catch error
+            throw adjustError error
+
 
     ### Misc/Other: ###
 

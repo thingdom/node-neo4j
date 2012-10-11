@@ -480,6 +480,77 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Get list of relationship indexes.
+    #
+    # @param callback {Function}
+    #
+    getRelationshipIndexes: (_) ->
+        try
+            services = @getServices _
+
+            url = "#{services.relationship_index}/"
+
+            response = @_request.get url, _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response
+
+            # Success
+            return response.body
+
+        catch error
+            throw adjustError error
+
+    #
+    # Create relationship index.
+    #
+    # @param index {String}
+    # @param callback {Function}
+    #
+    createRelationshipIndex: (index, _) ->
+        try
+            services = @getServices _
+
+            response = @_request.post
+                url: "#{services.relationship_index}/"
+                json:
+                    name: index
+            , _
+
+            if response.statusCode isnt status.CREATED
+                # Database error
+                throw response
+
+            # Success
+            return response.body
+
+        catch error
+            throw adjustError error
+
+    #
+    # Delete a relationship index.
+    #
+    # @param index {String}
+    # @param callback {Function}
+    #
+    deleteRelationshipIndex: (index, _) ->
+        try
+            services = @getServices _
+
+            url = "#{services.relationship_index}/#{index}"
+            response = @_request.del url, _
+
+            if response.statusCode isnt status.NO_CONTENT
+                # Database error
+                throw response
+
+            # Success
+            return response
+
+        catch error
+            throw adjustError error
 
     ### Misc/Other: ###
 

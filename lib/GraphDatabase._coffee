@@ -421,7 +421,7 @@ module.exports = class GraphDatabase
 
             response = @_request.get url, _
 
-            if response.statusCode isnt status.OK
+            if response.statusCode isnt status.OK and response.statusCode isnt status.NO_CONTENT
                 # Database error
                 throw response
 
@@ -490,10 +490,9 @@ module.exports = class GraphDatabase
             services = @getServices _
 
             url = "#{services.relationship_index}/"
-
             response = @_request.get url, _
 
-            if response.statusCode isnt status.OK
+            if response.statusCode isnt status.OK and response.statusCode isnt status.NO_CONTENT
                 # Database error
                 throw response
 

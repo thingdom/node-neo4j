@@ -406,6 +406,32 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    ### Indexes: ###
+
+    #
+    # Get list of node indexes.
+    #
+    # @param callback {Function}
+    #
+    getNodeIndexes: (_) ->
+        try
+            services = @getServices _
+
+            url = "#{services.node_index}/"
+
+            response = @_request.get url, _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response
+
+            # Success
+            return response.body
+
+        catch error
+            throw adjustError error
+
+
     ### Misc/Other: ###
 
     #

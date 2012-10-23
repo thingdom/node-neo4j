@@ -3,9 +3,7 @@
 This is a client library for accessing [Neo4j][], a graph database, from
 [Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api].
 
-This library supports and has been tested against Neo4j 1.4, 1.5 and 1.6. We
-need to formally test 1.7 and 1.8, but it's being used in the wild against
-those versions of Neo4j seemingly without any issues.
+This library supports and has been tested against Neo4j 1.4 through Neo4j 1.8.
 
 
 ## Installation
@@ -130,7 +128,7 @@ If you encounter any bugs or other issues, please file them in the
 
 [neo4j]: http://neo4j.org/
 [node.js]: http://nodejs.org/
-[neo4j-rest-api]: http://docs.neo4j.org/chunked/1.6/rest-api.html
+[neo4j-rest-api]: http://docs.neo4j.org/chunked/stable/rest-api.html
 
 [api-docs]: http://coffeedoc.info/github/thingdom/node-neo4j/master/
 [aseemk]: https://github.com/aseemk

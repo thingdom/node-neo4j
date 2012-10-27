@@ -82,6 +82,15 @@ exports.adjustError = (error) ->
             try
                 serverError = JSON.parse serverError
 
+        # also in some cases, the response body is indeed an error object, but
+        # it's a Neo4j exception without a message:
+        if serverError?.exception and not serverError.message
+            serverError.message = """
+                Neo4j #{serverError.exception}: #{
+                    JSON.stringify serverError.stacktrace or [], null, 2
+                }
+            """
+
         error = new Error
         error.message = serverError.message or serverError
 

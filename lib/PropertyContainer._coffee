@@ -91,14 +91,13 @@ module.exports = class PropertyContainer
             response = @_request.del @self, _
 
             if response.statusCode isnt status.NO_CONTENT
-                # database error
-                message = ''
                 switch response.statusCode
                     when status.NOT_FOUND
-                        message = 'PropertyContainer not found'
+                        throw new Error 'PropertyContainer not found'
                     when status.CONFLICT
-                        message = 'Node could not be deleted (still has relationships?)'
-                throw new Error message
+                        throw new Error 'Node could not be deleted (still has relationships?)'
+                    else
+                        throw response
 
             # success
             @_data.self = null

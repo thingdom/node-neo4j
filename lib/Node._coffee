@@ -163,6 +163,7 @@ module.exports = class Node extends PropertyContainer
 
     #
     # Uniquely add this node to the given index under the given key-value pair.
+    # This is no longer listed in the API as of 1.9.M02
     #
     # @param index {String} The name of the index, e.g. `'users'`.
     # @param key {String} The key to index under, e.g. `'username'`.
@@ -213,7 +214,7 @@ module.exports = class Node extends PropertyContainer
 
             if key
                 encodedKey = encodeURIComponent key
-                
+
                 if value
                     encodedValue = encodeURIComponent value
                     url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}/#{@id}"
@@ -234,7 +235,7 @@ module.exports = class Node extends PropertyContainer
 
         catch error
             throw adjustError error
-    
+
     # helper for overloaded unindex() method:
     do (actual = @::unindex) =>
         @::unindex = (index, key, value, callback) ->

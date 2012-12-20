@@ -475,7 +475,7 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            return response
+            return null
 
         catch error
             throw adjustError error
@@ -546,7 +546,7 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            return response
+            return null
 
         catch error
             throw adjustError error

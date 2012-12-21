@@ -138,41 +138,6 @@ module.exports = class Relationship extends PropertyContainer
             throw adjustError error
 
     #
-    # Uniquely add this relationship to the given index under the given key-value pair.
-    # This is no longer listed in the API as of 1.9.M02
-    #
-    # @param index {String} The name of the index, e.g. `'likes'`.
-    # @param key {String} The property key to index under, e.g. `'created'`.
-    # @param value {String} The property value to index under, e.g. `1346713658393`.
-    # @param callback {Function}
-    #
-    indexUniquely: (index, key, value, _) ->
-        try
-            # TODO
-            if not @exists
-                throw new Error 'Relationship must exist before indexing properties'
-
-            services = @db.getServices _
-
-            response = @_request.post
-                url: "#{services.relationship_index}/#{index}?unique"
-                json:
-                    key: key
-                    value: value
-                    uri: @self
-            , _
-
-            if response.statusCode isnt status.CREATED and response.statusCode isnt status.OK
-                # database error
-                throw response
-
-            # success
-            return response.body
-
-        catch error
-            throw adjustError error
-
-    #
     # Delete this relationship from the given index under the key (optional) and value (optional).
     #
     # @param index {String} The name of the index, e.g. `'likes'`.

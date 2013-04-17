@@ -115,12 +115,17 @@ But don't check this in! That would cause all clients to compile the code
 on-the-fly every time, which isn't desirable in production.
 
 
+## Changes
+
+See the [Changelog][changelog] for the full history of changes and releases.
+
+
 ## License
 
 This library is licensed under the [Apache License, Version 2.0][license].
 
 
-## Reporting Issues
+## Feedback
 
 If you encounter any bugs or other issues, please file them in the
 [issue tracker][issue-tracker].
@@ -142,6 +147,7 @@ Post questions and participate in general discussions there.
 [coffeescript]: http://coffeescript.org/
 [streamline.js]: https://github.com/Sage/streamlinejs
 
+[changelog]: CHANGELOG.md
 [issue-tracker]: https://github.com/thingdom/node-neo4j/issues
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html
 [google-group]: https://groups.google.com/group/node-neo4j

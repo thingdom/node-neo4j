@@ -67,18 +67,19 @@ dependency in your package.json, ***please* specify something like `0.2.x` or
 
 You'll also need a local Neo4j database instance for the tests:
 
-    curl http://dist.neo4j.org/neo4j-community-1.6-unix.tar.gz --O neo4j-community-1.6-unix.tar.gz
-    tar -zxvf neo4j-community-1.6-unix.tar.gz
-    mv neo4j-community-1.6 db
+    curl http://dist.neo4j.org/neo4j-community-1.8.2-unix.tar.gz --O neo4j-community-1.8.2-unix.tar.gz
+    tar -zxvf neo4j-community-1.8.2-unix.tar.gz
+    rm neo4j-community-1.8.2-unix.tar.gz
+    ln -s neo4j-community-1.8.2/bin/neo4j neo4j
 
 If you're new to Neo4j, read the [Getting Started][neo4j-getting-started] page.
 Start the server:
 
-    db/bin/neo4j start
+    ./neo4j start
 
 Stop the server:
 
-    db/bin/neo4j stop
+    ./neo4j stop
 
 To run the tests:
 

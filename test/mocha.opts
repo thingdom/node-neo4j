@@ -1,0 +1,3 @@
+--compilers coffee:coffee-script,_coffee:streamline/register
+-u exports
+-R spec

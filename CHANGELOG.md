@@ -1,3 +1,45 @@
+## Version 0.2.20 — April 17, 2013
+
+  - Improved error handling: this library now catches and parses a couple of
+    undocumented Neo4j error responses.
+
+  - Simplified installation: this library's CoffeeScript-Streamline source is
+    compiled to regular JavaScript pre-publish instead of post-install now.
+    This means the version that's in npm is ready to use out-of-the-box now.
+    This also fixes deployments to Heroku, where npm isn't available to
+    modules. (Issue [#35][]; thanks [@flipside][]!)
+
+  - Other than that, just improvements to the tests and documentation.
+
+[#35]: https://github.com/thingdom/node-neo4j/issues/35
+
+## Version 0.2.19 — October 1, 2012
+
+  - No code changes, just improvements to the
+    **[API documentation][api-docs]**.
+
+## Version 0.2.18 — September 30, 2012
+
+  - **[API documentation][api-docs]** has finally been added! Many thanks to
+    [@netzpirat][] for the excellent [Codo][] tool and support. (Issue [#6][])
+
+[api-docs]: http://coffeedoc.info/github/thingdom/node-neo4j/master/
+[@netzpirat]: https://github.com/netzpirat
+[Codo]: https://github.com/netzpirat/codo
+[#6]: https://github.com/thingdom/node-neo4j/issues/6
+
+## Version 0.2.17 — September 21, 2012
+
+  - Add support for [Gremlin][] queries! This is done via a new
+    `GraphDatabase::execute()` method that's similar to the Cypher
+    `GraphDatabase::query()` method; see the [Gremlin tests][] for examples.
+    Credit and thanks to [@sprjr][] for the implementation! (Pull [#47][])
+
+[Gremlin]: http://gremlin.tinkerpop.com/
+[Gremlin tests]: https://github.com/thingdom/node-neo4j/blob/develop/test/gremlin._coffee
+[#47]: https://github.com/thingdom/node-neo4j/pull/47
+[@sprjr]: https://github.com/sprjr
+
 ## Version 0.2.16 — September 11, 2012
 
   - Fix a regression introduced in v0.2.15 that added two extra round-trips to

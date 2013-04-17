@@ -1,7 +1,7 @@
 {
     "name": "neo4j",
     "description": "Neo4j driver (REST API client) for Node.js",
-    "version": "0.2.16",
+    "version": "0.2.20",
     "author": "The Thingdom <info@thethingdom.com>",
     "contributors": [
         "Daniel Gasienica <daniel@gasienica.ch>",
@@ -15,16 +15,20 @@
         "request": "~2.9.202",
         "streamline": "~0.4.0"
     },
-    "devDependencies": {},
+    "devDependencies": {
+        "codo": "~1.5.1",
+        "expect.js": "~0.1.2",
+        "mocha": "~1.3.0"
+    },
     "engines": {
         "node": ">= 0.6"
     },
     "scripts": {
         "build": "_coffee -c lib/",
         "clean": "rm lib/*.js",
-        "postinstall": "npm run build",
-        "profile": "_coffee test/profile",
-        "test": "_coffee test"
+        "codo": "codo && codo --server",
+        "prepublish": "npm run build",
+        "test": "mocha"
     },
     "keywords": [
         "neo4j", "graph", "database", "driver", "rest", "api", "client"

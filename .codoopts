@@ -1,0 +1,4 @@
+--name 'Node-Neo4j API Documentation'
+--title 'Node-Neo4j API Documentation'
+--readme API.md
+./lib

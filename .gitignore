@@ -1,7 +1,9 @@
 .DS_Store
 
-# for npm 1.0:
 node_modules/
+npm-debug.log
 
-db/
-support/
+/doc/
+
+/neo4j-*
+/neo4j

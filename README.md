@@ -94,8 +94,8 @@ compiled `.js` files from the source `._coffee` files manually:
 
     npm run build
 
-This is in fact what's run when this library is installed by npm. But please
-don't check the generated `.js` files in; to remove:
+This is in fact what's run each time this library is published to npm.
+But please don't check the generated `.js` files in; to remove:
 
     npm run clean
 

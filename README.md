@@ -125,6 +125,9 @@ This library is licensed under the [Apache License, Version 2.0][license].
 If you encounter any bugs or other issues, please file them in the
 [issue tracker][issue-tracker].
 
+We also now have a [Google Group][google-group]!
+Post questions and participate in general discussions there.
+
 
 [neo4j]: http://neo4j.org/
 [node.js]: http://nodejs.org/
@@ -141,3 +144,4 @@ If you encounter any bugs or other issues, please file them in the
 
 [issue-tracker]: https://github.com/thingdom/node-neo4j/issues
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html
+[google-group]: https://groups.google.com/group/node-neo4j

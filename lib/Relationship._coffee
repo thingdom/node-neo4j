@@ -74,14 +74,13 @@ module.exports = class Relationship extends PropertyContainer
             , _
 
             if response.statusCode isnt status.NO_CONTENT
-                # database error
-                message = ''
                 switch response.statusCode
                     when status.BAD_REQUEST
-                        message = 'Invalid data sent'
+                        throw new Error 'Invalid data sent'
                     when status.NOT_FOUND
-                        message = 'Relationship not found'
-                throw new Error message
+                        throw new Error 'Relationship not found'
+                    else
+                        throw response
 
             # either way, "return" (callback) this updated relationship:
             return @

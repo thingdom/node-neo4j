@@ -3,9 +3,7 @@
 This is a client library for accessing [Neo4j][], a graph database, from
 [Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api].
 
-This library supports and has been tested against Neo4j 1.4, 1.5 and 1.6. We
-need to formally test 1.7 and 1.8, but it's being used in the wild against
-those versions of Neo4j seemingly without any issues.
+This library supports and has been tested against Neo4j 1.4 through Neo4j 1.8.
 
 
 ## Installation
@@ -69,18 +67,19 @@ dependency in your package.json, ***please* specify something like `0.2.x` or
 
 You'll also need a local Neo4j database instance for the tests:
 
-    curl http://dist.neo4j.org/neo4j-community-1.6-unix.tar.gz --O neo4j-community-1.6-unix.tar.gz
-    tar -zxvf neo4j-community-1.6-unix.tar.gz
-    mv neo4j-community-1.6 db
+    curl http://dist.neo4j.org/neo4j-community-1.8.2-unix.tar.gz --O neo4j-community-1.8.2-unix.tar.gz
+    tar -zxvf neo4j-community-1.8.2-unix.tar.gz
+    rm neo4j-community-1.8.2-unix.tar.gz
+    ln -s neo4j-community-1.8.2/bin/neo4j neo4j
 
 If you're new to Neo4j, read the [Getting Started][neo4j-getting-started] page.
 Start the server:
 
-    db/bin/neo4j start
+    ./neo4j start
 
 Stop the server:
 
-    db/bin/neo4j stop
+    ./neo4j stop
 
 To run the tests:
 
@@ -95,8 +94,8 @@ compiled `.js` files from the source `._coffee` files manually:
 
     npm run build
 
-This is in fact what's run when this library is installed by npm. But please
-don't check the generated `.js` files in; to remove:
+This is in fact what's run each time this library is published to npm.
+But please don't check the generated `.js` files in; to remove:
 
     npm run clean
 
@@ -117,20 +116,28 @@ But don't check this in! That would cause all clients to compile the code
 on-the-fly every time, which isn't desirable in production.
 
 
+## Changes
+
+See the [Changelog][changelog] for the full history of changes and releases.
+
+
 ## License
 
 This library is licensed under the [Apache License, Version 2.0][license].
 
 
-## Reporting Issues
+## Feedback
 
 If you encounter any bugs or other issues, please file them in the
 [issue tracker][issue-tracker].
 
+We also now have a [Google Group][google-group]!
+Post questions and participate in general discussions there.
+
 
 [neo4j]: http://neo4j.org/
 [node.js]: http://nodejs.org/
-[neo4j-rest-api]: http://docs.neo4j.org/chunked/1.6/rest-api.html
+[neo4j-rest-api]: http://docs.neo4j.org/chunked/stable/rest-api.html
 
 [api-docs]: http://coffeedoc.info/github/thingdom/node-neo4j/master/
 [aseemk]: https://github.com/aseemk
@@ -141,5 +148,7 @@ If you encounter any bugs or other issues, please file them in the
 [coffeescript]: http://coffeescript.org/
 [streamline.js]: https://github.com/Sage/streamlinejs
 
+[changelog]: CHANGELOG.md
 [issue-tracker]: https://github.com/thingdom/node-neo4j/issues
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html
+[google-group]: https://groups.google.com/group/node-neo4j

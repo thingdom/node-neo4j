@@ -1,3 +1,18 @@
+## Version 0.2.20 — April 17, 2013
+
+  - Improved error handling: this library now catches and parses a couple of
+    undocumented Neo4j error responses.
+
+  - Simplified installation: this library's CoffeeScript-Streamline source is
+    compiled to regular JavaScript pre-publish instead of post-install now.
+    This means the version that's in npm is ready to use out-of-the-box now.
+    This also fixes deployments to Heroku, where npm isn't available to
+    modules. (Issue [#35][]; thanks [@flipside][]!)
+
+  - Other than that, just improvements to the tests and documentation.
+
+[#35]: https://github.com/thingdom/node-neo4j/issues/35
+
 ## Version 0.2.19 — October 1, 2012
 
   - No code changes, just improvements to the

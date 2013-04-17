@@ -50,12 +50,14 @@ module.exports = class Node extends PropertyContainer
                 , _
 
                 if response.statusCode isnt status.NO_CONTENT
-                    # database error
-                    message = response.body?.message
                     switch response.statusCode
-                        when status.BAD_REQUEST then message or= 'Invalid data sent'
-                        when status.NOT_FOUND then message or= 'Node not found'
-                    throw new Error message
+                        when status.BAD_REQUEST
+                            throw new Error 'Invalid data sent'
+                        when status.NOT_FOUND
+                            throw new Error 'Node not found'
+                        else
+                            throw response
+
             else
                 services = @db.getServices _
 
@@ -65,9 +67,11 @@ module.exports = class Node extends PropertyContainer
                 , _
 
                 if response.statusCode isnt status.CREATED
-                    # database error
-                    message = response.body?.message or 'Invalid data sent'
-                    throw new Error message
+                    switch response.statusCode
+                        when status.BAD_REQUEST
+                            throw new Error 'Invalid data sent'
+                        else
+                            throw response
 
                 # only update our copy of the data when it is POSTed.
                 @_data = response.body
@@ -214,16 +218,16 @@ module.exports = class Node extends PropertyContainer
                         type: type
                 , _
 
+                # client or database error:
                 if response.statusCode isnt status.CREATED
-                    # database error
-                    message = ''
-                    switch response.statusCode
+                    {message, exception} = response.body or {}
+                    message or= exception or switch response.statusCode
                         when status.BAD_REQUEST
-                            message = response.body?.message or
-                                      response.body?.exception or
-                                      "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
+                            "Invalid createRelationship: #{from.id} #{type} #{to.id} w/ data: #{JSON.stringify data}"
                         when status.CONFLICT
-                            message = '"to" node, or the node specified by the URI not found'
+                            '"to" node, or the node specified by the URI not found'
+                        else
+                            throw response  # e.g. internal server error
                     throw new Error message
 
                 # success

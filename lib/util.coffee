@@ -74,13 +74,22 @@ exports.adjustError = (error) ->
     # Neo4j server error (error is a response object)
     if error.statusCode
         serverError = error.body or
-            message: 'Unknown Neo4j error.'
+            message: "Unknown Neo4j error (status #{error.statusCode})."
 
         # in some cases, node-request hasn't parsed response JSON yet, so do.
         # XXX protect against neo4j incorrectly sending HTML instead of JSON.
         if typeof serverError is 'string'
             try
                 serverError = JSON.parse serverError
+
+        # also in some cases, the response body is indeed an error object, but
+        # it's a Neo4j exception without a message:
+        if serverError?.exception and not serverError.message
+            serverError.message = """
+                Neo4j #{serverError.exception}: #{
+                    JSON.stringify serverError.stacktrace or [], null, 2
+                }
+            """
 
         error = new Error
         error.message = serverError.message or serverError
@@ -92,7 +101,7 @@ exports.adjustError = (error) ->
     # anymore -- so don't use it! instead, use the string code directly.
     # see: http://stackoverflow.com/a/9254101/132978
     if error.code is 'ECONNREFUSED'
-        error.message = "Couldn't reach database (connection refused)"
+        error.message = "Couldn't reach database (connection refused)."
 
     return error
 

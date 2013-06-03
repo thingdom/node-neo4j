@@ -28,6 +28,7 @@
         "clean": "rm lib/*.js",
         "codo": "codo && codo --server",
         "prepublish": "npm run build",
+        "postpublish": "npm run clean",
         "test": "mocha"
     },
     "keywords": [

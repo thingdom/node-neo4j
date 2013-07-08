@@ -118,14 +118,14 @@ module.exports = class Node extends PropertyContainer
     #
     # @param index {String} The name of the index, e.g. `'users'`.
     # @param key {String} The key to index under, e.g. `'username'`.
-    # @param value {Object} The value to index under, e.g. `'aseemk'`.
+    # @param value {String} The value to index under, e.g. `'aseemk'`.
     # @param callback {Function}
     #
     index: (index, key, value, _) ->
         try
             # TODO
             if not @exists
-                throw new Error 'Node must exists before indexing properties'
+                throw new Error 'Node must exist before indexing properties'
 
             services = @db.getServices _
             version = @db.getVersion _
@@ -160,6 +160,59 @@ module.exports = class Node extends PropertyContainer
 
         catch error
             throw adjustError error
+
+    #
+    # Delete this node from the given index under the key (optional) and value (optional).
+    #
+    # @param index {String} The name of the index, e.g. `'users'`.
+    # @param key {String} The (optional) key to index under, e.g. `'username'`.
+    # @param value {String} The (optional) value to index under, e.g. `'aseemk'`.
+    # @param callback {Function}
+    #
+    unindex: (index, key, value, _) ->
+        try
+            # TODO
+            if not @exists
+                throw new Error 'Node must exist before unindexing properties'
+
+            services = @db.getServices _
+
+            if key
+                encodedKey = encodeURIComponent key
+
+                if value
+                    encodedValue = encodeURIComponent value
+                    url = "#{services.node_index}/#{index}/#{encodedKey}/#{encodedValue}/#{@id}"
+
+                else
+                    url = "#{services.node_index}/#{index}/#{encodedKey}/#{@id}"
+            else
+                url = "#{services.node_index}/#{index}/#{@id}"
+
+            response = @_request.del url, _
+
+            if response.statusCode isnt status.NO_CONTENT
+                # database error
+                throw response
+
+            # success
+            return
+
+        catch error
+            throw adjustError error
+
+    # helper for overloaded unindex() method:
+    do (actual = @::unindex) =>
+        @::unindex = (index, key, value, callback) ->
+            if typeof key is 'function'
+                callback = key
+                key = null
+                value = null
+            else if typeof value is 'function'
+                callback = value
+                value = null
+
+            actual.call @, index, key, value, callback
 
     #
     # Create and "return" (via callback) a relationship of the given type and

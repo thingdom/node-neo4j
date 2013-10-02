@@ -1,3 +1,18 @@
+## Unreleased
+
+  - New `GraphDatabase` methods to create, read, and delete node and
+    relationship indexes, e.g. `createNodeIndex()`, `getNodeIndexes()`, and
+    `deleteNodeIndex()` respectively for nodes.
+
+  - New `Node` and `Relationship` `unindex()` methods to remove the current
+    node or relationship from an index, optionally under the given key or
+    key-value pair.
+
+  - Both of the above were contributed by [@flipside][] — many thanks!
+    (Pull [#55])
+
+[#55]: https://github.com/thingdom/node-neo4j/pull/55
+
 ## Version 0.2.20 — April 17, 2013
 
   - Improved error handling: this library now catches and parses a couple of

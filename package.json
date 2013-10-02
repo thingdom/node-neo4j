@@ -10,13 +10,13 @@
     ],
     "main": "./lib",
     "dependencies": {
-        "coffee-script": "~1.3.1",
         "http-status": "~0.1.0",
         "request": "~2.9.202",
         "streamline": "~0.4.0"
     },
     "devDependencies": {
         "codo": "~1.5.1",
+        "coffee-script": "~1.3",
         "expect.js": "~0.1.2",
         "mocha": "~1.3.0"
     },

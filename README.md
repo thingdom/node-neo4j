@@ -3,7 +3,7 @@
 This is a client library for accessing [Neo4j][], a graph database, from
 [Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api].
 
-This library supports and has been tested against Neo4j 1.4 through Neo4j 1.9.
+This library supports and has been tested against Neo4j 1.5 through Neo4j 1.9.
 
 
 ## Installation

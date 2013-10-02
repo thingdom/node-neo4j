@@ -1,11 +1,5 @@
 ## Unreleased
 
-  - ***BREAKING:*** This library no longer supports Neo4j 1.4.
-
-  - ***BREAKING:*** `GraphDatabase::getVersion()` has been removed.
-    It was only used internally for Neo4j 1.4 support;
-    hopefully you had no need for it externally.
-
   - New `GraphDatabase` methods to create, read, and delete node and
     relationship indexes, e.g. `createNodeIndex()`, `getNodeIndexes()`, and
     `deleteNodeIndex()` respectively for nodes.

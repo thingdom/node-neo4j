@@ -106,6 +106,25 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the Neo4j version as a float.
+    #
+    # @note This doesn't preserve "milestone" information, e.g. "M06".
+    #
+    # @param callback {Function}
+    # @return {Number}
+    #
+    getVersion: (_) ->
+        try
+            services = @getServices _
+
+            # Neo4j 1.5 onwards report their version number here;
+            # if it's not there, assume Neo4j 1.4.
+            parseFloat services['neo4j_version'] or '1.4'
+
+        catch error
+            throw adjustError
+
     ### Nodes: ###
 
     #

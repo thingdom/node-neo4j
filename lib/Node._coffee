@@ -118,14 +118,13 @@ module.exports = class Node extends PropertyContainer
     #
     # @param index {String} The name of the index, e.g. `'users'`.
     # @param key {String} The key to index under, e.g. `'username'`.
-    # @param value {Object} The value to index under, e.g. `'aseemk'`.
+    # @param value {String} The value to index under, e.g. `'aseemk'`.
     # @param callback {Function}
     #
     index: (index, key, value, _) ->
         try
-            # TODO
             if not @exists
-                throw new Error 'Node must exists before indexing properties'
+                throw new Error 'Node must exist before indexing.'
 
             services = @db.getServices _
             version = @db.getVersion _
@@ -162,30 +161,94 @@ module.exports = class Node extends PropertyContainer
             throw adjustError error
 
     #
-    # Create and "return" (via callback) a relationship of the given type and
-    # with the given properties from this node to another node.
+    # Delete this node from the given index, optionally under the given key
+    # or key-value pair. (A key is required if a value is given.)
     #
-    # @param otherNode {Node}
-    # @param type {String}
-    # @param data {Object} The properties this relationship should have.
+    # @param index {String} The name of the index, e.g. `'users'`.
+    # @param key {String} (Optional) The key to unindex from, e.g. `'username'`.
+    # @param value {String} (Optional) The value to unindex from, e.g. `'aseemk'`.
     # @param callback {Function}
-    # @return {Relationship}
     #
-    createRelationshipTo: (otherNode, type, data, _) ->
-        @_createRelationship this, otherNode, type, data, _
+    unindex: (index, key, value, _) ->
+        # see below for the code that normalizes the args;
+        # this function assumes all args are present (but may be null/etc.).
+        try
+            if not @exists
+                throw new Error 'Node must exist before unindexing.'
+
+            services = @db.getServices _
+
+            key = encodeURIComponent key if key
+            value = encodeURIComponent value if value
+            base = "#{services.node_index}/#{encodeURIComponent index}"
+            url =
+                if key and value
+                    "#{base}/#{key}/#{value}/#{@id}"
+                else if key
+                    "#{base}/#{key}/#{@id}"
+                else
+                    "#{base}/#{@id}"
+
+            response = @_request.del url, _
+
+            if response.statusCode isnt status.NO_CONTENT
+                # database error
+                throw response
+
+            # success
+            return
+
+        catch error
+            throw adjustError error
+
+    # helper for overloaded unindex() method:
+    do (actual = @::unindex) =>
+        @::unindex = (index, key, value, callback) ->
+            if typeof key is 'function'
+                callback = key
+                key = null
+                value = null
+            else if typeof value is 'function'
+                callback = value
+                value = null
+
+            actual.call @, index, key, value, callback
 
     #
-    # Create and "return" (via callback) a relationship of the given type and
-    # with the given properties from another node to this node.
+    # Create and "return" (via callback) a relationship of the given type, and
+    # optionally with the given properties, from this node to another node.
     #
     # @param otherNode {Node}
     # @param type {String}
-    # @param data {Object} The properties this relationship should have.
+    # @param data {Object} (Optional) The properties this relationship should have.
     # @param callback {Function}
     # @return {Relationship}
     #
-    createRelationshipFrom: (otherNode, type, data, _) ->
-        @_createRelationship otherNode, this, type, data, _
+    createRelationshipTo: (otherNode, type, data, cb) ->
+        # support omitting data:
+        if typeof data is 'function'
+            cb = data
+            data = null
+
+        @_createRelationship this, otherNode, type, data, cb
+
+    #
+    # Create and "return" (via callback) a relationship of the given type, and
+    # optionally with the given properties, from another node to this node.
+    #
+    # @param otherNode {Node}
+    # @param type {String}
+    # @param data {Object} (Optional) The properties this relationship should have.
+    # @param callback {Function}
+    # @return {Relationship}
+    #
+    createRelationshipFrom: (otherNode, type, data, cb) ->
+        # support omitting data:
+        if typeof data is 'function'
+            cb = data
+            data = null
+
+        @_createRelationship otherNode, this, type, data, cb
 
     #
     # Create and "return" (via callback) a relationship of the given type and
@@ -199,7 +262,7 @@ module.exports = class Node extends PropertyContainer
     # @param callback {Function}
     # @return {Relationship}
     #
-    _createRelationship: (from, to, type, data, _) ->
+    _createRelationship: (from, to, type, data={}, _) ->
         try
             # ensure this node exists
             # ensure otherNode exists

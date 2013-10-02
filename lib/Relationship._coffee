@@ -94,14 +94,13 @@ module.exports = class Relationship extends PropertyContainer
     #
     # @param index {String} The name of the index, e.g. `'likes'`.
     # @param key {String} The property key to index under, e.g. `'created'`.
-    # @param value {Object} The property value to index under, e.g. `1346713658393`.
+    # @param value {String} The property value to index under, e.g. `1346713658393`.
     # @param callback {Function}
     #
     index: (index, key, value, _) ->
         try
-            # TODO
             if not @exists
-                throw new Error 'Relationship must exists before indexing properties'
+                throw new Error 'Relationship must exist before indexing properties'
 
             services = @db.getServices _
             version = @db.getVersion _
@@ -136,3 +135,57 @@ module.exports = class Relationship extends PropertyContainer
 
         catch error
             throw adjustError error
+
+    #
+    # Delete this relationship from the given index, optionally under the
+    # given key or key-value pair. (A key is required if a value is given.)
+    #
+    # @param index {String} The name of the index, e.g. `'likes'`.
+    # @param key {String} (Optional) The property key to unindex from, e.g. `'created'`.
+    # @param value {String} (Optional) The property value to unindex from, e.g. `1346713658393`.
+    # @param callback {Function}
+    #
+    unindex: (index, key, value, _) ->
+        # see below for the code that normalizes the args;
+        # this function assumes all args are present (but may be null/etc.).
+        try
+            if not @exists
+                throw new Error 'Relationship must exist before unindexing.'
+
+            services = @db.getServices _
+
+            key = encodeURIComponent key if key
+            value = encodeURIComponent value if value
+            base = "#{services.relationship_index}/#{encodeURIComponent index}"
+            url =
+                if key and value
+                    "#{base}/#{key}/#{value}/#{@id}"
+                else if key
+                    "#{base}/#{key}/#{@id}"
+                else
+                    "#{base}/#{@id}"
+
+            response = @_request.del url, _
+
+            if response.statusCode isnt status.NO_CONTENT
+                # database error
+                throw response
+
+            # success
+            return
+
+        catch error
+            throw adjustError error
+
+    # helper for overloaded unindex() method:
+    do (actual = @::unindex) =>
+        @::unindex = (index, key, value, callback) ->
+            if typeof key is 'function'
+                callback = key
+                key = null
+                value = null
+            else if typeof value is 'function'
+                callback = value
+                value = null
+
+            actual.call @, index, key, value, callback

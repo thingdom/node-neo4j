@@ -1,7 +1,7 @@
 # this file is in streamline syntax!
 # https://github.com/Sage/streamlinejs
 
-expect = require 'expect.js'
+{expect} = require 'chai'
 neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'
@@ -11,35 +11,86 @@ danielData =
     name: 'Daniel'
 aseemData =
     name: 'Aseem'
+matData =
+    name: 'Mat'
+    name2: 'Matt'
+    id: '12345'
 
 # instances we're going to reuse across tests:
 daniel = null
 aseem = null
+mat = null
 relationship = null
 
+# index list
+nodeIndexName = 'testUsers'
+relIndexName = 'testFollows'
+
+
+## TESTS:
+
 @crud =
+
+    'getNodeIndexes': (_) ->
+        nodeIndexes = db.getNodeIndexes _
+
+        # we should always get back an array of names, but the array should
+        # have map-like properties for the index config details too:
+        expect(nodeIndexes).to.be.an 'array'
+        for name in nodeIndexes
+            expect(nodeIndexes).to.contain.key name
+            expect(nodeIndexes[name]).to.be.an 'object'
+            expect(nodeIndexes[name].type).to.be.a 'string'
+
+    'getRelationshipIndexes': (_) ->
+        relIndexes = db.getRelationshipIndexes _
+
+        # we should always get back an array of names, but the array should
+        # have map-like properties for the index config details too:
+        expect(relIndexes).to.be.an 'array'
+        for name in relIndexes
+            expect(relIndexes).to.contain.key name
+            expect(relIndexes[name]).to.be.an 'object'
+            expect(relIndexes[name].type).to.be.a 'string'
+
+    'createNodeIndex': (_) ->
+        db.createNodeIndex nodeIndexName, _
+
+        # our newly created index should now be in the list of indexes:
+        nodeIndexes = db.getNodeIndexes _
+        expect(nodeIndexes).to.contain nodeIndexName
+        expect(nodeIndexes).to.contain.key nodeIndexName
+
+    'createRelationshipIndex': (_) ->
+        db.createRelationshipIndex relIndexName, _
+
+        # our newly created index should now be in the list of indexes:
+        relIndexes = db.getRelationshipIndexes _
+        expect(relIndexes).to.contain relIndexName
+        expect(relIndexes).to.contain.key relIndexName
 
     'create nodes': (_) ->
         daniel = db.createNode danielData
         aseem = db.createNode aseemData
+        mat = db.createNode matData
 
         expect(daniel).to.be.an 'object'
-        expect(daniel.exists).to.be false
-        expect(daniel.self).to.be null
+        expect(daniel.exists).to.be.false
+        expect(daniel.self).to.not.exist
             # TODO should this really be tested? is @self a public API?
             # maybe it should just have a better name than 'self'? like url?
 
     'save nodes': (_) ->
         # test futures here by saving both aseem and daniel in parallel:
-        futures = [daniel.save(), aseem.save()]
+        futures = [daniel.save(), aseem.save(), mat.save()]
         future _ for future in futures
 
-        expect(daniel.exists).to.be true
+        expect(daniel.exists).to.be.true
         expect(daniel.self).to.be.a 'string'    # TODO see above
         expect(daniel.self).to.not.equal aseem.self     # TODO see above
         expect(daniel.data).to.eql danielData
 
-        expect(aseem.exists).to.be true
+        expect(aseem.exists).to.be.true
         expect(aseem.self).to.be.a 'string'     # TODO see above
         expect(aseem.self).to.not.equal daniel.self     # TODO see above
         expect(aseem.data).to.eql aseemData
@@ -49,8 +100,8 @@ relationship = null
         testRelationship relationship
 
         # in this case, the start and end *should* be our instances
-        expect(relationship.start).to.be daniel
-        expect(relationship.end).to.be aseem
+        expect(relationship.start).to.eq daniel
+        expect(relationship.end).to.eq aseem
 
     'fetch relationships': (_) ->
         # test futures by *initiating* getRelationships() for both aseem and daniel in
@@ -62,13 +113,13 @@ relationship = null
         testRelationships relationships
 
         # in this case, the start *should* be our instance
-        expect(relationships[0].start).to.be daniel
+        expect(relationships[0].start).to.eq daniel
 
         relationships = aseemFuture _
         testRelationships relationships
 
         # in this case, the end *should* be our instance
-        expect(relationships[0].end).to.be aseem
+        expect(relationships[0].end).to.eq aseem
 
     'traverse nodes': (_) ->
         # same parallel lookups using futures:
@@ -79,7 +130,7 @@ relationship = null
         expect(nodes).to.be.an 'array'
         expect(nodes).to.have.length 1
         expect(nodes[0]).to.be.an 'object'
-        expect(nodes[0].exists).to.be true
+        expect(nodes[0].exists).to.be.true
         expect(nodes[0].self).to.equal aseem.self   # TODO see above
         expect(nodes[0].data).to.eql aseemData
 
@@ -88,7 +139,7 @@ relationship = null
         expect(nodes).to.be.an 'array'
         expect(nodes).to.have.length 1
         expect(nodes[0]).to.be.an 'object'
-        expect(nodes[0].exists).to.be true
+        expect(nodes[0].exists).to.be.true
         expect(nodes[0].self).to.equal daniel.self  # TODO see above
         expect(nodes[0].data).to.eql danielData
 
@@ -96,7 +147,7 @@ relationship = null
         daniel.index 'users', 'name', 'Daniel', _
         node = db.getIndexedNode 'users', 'name', 'Daniel', _
         expect(node).to.be.an 'object'
-        expect(node.exists).to.be true
+        expect(node.exists).to.be.true
         # TODO FIXME we're not unindexing these nodes after each test, so in fact the
         # returned node and data might be from a previous test!
         # expect(node.self).to.equal daniel.self  # TODO see above
@@ -106,17 +157,106 @@ relationship = null
         relationship.index 'follows', 'name', 'Daniel', _
         rel = db.getIndexedRelationship 'follows', 'name', 'Daniel', _
         expect(rel).to.be.an 'object'
-        expect(rel.exists).to.be true
+        expect(rel.exists).to.be.true
         expect(rel.self).to.be.a 'string'   # TODO see above
-        expect(rel.type).to.be 'follows'
+        expect(rel.type).to.eq 'follows'
 
-    # TODO delete tests! that's the 'd' in 'crud'!
+    'unindex nodes': (_) ->
+        mat.index nodeIndexName, 'name', 'Mat', _
+        mat.index nodeIndexName, 'name', 'Matt', _
+        mat.index nodeIndexName, 'id', '12345', _
+
+        # delete entries for the node that match index, key, value
+        mat.unindex nodeIndexName, 'name', 'Matt', _
+        mattNode = db.getIndexedNode nodeIndexName, 'name', 'Matt', _
+        matNode = db.getIndexedNode nodeIndexName, 'name', 'Mat', _
+        idNode = db.getIndexedNode nodeIndexName, 'id', '12345', _
+        expect(mattNode).to.not.exist
+        expect(matNode).to.be.an 'object'
+        expect(matNode.exists).to.be.true
+        expect(idNode).to.be.an 'object'
+        expect(idNode.exists).to.be.true
+
+        # delete entries for the node that match index, key
+        mat.unindex nodeIndexName, 'name', _
+        mattNode = db.getIndexedNode nodeIndexName, 'name', 'Matt', _
+        matNode = db.getIndexedNode nodeIndexName, 'name', 'Mat', _
+        idNode = db.getIndexedNode nodeIndexName, 'id', '12345', _
+        expect(mattNode).to.not.exist
+        expect(matNode).to.not.exist
+        expect(idNode).to.be.an 'object'
+        expect(idNode.exists).to.be.true
+
+        # delete entries for the node that match index
+        mat.unindex nodeIndexName, _
+        mattNode = db.getIndexedNode nodeIndexName, 'name', 'Matt', _
+        matNode = db.getIndexedNode nodeIndexName, 'name', 'Mat', _
+        idNode = db.getIndexedNode nodeIndexName, 'id', '12345', _
+        expect(mattNode).to.not.exist
+        expect(matNode).to.not.exist
+        expect(idNode).to.not.exist
+
+    'unindex relationships': (_) ->
+        relationship.index relIndexName, 'name', 'Mat', _
+        relationship.index relIndexName, 'name', 'Matt', _
+        relationship.index relIndexName, 'id', '12345', _
+
+        # delete entries for the relationship that match index, key, value
+        relationship.unindex relIndexName, 'name', 'Matt', _
+        mattRelationship = db.getIndexedRelationship relIndexName, 'name', 'Matt', _
+        matRelationship = db.getIndexedRelationship relIndexName, 'name', 'Mat', _
+        idRelationship = db.getIndexedRelationship relIndexName, 'id', '12345', _
+        expect(mattRelationship).to.not.exist
+        expect(matRelationship).to.be.an 'object'
+        expect(matRelationship.exists).to.be.true
+        expect(idRelationship).to.be.an 'object'
+        expect(idRelationship.exists).to.be.true
+
+        # delete entries for the relationship that match index, key
+        relationship.unindex relIndexName, 'name', _
+        mattRelationship = db.getIndexedRelationship relIndexName, 'name', 'Matt', _
+        matRelationship = db.getIndexedRelationship relIndexName, 'name', 'Mat', _
+        idRelationship = db.getIndexedRelationship relIndexName, 'id', '12345', _
+        expect(mattRelationship).to.not.exist
+        expect(matRelationship).to.not.exist
+        expect(idRelationship).to.be.an 'object'
+        expect(idRelationship.exists).to.be.true
+
+        # delete entries for the relationship that match index
+        relationship.unindex relIndexName, _
+        mattRelationship = db.getIndexedRelationship relIndexName, 'name', 'Matt', _
+        matRelationship = db.getIndexedRelationship relIndexName, 'name', 'Mat', _
+        idRelationship = db.getIndexedRelationship relIndexName, 'id', '12345', _
+        expect(mattRelationship).to.not.exist
+        expect(matRelationship).to.not.exist
+        expect(idRelationship).to.not.exist
+
+    # TODO test deleting nodes and relationships!
+
+    'deleteNodeIndex': (_) ->
+        db.deleteNodeIndex nodeIndexName, _
+
+        # our index should no longer be in the list of indexes:
+        nodeIndexes = db.getNodeIndexes _
+        expect(nodeIndexes).to.not.contain nodeIndexName
+        expect(nodeIndexes).to.not.contain.key nodeIndexName
+
+    'deleteRelationshipIndex': (_) ->
+        db.deleteRelationshipIndex relIndexName, _
+
+        # our index should no longer be in the list of indexes:
+        relIndexes = db.getRelationshipIndexes _
+        expect(relIndexes).to.not.contain relIndexName
+        expect(relIndexes).to.not.contain.key relIndexName
+
+
+## HELPERS:
 
 testRelationship = (relationship) ->
     expect(relationship).to.be.an 'object'
-    expect(relationship.exists).to.be true
+    expect(relationship.exists).to.be.true
     expect(relationship.self).to.be.a 'string'  # TODO see above
-    expect(relationship.type).to.be 'follows'
+    expect(relationship.type).to.eq 'follows'
 
     # in some cases, the start/end nodes may not be "filled", so these are
     # commented out for now:

@@ -99,7 +99,6 @@ module.exports = class Relationship extends PropertyContainer
     #
     index: (index, key, value, _) ->
         try
-            # TODO
             if not @exists
                 throw new Error 'Relationship must exist before indexing properties'
 
@@ -138,32 +137,33 @@ module.exports = class Relationship extends PropertyContainer
             throw adjustError error
 
     #
-    # Delete this relationship from the given index under the key (optional) and value (optional).
+    # Delete this relationship from the given index, optionally under the
+    # given key or key-value pair. (A key is required if a value is given.)
     #
     # @param index {String} The name of the index, e.g. `'likes'`.
-    # @param key {String} The property key to index under, e.g. `'created'`.
-    # @param value {String} The property value to index under, e.g. `1346713658393`.
+    # @param key {String} (Optional) The property key to unindex from, e.g. `'created'`.
+    # @param value {String} (Optional) The property value to unindex from, e.g. `1346713658393`.
     # @param callback {Function}
     #
     unindex: (index, key, value, _) ->
+        # see below for the code that normalizes the args;
+        # this function assumes all args are present (but may be null/etc.).
         try
-            # TODO
             if not @exists
-                throw new Error 'Relationship must exist before unindexing properties'
+                throw new Error 'Relationship must exist before unindexing.'
 
             services = @db.getServices _
 
-            if key
-                encodedKey = encodeURIComponent key
-
-                if value
-                    encodedValue = encodeURIComponent value
-                    url = "#{services.relationship_index}/#{index}/#{encodedKey}/#{encodedValue}/#{@id}"
-
+            key = encodeURIComponent key if key
+            value = encodeURIComponent value if value
+            base = "#{services.relationship_index}/#{encodeURIComponent index}"
+            url =
+                if key and value
+                    "#{base}/#{key}/#{value}/#{@id}"
+                else if key
+                    "#{base}/#{key}/#{@id}"
                 else
-                    url = "#{services.relationship_index}/#{index}/#{encodedKey}/#{@id}"
-            else
-                url = "#{services.relationship_index}/#{index}/#{@id}"
+                    "#{base}/#{@id}"
 
             response = @_request.del url, _
 

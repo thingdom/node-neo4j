@@ -409,24 +409,36 @@ module.exports = class GraphDatabase
     ### Indexes: ###
 
     #
-    # Get list of node indexes.
+    # Get the current existing node indexes.
+    # "Returns" (via callback) an array of string index names, but the array
+    # also serves as a dictionary of index name to its config properties.
     #
     # @param callback {Function}
+    # @return {Array<String>}
+    #
+    #   db.getNodeIndexes(function (err, indexes) {
+    #       if (err) throw err;
+    #       indexes.forEach(function (name) {
+    #           console.log('Index', name, 'has config:', indexes[name]);
+    #       });
+    #   });
     #
     getNodeIndexes: (_) ->
         try
             services = @getServices _
+            response = @_request.get services.node_index, _
 
-            url = "#{services.node_index}/"
-
-            response = @_request.get url, _
-
-            if response.statusCode isnt status.OK and response.statusCode isnt status.NO_CONTENT
+            if response.statusCode not in [status.OK, status.NO_CONTENT]
                 # Database error
                 throw response
 
-            # Success
-            return response.body
+            # Success: transform the map into an array-map hybrid.
+            map = response.body or {}
+            arr = []
+            for name, props of map
+                arr.push name
+                arr[name] = props
+            return arr
 
         catch error
             throw adjustError error
@@ -434,17 +446,16 @@ module.exports = class GraphDatabase
     #
     # Create node index.
     #
-    # @param index {String}
+    # @param name {String}
     # @param callback {Function}
     #
-    createNodeIndex: (index, _) ->
+    createNodeIndex: (name, _) ->
         try
             services = @getServices _
 
             response = @_request.post
-                url: "#{services.node_index}/"
-                json:
-                    name: index
+                url: services.node_index
+                json: {name}
             , _
 
             if response.statusCode isnt status.CREATED
@@ -452,7 +463,7 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            return response.body
+            return
 
         catch error
             throw adjustError error
@@ -460,44 +471,57 @@ module.exports = class GraphDatabase
     #
     # Delete a node index.
     #
-    # @param index {String}
+    # @param name {String}
     # @param callback {Function}
     #
-    deleteNodeIndex: (index, _) ->
+    deleteNodeIndex: (name, _) ->
         try
             services = @getServices _
-
-            url = "#{services.node_index}/#{index}"
-            response = @_request.del url, _
+            response = @_request.del
+                url: "#{services.node_index}/#{encodeURIComponent name}"
+            , _
 
             if response.statusCode isnt status.NO_CONTENT
                 # Database error
                 throw response
 
             # Success
-            return null
+            return
 
         catch error
             throw adjustError error
 
     #
-    # Get list of relationship indexes.
+    # Get the current existing relationship indexes.
+    # "Returns" (via callback) an array of string index names, but the array
+    # also serves as a dictionary of index name to its config properties.
     #
     # @param callback {Function}
+    # @return {Array<String>}
+    #
+    #   db.getRelationshipIndexes(function (err, indexes) {
+    #       if (err) throw err;
+    #       indexes.forEach(function (name) {
+    #           console.log('Index', name, 'has config:', indexes[name]);
+    #       });
+    #   });
     #
     getRelationshipIndexes: (_) ->
         try
             services = @getServices _
+            response = @_request.get services.relationship_index, _
 
-            url = "#{services.relationship_index}/"
-            response = @_request.get url, _
-
-            if response.statusCode isnt status.OK and response.statusCode isnt status.NO_CONTENT
+            if response.statusCode not in [status.OK, status.NO_CONTENT]
                 # Database error
                 throw response
 
-            # Success
-            return response.body
+            # Success: transform the map into an array-map hybrid.
+            map = response.body or {}
+            arr = []
+            for name, props of map
+                arr.push name
+                arr[name] = props
+            return arr
 
         catch error
             throw adjustError error
@@ -505,17 +529,16 @@ module.exports = class GraphDatabase
     #
     # Create relationship index.
     #
-    # @param index {String}
+    # @param name {String}
     # @param callback {Function}
     #
-    createRelationshipIndex: (index, _) ->
+    createRelationshipIndex: (name, _) ->
         try
             services = @getServices _
 
             response = @_request.post
                 url: "#{services.relationship_index}/"
-                json:
-                    name: index
+                json: {name}
             , _
 
             if response.statusCode isnt status.CREATED
@@ -523,7 +546,7 @@ module.exports = class GraphDatabase
                 throw response
 
             # Success
-            return response.body
+            return
 
         catch error
             throw adjustError error
@@ -531,22 +554,22 @@ module.exports = class GraphDatabase
     #
     # Delete a relationship index.
     #
-    # @param index {String}
+    # @param name {String}
     # @param callback {Function}
     #
-    deleteRelationshipIndex: (index, _) ->
+    deleteRelationshipIndex: (name, _) ->
         try
             services = @getServices _
-
-            url = "#{services.relationship_index}/#{index}"
-            response = @_request.del url, _
+            response = @_request.del
+                url: "#{services.relationship_index}/#{encodeURIComponent name}"
+            , _
 
             if response.statusCode isnt status.NO_CONTENT
                 # Database error
                 throw response
 
             # Success
-            return null
+            return
 
         catch error
             throw adjustError error

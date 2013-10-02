@@ -23,42 +23,51 @@ mat = null
 relationship = null
 
 # index list
-nodeIndexes = null
-relIndexes = null
 nodeIndexName = 'testUsers'
 relIndexName = 'testFollows'
+
+
+## TESTS:
 
 @crud =
 
     'getNodeIndexes': (_) ->
         nodeIndexes = db.getNodeIndexes _
-        if nodeIndexes
-            expect(nodeIndexes).to.be.an 'object'
-        else
-            # requires a clean db to test
-            expect(nodeIndexes).to.be undefined
+
+        # we should always get back an array of names, but the array should
+        # have map-like properties for the index config details too:
+        expect(nodeIndexes).to.be.an 'array'
+        for name in nodeIndexes
+            expect(nodeIndexes).to.have.key name
+            expect(nodeIndexes[name]).to.be.an 'object'
+            expect(nodeIndexes[name].type).to.be.a 'string'
 
     'getRelationshipIndexes': (_) ->
         relIndexes = db.getRelationshipIndexes _
-        if relIndexes
-            expect(relIndexes).to.be.an 'object'
-        else
-            # requires a clean db to test
-            expect(relIndexes).to.be undefined
+
+        # we should always get back an array of names, but the array should
+        # have map-like properties for the index config details too:
+        expect(relIndexes).to.be.an 'array'
+        for name in relIndexes
+            expect(relIndexes).to.have.key name
+            expect(relIndexes[name]).to.be.an 'object'
+            expect(relIndexes[name].type).to.be.a 'string'
 
     'createNodeIndex': (_) ->
-        testIndex = db.createNodeIndex nodeIndexName, _
-        expect(testIndex).to.be.an 'object'
+        db.createNodeIndex nodeIndexName, _
+
+        # our newly created index should now be in the list of indexes:
         nodeIndexes = db.getNodeIndexes _
-        expect(nodeIndexes).to.be.an 'object'
-        expect(nodeIndexes[nodeIndexName]).to.be.an 'object'
+        expect(nodeIndexes).to.contain nodeIndexName
+        expect(nodeIndexes).to.have.key nodeIndexName
 
     'createRelationshipIndex': (_) ->
-        testIndex = db.createRelationshipIndex relIndexName, _
-        expect(testIndex).to.be.an 'object'
+        db.createRelationshipIndex relIndexName, _
+
+        # our newly created index should now be in the list of indexes:
         relIndexes = db.getRelationshipIndexes _
-        expect(relIndexes).to.be.an 'object'
-        expect(relIndexes[relIndexName]).to.be.an 'object'
+        expect(relIndexes).to.contain relIndexName
+        expect(relIndexes).to.have.key relIndexName
 
     'create nodes': (_) ->
         daniel = db.createNode danielData
@@ -222,30 +231,26 @@ relIndexName = 'testFollows'
         expect(matRelationship).to.be null
         expect(idRelationship).to.be null
 
-
-    # TODO delete tests! that's the 'd' in 'crud'!
+    # TODO test deleting nodes and relationships!
 
     'deleteNodeIndex': (_) ->
-        testIndex = db.deleteNodeIndex nodeIndexName, _
-        expect(testIndex).to.be null
+        db.deleteNodeIndex nodeIndexName, _
+
+        # our index should no longer be in the list of indexes:
         nodeIndexes = db.getNodeIndexes _
-        if nodeIndexes
-            expect(nodeIndexes).to.be.an 'object'
-            expect(nodeIndexes[nodeIndexName]).to.be undefined
-        else
-            expect(nodeIndexes).to.be undefined
+        expect(nodeIndexes).to.not.contain nodeIndexName
+        expect(nodeIndexes).to.not.have.key nodeIndexName
 
     'deleteRelationshipIndex': (_) ->
-        testIndex = db.deleteRelationshipIndex relIndexName, _
-        expect(testIndex).to.be null
+        db.deleteRelationshipIndex relIndexName, _
+
+        # our index should no longer be in the list of indexes:
         relIndexes = db.getRelationshipIndexes _
-        if relIndexes
-            expect(relIndexes).to.be.an 'object'
-            expect(relIndexes[relIndexName]).to.be undefined
-        else
-            expect(relIndexes).to.be undefined
+        expect(relIndexes).to.not.contain relIndexName
+        expect(relIndexes).to.not.have.key relIndexName
 
 
+## HELPERS:
 
 testRelationship = (relationship) ->
     expect(relationship).to.be.an 'object'

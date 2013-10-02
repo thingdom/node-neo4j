@@ -12,7 +12,7 @@
     "dependencies": {
         "http-status": "~0.1.0",
         "request": "~2.9.202",
-        "streamline": "~0.4.0"
+        "streamline": "~0.4"
     },
     "devDependencies": {
         "codo": "~1.5.1",

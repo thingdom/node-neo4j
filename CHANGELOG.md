@@ -15,12 +15,21 @@
     key-value pair.
 
   - Both of the above were contributed by [@flipside][] — many thanks!
-    (Pull [#55])
+    (Pull [#55][])
 
   - The `Node` class's `createRelationshipTo()` and `createRelationshipFrom()`
     methods now support omitting the `data` parameter.
+    (Issue [#87][]; thanks [@rpsirois][]!)
+
+  - The Cypher `query()` method now guards against malformed responses, which
+    may happen if Neo4j runs out of memory serving inefficient queries.
+    (Issue [#71][])
 
 [#55]: https://github.com/thingdom/node-neo4j/pull/55
+[#71]: https://github.com/thingdom/node-neo4j/issue/71
+[#87]: https://github.com/thingdom/node-neo4j/issue/87
+
+[@rpsirois]: https://github.com/rpsirois
 
 ## Version 0.2.20 — April 17, 2013
 

@@ -620,6 +620,23 @@ module.exports = class GraphDatabase
 
             # Success: build result maps, and transform nodes/relationships
             body = response.body
+
+            # Update: guard against streaming errors where the response code
+            # is still 200, but the body is malformed JSON, and node-request
+            # swallows the error parsing the JSON:
+            # https://github.com/thingdom/node-neo4j/issues/71
+            # This is a manual fix for only this operation, since we know
+            # here that the response should always be a JSON object.
+            if typeof body isnt 'object'
+                throw new Error """
+                    Malformed Cypher response for query:
+
+                    #{query}
+
+                    Neo4j may have run out of memory processing this query.
+                    Maybe try a more efficient query?
+                """
+
             columns = body.columns
             results = for row in body.data
                 map = {}

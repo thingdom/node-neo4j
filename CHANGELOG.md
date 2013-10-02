@@ -1,4 +1,4 @@
-## Unreleased
+## Version 0.2.21 — October 2, 2013
 
   - New `GraphDatabase` methods to create, read, and delete node and
     relationship indexes, e.g. `createNodeIndex()`, `getNodeIndexes()`, and

@@ -201,30 +201,40 @@ module.exports = class Node extends PropertyContainer
             actual.call @, index, key, value, callback
 
     #
-    # Create and "return" (via callback) a relationship of the given type and
-    # with the given properties from this node to another node.
+    # Create and "return" (via callback) a relationship of the given type, and
+    # optionally with the given properties, from this node to another node.
     #
     # @param otherNode {Node}
     # @param type {String}
-    # @param data {Object} The properties this relationship should have.
+    # @param data {Object} (Optional) The properties this relationship should have.
     # @param callback {Function}
     # @return {Relationship}
     #
-    createRelationshipTo: (otherNode, type, data, _) ->
-        @_createRelationship this, otherNode, type, data, _
+    createRelationshipTo: (otherNode, type, data, cb) ->
+        # support omitting data:
+        if typeof data is 'function'
+            cb = data
+            data = null
+
+        @_createRelationship this, otherNode, type, data, cb
 
     #
-    # Create and "return" (via callback) a relationship of the given type and
-    # with the given properties from another node to this node.
+    # Create and "return" (via callback) a relationship of the given type, and
+    # optionally with the given properties, from another node to this node.
     #
     # @param otherNode {Node}
     # @param type {String}
-    # @param data {Object} The properties this relationship should have.
+    # @param data {Object} (Optional) The properties this relationship should have.
     # @param callback {Function}
     # @return {Relationship}
     #
-    createRelationshipFrom: (otherNode, type, data, _) ->
-        @_createRelationship otherNode, this, type, data, _
+    createRelationshipFrom: (otherNode, type, data, cb) ->
+        # support omitting data:
+        if typeof data is 'function'
+            cb = data
+            data = null
+
+        @_createRelationship otherNode, this, type, data, cb
 
     #
     # Create and "return" (via callback) a relationship of the given type and
@@ -238,7 +248,7 @@ module.exports = class Node extends PropertyContainer
     # @param callback {Function}
     # @return {Relationship}
     #
-    _createRelationship: (from, to, type, data, _) ->
+    _createRelationship: (from, to, type, data={}, _) ->
         try
             # ensure this node exists
             # ensure otherNode exists

@@ -3,7 +3,7 @@
 This is a client library for accessing [Neo4j][], a graph database, from
 [Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api].
 
-This library supports and has been tested against Neo4j 1.4 through Neo4j 1.8.
+This library supports and has been tested against Neo4j 1.4 through Neo4j 1.9.
 
 
 ## Installation
@@ -67,10 +67,11 @@ dependency in your package.json, ***please* specify something like `0.2.x` or
 
 You'll also need a local Neo4j database instance for the tests:
 
-    curl http://dist.neo4j.org/neo4j-community-1.8.2-unix.tar.gz --O neo4j-community-1.8.2-unix.tar.gz
-    tar -zxvf neo4j-community-1.8.2-unix.tar.gz
-    rm neo4j-community-1.8.2-unix.tar.gz
-    ln -s neo4j-community-1.8.2/bin/neo4j neo4j
+    NEO4J_VERSION=neo4j-community-1.9.4
+    curl http://dist.neo4j.org/$NEO4J_VERSION-unix.tar.gz --O $NEO4J_VERSION-unix.tar.gz
+    tar -zxvf $NEO4J_VERSION-unix.tar.gz
+    rm $NEO4J_VERSION-unix.tar.gz
+    ln -s $NEO4J_VERSION/bin/neo4j neo4j
 
 If you're new to Neo4j, read the [Getting Started][neo4j-getting-started] page.
 Start the server:

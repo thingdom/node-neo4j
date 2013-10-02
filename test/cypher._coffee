@@ -1,7 +1,7 @@
 # we'll be creating a somewhat complex graph and testing that cypher queries
 # on it return expected results.
 
-expect = require 'expect.js'
+{expect} = require 'chai'
 neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'
@@ -95,7 +95,7 @@ user9 = users[9]
 
         expect(results[1]).to.be.an 'object'
         expect(results[1]['r']).to.be.an 'object'
-        expect(results[1]['r'].type).to.be 'follows'
+        expect(results[1]['r'].type).to.eq 'follows'
         expect(results[1]['m.name']).to.equal user8.data.name
 
     'send query parameters instead of literals': (_) ->
@@ -111,7 +111,7 @@ user9 = users[9]
 
         expect(results[1]).to.be.an 'object'
         expect(results[1]['r']).to.be.an 'object'
-        expect(results[1]['r'].type).to.be 'follows'
+        expect(results[1]['r'].type).to.eq 'follows'
         expect(results[1]['m.name']).to.equal user5.data.name
 
     'return collection/array of nodes': (_) ->
@@ -164,4 +164,4 @@ user9 = users[9]
         expect(results[0]['path'].relationships).to.be.an 'array'
         expect(results[0]['path'].relationships).to.have.length 2
         expect(results[0]['path'].relationships[1]).to.be.an 'object'
-        # expect(results[0]['path'].relationships[1].type).to.be 'follows'
+        # expect(results[0]['path'].relationships[1].type).to.eq 'follows'

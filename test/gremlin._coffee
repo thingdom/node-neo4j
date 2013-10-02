@@ -1,7 +1,7 @@
 # will be used for testing gremlin script executions
 # as well as validating the return results are as expected
 
-expect = require 'expect.js'
+{expect} = require 'chai'
 neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'

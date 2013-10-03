@@ -52,11 +52,12 @@ look at [@aseemk][aseemk]'s [node-neo4j-template][] app for a complete usage
 example. (The `models/User.js` file in particular is the one that interacts
 with this library.)
 
-Please note that **breaking changes to this library are *very* likely** in the
-near future as we consider an API overhaul, but the version number will always
-respect [semantic versioning][semver]. So if you specify this library as a
-dependency in your package.json, ***please* specify something like `0.2.x` or
-`~0.2.6`, *not* `>=0.2.6`**. Thanks. =)
+This library is now officially "v1", but "v2" will almost certainly have
+breaking changes in order to support Neo4j 2.0 and generally improve the API
+([roadmap][]). You can be sheltered from these changes if you simply specify
+your node-neo4j dependency as `1.x` or `~1.0.0` instead of `*`.
+
+[Roadmap]: https://github.com/thingdom/node-neo4j/wiki/Roadmap
 
 
 ## Development

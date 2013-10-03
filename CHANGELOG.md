@@ -1,10 +1,12 @@
-## Unreleased
+## Version 1.0.0 — October 2, 2013
 
   - ***BREAKING:*** This library no longer supports Neo4j 1.4.
 
   - ***BREAKING:*** `GraphDatabase::getVersion()` has been removed.
     It was only used internally for Neo4j 1.4 support;
     hopefully you had no need for it externally.
+
+  - Otherwise, this is the same as v0.2.21 — just nailing down "v1" finally!
 
 ## Version 0.2.21 — October 2, 2013
 

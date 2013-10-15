@@ -2,6 +2,7 @@
 # on it return expected results.
 
 {expect} = require 'chai'
+flows = require 'streamline/lib/util/flows'
 neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'
@@ -27,8 +28,9 @@ user9 = users[9]
 
     '(pre-req) save nodes': (_) ->
         # save in parallel
-        futures = (user.save() for user in users)
-        future _ for future in futures
+        flows.collect _,
+            for user in users
+                user.save not _
 
     'query single user': (_) ->
         results = db.query """
@@ -69,18 +71,16 @@ user9 = users[9]
             i2 = (i + 2) % users.length
             i3 = (i + 3) % users.length
             # create three relationships in parallel
-            # WARNING: don't use a variable named futures here!
-            # coffeescript variable shadowing will kick in unexpectedly. =(
-            f1 = user.createRelationshipTo users[i1], 'follows', {}
-            f2 = user.createRelationshipTo users[i2], 'follows', {}
-            f3 = user.createRelationshipTo users[i3], 'follows', {}
-            f1 _
-            f2 _
-            f3 _
+            flows.collect _, [
+                user.createRelationshipTo users[i1], 'follows', {}, not _
+                user.createRelationshipTo users[i2], 'follows', {}, not _
+                user.createRelationshipTo users[i3], 'follows', {}, not _
+            ]
 
         # create follow relationships for each user in parallel
-        futures = (createFollowRelationships(i) for user, i in users)
-        future _ for future in futures
+        flows.collect _,
+            for user, i in users
+                createFollowRelationships i, not _
 
     'query relationships / return multiple values': (_) ->
         results = db.query """

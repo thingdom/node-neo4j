@@ -2,6 +2,7 @@
 # https://github.com/Sage/streamlinejs
 
 {expect} = require 'chai'
+flows = require 'streamline/lib/util/flows'
 neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'
@@ -82,8 +83,11 @@ relIndexName = 'testFollows'
 
     'save nodes': (_) ->
         # test futures here by saving both aseem and daniel in parallel:
-        futures = [daniel.save(), aseem.save(), mat.save()]
-        future _ for future in futures
+        flows.collect _, [
+            daniel.save not _
+            aseem.save not _
+            mat.save not _
+        ]
 
         expect(daniel.exists).to.be.true
         expect(daniel.self).to.be.a 'string'    # TODO see above
@@ -106,8 +110,8 @@ relIndexName = 'testFollows'
     'fetch relationships': (_) ->
         # test futures by *initiating* getRelationships() for both aseem and daniel in
         # parallel. note how we'll still "collect" (process) the futures in sequence.
-        danielFuture = daniel.getRelationships('follows')
-        aseemFuture = aseem.getRelationships('follows')
+        danielFuture = daniel.getRelationships 'follows', not _
+        aseemFuture = aseem.getRelationships 'follows', not _
 
         relationships = danielFuture _
         testRelationships relationships
@@ -123,8 +127,8 @@ relIndexName = 'testFollows'
 
     'traverse nodes': (_) ->
         # same parallel lookups using futures:
-        danielFuture = daniel.getRelationshipNodes('follows')
-        aseemFuture = aseem.getRelationshipNodes('follows')
+        danielFuture = daniel.getRelationshipNodes 'follows', not _
+        aseemFuture = aseem.getRelationshipNodes 'follows', not _
 
         nodes = danielFuture _
         expect(nodes).to.be.an 'array'

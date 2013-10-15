@@ -2,6 +2,7 @@
 # as well as validating the return results are as expected.
 
 {expect} = require 'chai'
+flows = require 'streamline/lib/util/flows'
 neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'
@@ -35,8 +36,9 @@ user6 = users[6]
 
     '(pre-req) save nodes': (_) ->
         # save in parallel
-        futures = (user.save() for user in users)
-        future _ for future in futures
+        flows.collect _,
+            for user in users
+                user.save not _
 
     'query single user, using param': (_) ->
         result = db.execute """
@@ -53,16 +55,16 @@ user6 = users[6]
             i1 = (i + 1) % users.length
             i2 = (i + 2) % users.length
             i3 = (i + 3) % users.length
-            f1 = user.createRelationshipTo users[i1], 'gremlin_follows', {}
-            f2 = user.createRelationshipTo users[i2], 'gremlin_follows', {}
-            f3 = user.createRelationshipTo users[i3], 'gremlin_follows', {}
-            f1 _
-            f2 _
-            f3 _
+            flows.collect _, [
+                user.createRelationshipTo users[i1], 'gremlin_follows', {}, not _
+                user.createRelationshipTo users[i2], 'gremlin_follows', {}, not _
+                user.createRelationshipTo users[i3], 'gremlin_follows', {}, not _
+            ]
 
         # create follow relationships for each user in parallel
-        futures = (createFollowRelationships(i) for user, i in users)
-        future _ for future in futures
+        flows.collect _,
+            for user, i in users
+                createFollowRelationships i, not _
 
     # TODO test returning relationships too, not just connected nodes
 

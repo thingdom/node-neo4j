@@ -30,8 +30,8 @@
     (Issue [#71][])
 
 [#55]: https://github.com/thingdom/node-neo4j/pull/55
-[#71]: https://github.com/thingdom/node-neo4j/issue/71
-[#87]: https://github.com/thingdom/node-neo4j/issue/87
+[#71]: https://github.com/thingdom/node-neo4j/issues/71
+[#87]: https://github.com/thingdom/node-neo4j/issues/87
 
 [@rpsirois]: https://github.com/rpsirois
 

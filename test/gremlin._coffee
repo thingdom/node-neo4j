@@ -1,10 +1,17 @@
 # will be used for testing gremlin script executions
-# as well as validating the return results are as expected
+# as well as validating the return results are as expected.
 
 {expect} = require 'chai'
 neo4j = require '..'
 
 db = new neo4j.GraphDatabase 'http://localhost:7474'
+
+# UPDATE: the gremlin plugin no longer ships with Neo4j 2.0,
+# so we check for its presence first before running the tests.
+# TODO: can we do this without these tests showing up at all?
+# can't figure out a way with Mocha, since the check is async.
+AVAILABLE = true
+UNAVAILABLE_MSG = 'Gremlin plugin not available; not running Gremlin tests.'
 
 # create some nodes
 users = for i in [0..6]
@@ -21,6 +28,10 @@ user5 = users[5]
 user6 = users[6]
 
 @gremlin =
+
+    '(pre-req) check availability': (_) ->
+        {extensions} = db.getServices _
+        AVAILABLE = extensions?['GremlinPlugin']?
 
     '(pre-req) save nodes': (_) ->
         # save in parallel
@@ -95,3 +106,13 @@ user6 = users[6]
         expect(params_test).to.be.an 'object'
         expect(params_test.id).to.equal user0.id
         expect(params_test.data).to.eql user0.data
+
+# wrap every test to check if the gremlin plugin is available:
+# (remember to wrap loop body in closure, since tests are async!)
+for name, test of @gremlin
+    do (name, test) =>
+        @gremlin[name] = (_) ->
+            if AVAILABLE
+                test _
+            else
+                console.log UNAVAILABLE_MSG

@@ -428,15 +428,16 @@ module.exports = class GraphDatabase
     # Create node index.
     #
     # @param name {String}
+    # @param config {Object} Node index configuration
     # @param callback {Function}
     #
-    createNodeIndex: (name, _) ->
+    createNodeIndex: (name, config={}, _) ->
         try
             services = @getServices _
 
             response = @_request.post
                 url: services.node_index
-                json: {name}
+                json: {name, config}
             , _
 
             if response.statusCode isnt status.CREATED
@@ -511,15 +512,16 @@ module.exports = class GraphDatabase
     # Create relationship index.
     #
     # @param name {String}
+    # @param config {Object} Relationship index configuration
     # @param callback {Function}
     #
-    createRelationshipIndex: (name, _) ->
+    createRelationshipIndex: (name, config={}, _) ->
         try
             services = @getServices _
 
             response = @_request.post
                 url: "#{services.relationship_index}/"
-                json: {name}
+                json: {name, config}
             , _
 
             if response.statusCode isnt status.CREATED

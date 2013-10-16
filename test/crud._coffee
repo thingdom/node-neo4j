@@ -16,6 +16,10 @@ matData =
     name: 'Mat'
     name2: 'Matt'
     id: '12345'
+indexConfig = 
+    type: 'fulltext'
+    provider: 'lucene'
+    to_lower_case: 'false'
 
 # instances we're going to reuse across tests:
 daniel = null
@@ -55,7 +59,7 @@ relIndexName = 'testFollows'
             expect(relIndexes[name].type).to.be.a 'string'
 
     'createNodeIndex': (_) ->
-        db.createNodeIndex nodeIndexName, _
+        db.createNodeIndex nodeIndexName, indexConfig, _
 
         # our newly created index should now be in the list of indexes:
         nodeIndexes = db.getNodeIndexes _
@@ -63,7 +67,7 @@ relIndexName = 'testFollows'
         expect(nodeIndexes).to.contain.key nodeIndexName
 
     'createRelationshipIndex': (_) ->
-        db.createRelationshipIndex relIndexName, _
+        db.createRelationshipIndex relIndexName, indexConfig, _
 
         # our newly created index should now be in the list of indexes:
         relIndexes = db.getRelationshipIndexes _

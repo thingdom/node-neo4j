@@ -250,8 +250,6 @@ module.exports = class GraphDatabase
     # syntax}) from the given index. If no such nodes exist, an empty array is
     # returned.
     #
-    # @todo Implement a similar method for relationships?
-    #
     # @param index {String} The name of the index, e.g. `node_auto_index`.
     # @param query {String} The Lucene query, e.g. `foo:bar AND hello:world`.
     # @param callback {Function}
@@ -387,6 +385,35 @@ module.exports = class GraphDatabase
         catch error
             throw adjustError error
 
+    #
+    # Fetch and "return" (via callback) the relationships matching the given query (in
+    # {http://lucene.apache.org/core/old_versioned_docs/versions/3_1_0/queryparsersyntax.html Lucene
+    # syntax}) from the given index. If no such relationship exist, an empty array is
+    # returned.
+    #
+    # @param index {String} The name of the index, e.g. `node_auto_index`.
+    # @param query {String} The Lucene query, e.g. `foo:bar AND hello:world`.
+    # @param callback {Function}
+    # @return {Array<Relationship>}
+    #
+    queryRelationshipIndex: (index, query, _) ->
+        try
+            services = @getServices _
+            url = "#{services.relationship_index}/#{index}?query=#{encodeURIComponent query}"
+
+            response = @_request.get url, _
+
+            if response.statusCode isnt status.OK
+                # Database error
+                throw response
+
+            # Success
+            return response.body.map (relationship) =>
+                new Relationship this, relationship
+
+        catch error
+            throw adjustError error
+
     ### Indexes: ###
 
     #
@@ -428,15 +455,16 @@ module.exports = class GraphDatabase
     # Create node index.
     #
     # @param name {String}
+    # @param config {Object} Node index configuration
     # @param callback {Function}
     #
-    createNodeIndex: (name, _) ->
+    createNodeIndex: (name, config={}, _) ->
         try
             services = @getServices _
 
             response = @_request.post
                 url: services.node_index
-                json: {name}
+                json: {name, config}
             , _
 
             if response.statusCode isnt status.CREATED
@@ -448,6 +476,15 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+
+    # helper for overloaded createNodeIndex() method:
+    do (actual = @::createNodeIndex) =>
+        @::createNodeIndex = (name, config, callback) ->
+            if typeof config is 'function'
+                callback = config
+                config = null
+
+            actual.call @, name, config, callback
 
     #
     # Delete a node index.
@@ -511,15 +548,16 @@ module.exports = class GraphDatabase
     # Create relationship index.
     #
     # @param name {String}
+    # @param config {Object} Relationship index configuration
     # @param callback {Function}
     #
-    createRelationshipIndex: (name, _) ->
+    createRelationshipIndex: (name, config={}, _) ->
         try
             services = @getServices _
 
             response = @_request.post
                 url: "#{services.relationship_index}/"
-                json: {name}
+                json: {name, config}
             , _
 
             if response.statusCode isnt status.CREATED
@@ -531,6 +569,15 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+
+    # helper for overloaded createRelationshipIndex() method:
+    do (actual = @::createRelationshipIndex) =>
+        @::createRelationshipIndex = (name, config, callback) ->
+            if typeof config is 'function'
+                callback = config
+                config = null
+
+            actual.call @, name, config, callback
 
     #
     # Delete a relationship index.

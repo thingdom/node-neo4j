@@ -16,6 +16,13 @@ matData =
     name: 'Mat'
     name2: 'Matt'
     id: '12345'
+indexConfig =
+    type: 'fulltext'
+    provider: 'lucene'
+    to_lower_case: 'true'
+indexConfig2 =
+    type: 'fulltext'
+    to_lower_case: 'false'
 
 # instances we're going to reuse across tests:
 daniel = null
@@ -25,7 +32,11 @@ relationship = null
 
 # index list
 nodeIndexName = 'testUsers'
+nodeCustomIndexName = 'testUsersFullTextLowercase'
+nodeCustomIndexName2 = 'testUsersFullTextNoLowercase'
 relIndexName = 'testFollows'
+relCustomIndexName = 'testFollowsFullTextLowercase'
+relCustomIndexName2 = 'testFollowsFullTextNoLowercase'
 
 
 ## TESTS:
@@ -62,6 +73,22 @@ relIndexName = 'testFollows'
         expect(nodeIndexes).to.contain nodeIndexName
         expect(nodeIndexes).to.contain.key nodeIndexName
 
+    'createNodeIndex custom fulltext with lowercase': (_) ->
+        db.createNodeIndex nodeCustomIndexName, indexConfig, _
+
+        # our newly created index should now be in the list of indexes:
+        nodeIndexes = db.getNodeIndexes _
+        expect(nodeIndexes).to.contain nodeCustomIndexName
+        expect(nodeIndexes).to.contain.key nodeCustomIndexName
+
+    'createNodeIndex custom fulltext with no lowercase': (_) ->
+        db.createNodeIndex nodeCustomIndexName2, indexConfig, _
+
+        # our newly created index should now be in the list of indexes:
+        nodeIndexes = db.getNodeIndexes _
+        expect(nodeIndexes).to.contain nodeCustomIndexName2
+        expect(nodeIndexes).to.contain.key nodeCustomIndexName2
+
     'createRelationshipIndex': (_) ->
         db.createRelationshipIndex relIndexName, _
 
@@ -69,6 +96,22 @@ relIndexName = 'testFollows'
         relIndexes = db.getRelationshipIndexes _
         expect(relIndexes).to.contain relIndexName
         expect(relIndexes).to.contain.key relIndexName
+
+    'createRelationshipIndex custom fulltext with lowercase': (_) ->
+        db.createRelationshipIndex relCustomIndexName, indexConfig, _
+
+        # our newly created index should now be in the list of indexes:
+        relIndexes = db.getRelationshipIndexes _
+        expect(relIndexes).to.contain relCustomIndexName
+        expect(relIndexes).to.contain.key relCustomIndexName
+
+    'createRelationshipIndex custom fulltext with no lowercase': (_) ->
+        db.createRelationshipIndex relCustomIndexName2, indexConfig, _
+
+        # our newly created index should now be in the list of indexes:
+        relIndexes = db.getRelationshipIndexes _
+        expect(relIndexes).to.contain relCustomIndexName2
+        expect(relIndexes).to.contain.key relCustomIndexName2
 
     'create nodes': (_) ->
         daniel = db.createNode danielData
@@ -152,10 +195,26 @@ relIndexName = 'testFollows'
         node = db.getIndexedNode 'users', 'name', 'Daniel', _
         expect(node).to.be.an 'object'
         expect(node.exists).to.be.true
+        daniel.unindex 'users', 'name', 'Daniel', _ # Delete created node index
         # TODO FIXME we're not unindexing these nodes after each test, so in fact the
         # returned node and data might be from a previous test!
         # expect(node.self).to.equal daniel.self  # TODO see above
         # expect(node.data).to.eql danielData
+
+    # Since fulltext search is using Lucene Query Language we cannot use getIndexedNode, instead we use queryNodeIndex method
+    'index nodes to custom fulltext index with lowercase': (_) ->
+        daniel.index nodeCustomIndexName, 'name', 'Daniel', _
+        nodes = db.queryNodeIndex nodeCustomIndexName, 'name:dan*', _
+        expect(nodes).to.be.an 'array'
+        expect(nodes[0].exists).to.be.true
+        daniel.unindex nodeCustomIndexName, 'name', 'Daniel', _ # Delete created custom node index
+
+    'index nodes to custom fulltext index with no lowercase': (_) ->
+        daniel.index nodeCustomIndexName2, 'name', 'Daniel', _
+        nodes = db.queryNodeIndex nodeCustomIndexName2, 'name:Dan*', _
+        expect(nodes).to.be.an 'array'
+        expect(nodes[0].exists).to.be.true
+        daniel.unindex nodeCustomIndexName2, 'name', 'Daniel', _ # Delete created custom node index
 
     'index relationships': (_) ->
         relationship.index 'follows', 'name', 'Daniel', _
@@ -164,6 +223,28 @@ relIndexName = 'testFollows'
         expect(rel.exists).to.be.true
         expect(rel.self).to.be.a 'string'   # TODO see above
         expect(rel.type).to.eq 'follows'
+        relationship.unindex 'follows', 'name', 'Daniel', _ # Delete created relationship index
+
+    # Since fulltext search is using Lucene Query Language we cannot use getIndexedRelationship, instead we use queryRelationshipIndex method
+    # queryRelationshipIndex method was not implemented, so I implemented it for this method to work
+    # Due to comments of queryNodeIndex method, queryRelationshipIndex was a to-do
+    'index relationships to custom fulltext index with lowercase': (_) ->
+        relationship.index relCustomIndexName, 'name', 'Daniel', _
+        rels = db.queryRelationshipIndex relCustomIndexName, 'name:*niE*', _
+        expect(rels).to.be.an 'array'
+        expect(rels[0].exists).to.be.true
+        expect(rels[0].self).to.be.a 'string'
+        expect(rels[0].type).to.eq 'follows'
+        relationship.unindex relCustomIndexName, 'name', 'Daniel', _ # Delete created custom relationship index
+
+    'index relationships to custom fulltext index with no lowercase': (_) ->
+        relationship.index relCustomIndexName2, 'name', 'Daniel', _
+        rels = db.queryRelationshipIndex relCustomIndexName2, 'name:*nie*', _
+        expect(rels).to.be.an 'array'
+        expect(rels[0].exists).to.be.true
+        expect(rels[0].self).to.be.a 'string'
+        expect(rels[0].type).to.eq 'follows'
+        relationship.unindex relCustomIndexName2, 'name', 'Daniel', _ # Delete created custom relationship index
 
     'unindex nodes': (_) ->
         mat.index nodeIndexName, 'name', 'Mat', _

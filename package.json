@@ -12,7 +12,7 @@
     "dependencies": {
         "http-status": "~0.1.0",
         "request": "~2.27",
-        "streamline": "~0.8"
+        "streamline": "~0.10"
     },
     "devDependencies": {
         "chai": "~1.8",

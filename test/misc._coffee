@@ -23,6 +23,9 @@ db = new neo4j.GraphDatabase 'http://localhost:7474'
         timer = null
 
         db.getNodeById 0, (err, node) ->
+            # TEMP remove after we figure this out...
+            console.log '(temporary debugging) callback called'
+
             # if we're getting called a second time, clear our timer:
             clearTimeout timer if timer
 

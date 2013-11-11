@@ -18,8 +18,7 @@ db = new neo4j.GraphDatabase 'http://localhost:7474'
     # https://github.com/Sage/streamlinejs/issues/168
     #
     'callback that throws error': (next) ->
-        # have we been called back? how many times if so?
-        called = 0
+        called = false
         timer = null
 
         db.getNodeById 0, (err, node) ->
@@ -30,8 +29,10 @@ db = new neo4j.GraphDatabase 'http://localhost:7474'
             clearTimeout timer if timer
 
             # now check to see if we've been called already:
-            called++
-            expect(called).to.eq 1
+            if called
+                throw new Error "Callback called twice!"
+            else
+                called = true
 
             # now cause a synchronous error, but set a timeout first for the
             # correct case that we never get called again.

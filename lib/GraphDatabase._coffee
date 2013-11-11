@@ -391,7 +391,7 @@ module.exports = class GraphDatabase
     # syntax}) from the given index. If no such relationship exist, an empty array is
     # returned.
     #
-    # @param index {String} The name of the index, e.g. `node_auto_index`.
+    # @param index {String} The name of the index, e.g. `relationship_auto_index`.
     # @param query {String} The Lucene query, e.g. `foo:bar AND hello:world`.
     # @param callback {Function}
     # @return {Array<Relationship>}

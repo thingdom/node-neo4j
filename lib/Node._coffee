@@ -1,4 +1,3 @@
-flows = require 'streamline/lib/util/flows'
 status = require 'http-status'
 
 util = require './util'
@@ -103,9 +102,8 @@ module.exports = class Node extends PropertyContainer
             # If so, fetch and delete in parallel:
             if force
                 relationships = @all null, _
-                flows.collect _,
-                    for relationship in relationships
-                        relationship.delete()
+                relationships.forEach_ _, {parallel: true}, (_, rel) ->
+                    rel.delete _
 
         catch error
             throw adjustError error

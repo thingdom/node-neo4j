@@ -19,6 +19,9 @@
     (issue [#76][]) and to take advantage of new *standalone* compilation,
     meaning Streamline is no longer a regular (production) dependency!
 
+  - Source maps are now generated alongside the compiled JS, for both
+    CoffeeScript and Streamline. Suh-weet!
+
 [#76]: https://github.com/thingdom/node-neo4j/issues/76
 
 ## Version 1.0.0 — October 2, 2013

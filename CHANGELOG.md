@@ -1,10 +1,11 @@
 ## Unreleased
 
-  - New `GraphDatabase` `queryRelationshipIndex()` method, similar to the
+  - **New:** `GraphDatabase` `queryRelationshipIndex()` method, similar to the
     existing `queryNodeIndex()` method.
 
-  - The `GraphDatabase` `createNodeIndex()` and `createRelationshipIndex()`
-    methods now take an optional `config` parameter after the index name.
+  - **New:** the `GraphDatabase` `createNodeIndex()` and
+    `createRelationshipIndex()` methods now take an optional `config`
+    parameter after the index name.
     See the Neo4j manual ([Configuration and fulltext indexes][]) for more.
 
   - Both of the above were contributed by [@sarpdoruk][] — thanks!
@@ -13,6 +14,12 @@
 [Configuration and fulltext indexes]: http://docs.neo4j.org/chunked/stable/indexing-create-advanced.html
 [@sarpdoruk]: https://github.com/sarpdoruk
 [#93]: https://github.com/thingdom/node-neo4j/pull/93
+
+  - Upgraded to Streamline 0.10, to hopefully fix a duplicate-callback bug
+    (issue [#76][]) and to take advantage of new *standalone* compilation,
+    meaning Streamline is no longer a regular (production) dependency!
+
+[#76]: https://github.com/thingdom/node-neo4j/issues/76
 
 ## Version 1.0.0 — October 2, 2013
 

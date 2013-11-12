@@ -55,7 +55,7 @@ with this library.)
 This library is now officially "v1", but "v2" will almost certainly have
 breaking changes in order to support Neo4j 2.0 and generally improve the API
 ([roadmap][]). You can be sheltered from these changes if you simply specify
-your node-neo4j dependency as `1.x` or `~1.0.0` instead of `*`.
+your node-neo4j dependency as `1.x` or `~1.0` instead of `*`.
 
 [Roadmap]: https://github.com/thingdom/node-neo4j/wiki/Roadmap
 

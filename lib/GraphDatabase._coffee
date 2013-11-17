@@ -4,6 +4,8 @@
 # this can be done in Streamline syntax by adding one line before cases where
 # we're returning immediately: process.nextTick _
 
+PACKAGE = require '../package'
+
 status = require 'http-status'
 
 util = require './util'
@@ -601,6 +603,25 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+
+    ## Serialization: ##
+
+    #
+    # Helper for other classes to serialize their data in a format that this
+    # GraphDatabase class will understand for *de*-serialization.
+    #
+    # @private
+    #
+    _toJSON: (obj) ->
+        # save this lib's basic info both for identification purposes and in
+        # case we ever need it in the future (e.g. for breaking changes):
+        package:
+            name: PACKAGE.name
+            version: PACKAGE.version
+        # save the object's constructor name, so we can deserialize it:
+        constructor: obj.constructor.name
+        # important: we don't save this db's URL, because it might contain a
+        # basic auth password!
 
     ### Misc/Other: ###
 

@@ -4,6 +4,8 @@
 # this can be done in Streamline syntax by adding one line before cases where
 # we're returning immediately: process.nextTick _
 
+PACKAGE = require '../package'
+
 status = require 'http-status'
 
 util = require './util'
@@ -601,6 +603,53 @@ module.exports = class GraphDatabase
 
         catch error
             throw adjustError error
+
+    ## Serialization: ##
+
+    #
+    # Helper for other classes to serialize their data in a format that this
+    # GraphDatabase class will understand for *de*-serialization.
+    #
+    # @private
+    #
+    _toJSON: (obj) ->
+        # save this lib's basic info both for identification purposes and in
+        # case we ever need it in the future (e.g. for breaking changes):
+        package:
+            name: PACKAGE.name
+            version: PACKAGE.version
+        # save the object's constructor name, so we can deserialize it:
+        constructor: obj.constructor.name
+        # important: we don't save this db's URL, because it might contain a
+        # basic auth password!
+
+    #
+    # Transforms the given node or relationship object, parsed from JSON,
+    # to its appropriate node or relationship instance.
+    #
+    fromJSON: (obj) ->
+        if obj?.package?.name isnt PACKAGE.name
+            throw new Error "Invalid JSON object: #{JSON.stringify obj}"
+
+        {constructor} = obj
+        Constructor = require "./#{constructor}"
+        Constructor.fromJSON @, obj
+
+    #
+    # A "reviver" function for JSON.parse() that'll transform any serialized
+    # nodes or relationships into their appropriate instances.
+    #
+    # To use, pass this method as the second parameter to JSON.parse().
+    # For convenience, it'll be bound to this GraphDatabase instance.
+    #
+    # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
+    #
+    reviveJSON: (k, v) =>
+        # only transform objects we recognize; ignore (pass through) the rest:
+        if v?.package?.name is PACKAGE.name
+            @fromJSON v
+        else
+            v
 
     ### Misc/Other: ###
 

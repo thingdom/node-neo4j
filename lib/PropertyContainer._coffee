@@ -115,3 +115,25 @@ module.exports = class PropertyContainer
     #
     del: ->
         @delete.apply @, arguments
+
+    #
+    # Return a JSON representation of this property container, suitable for
+    # serialization (e.g. caching).
+    #
+    toJSON: ->
+        # take the basic info for this db, then just add the data object
+        # directly since we need that for deserialization/construction.
+        # TODO it'd be great if we could store a trimmed down version of
+        # the data object instead of e.g. all the hypermedia URLs...
+        # but we need those hypermedia URLs for making requests for now.
+        json = @db._toJSON @
+        json._data = @_data
+        json
+
+    #
+    # Returns an instance of this property container for the given object,
+    # parsed from JSON.
+    #
+    @fromJSON: (db, obj) ->
+        {_data} = obj
+        new @ db, _data

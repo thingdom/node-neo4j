@@ -150,6 +150,33 @@ relCustomIndexName2 = 'testFollowsFullTextNoLowercase'
         expect(relationship.start).to.eq daniel
         expect(relationship.end).to.eq aseem
 
+    'serialize & de-serialize nodes': (_) ->
+        json = JSON.stringify [aseem, daniel]
+        obj = JSON.parse json, db.reviveJSON
+
+        expect(obj).to.be.an 'array'
+        expect(obj).to.have.length 2
+
+        [aseem2, daniel2] = obj
+
+        expect(aseem2).to.be.an 'object'
+        expect(aseem2.data).to.eql aseem.data
+
+        expect(daniel2).to.be.an 'object'
+        expect(daniel2.data).to.eql daniel.data
+
+    'serialize & de-serialize relationship': (_) ->
+        json = JSON.stringify {foo: {bar: relationship}}
+        obj = JSON.parse json, db.reviveJSON
+
+        expect(obj).to.be.an 'object'
+        expect(obj.foo).to.be.an 'object'
+
+        rel2 = obj.foo.bar
+
+        expect(rel2).to.be.an 'object'
+        expect(rel2.data).to.eql relationship.data
+
     'fetch relationships': (_) ->
         # test futures by *initiating* getRelationships() for both aseem and daniel in
         # parallel. note how we'll still "collect" (process) the futures in sequence.

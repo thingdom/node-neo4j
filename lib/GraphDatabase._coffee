@@ -635,6 +635,22 @@ module.exports = class GraphDatabase
         Constructor = require "./#{constructor}"
         Constructor.fromJSON @, obj
 
+    #
+    # A "reviver" function for JSON.parse() that'll transform any serialized
+    # nodes or relationships into their appropriate instances.
+    #
+    # To use, pass this method as the second parameter to JSON.parse().
+    # For convenience, it'll be bound to this GraphDatabase instance.
+    #
+    # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
+    #
+    reviveJSON: (k, v) =>
+        # only transform objects we recognize; ignore (pass through) the rest:
+        if v?.package?.name is PACKAGE.name
+            @fromJSON v
+        else
+            v
+
     ### Misc/Other: ###
 
     #

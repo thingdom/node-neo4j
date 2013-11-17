@@ -19,10 +19,26 @@
     (issue [#76][]) and to take advantage of new *standalone* compilation,
     meaning Streamline is no longer a regular (production) dependency!
 
-  - Source maps are now generated alongside the compiled JS, for both
+[#76]: https://github.com/thingdom/node-neo4j/issues/76
+
+  - **New:** Source maps are now generated alongside the compiled JS, for both
     CoffeeScript and Streamline. Suh-weet!
 
-[#76]: https://github.com/thingdom/node-neo4j/issues/76
+  - **New:** nodes and relationships can now be serialized to and from JSON!
+    (Issue [#75][])
+
+    Specifically, you can now freely `JSON.stringify()` any `Node` or
+    `Relationship` instance — or any object or array containing `Node` and/or
+    `Relationship` instances — and the resulting string will be deserializable
+    back into `Node` and/or `Relationship` instances.
+
+    To deserialize, the `GraphDatabase` class has a new `reviveJSON()`
+    instance method that can be passed as the second argument to `JSON.parse()`;
+    this method will take care of the automatic transformation above.
+
+    This is perfect for caching, e.g. to disk or Redis. Try it out!
+
+[#75]: https://github.com/thingdom/node-neo4j/issues/75
 
 ## Version 1.0.0 — October 2, 2013
 

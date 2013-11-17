@@ -129,3 +129,11 @@ module.exports = class PropertyContainer
         json = @db._toJSON @
         json._data = @_data
         json
+
+    #
+    # Returns an instance of this property container for the given object,
+    # parsed from JSON.
+    #
+    @fromJSON: (db, obj) ->
+        {_data} = obj
+        new @ db, _data

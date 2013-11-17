@@ -623,6 +623,18 @@ module.exports = class GraphDatabase
         # important: we don't save this db's URL, because it might contain a
         # basic auth password!
 
+    #
+    # Transforms the given node or relationship object, parsed from JSON,
+    # to its appropriate node or relationship instance.
+    #
+    fromJSON: (obj) ->
+        if obj?.package?.name isnt PACKAGE.name
+            throw new Error "Invalid JSON object: #{JSON.stringify obj}"
+
+        {constructor} = obj
+        Constructor = require "./#{constructor}"
+        Constructor.fromJSON @, obj
+
     ### Misc/Other: ###
 
     #

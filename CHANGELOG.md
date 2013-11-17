@@ -15,9 +15,9 @@
 [@sarpdoruk]: https://github.com/sarpdoruk
 [#93]: https://github.com/thingdom/node-neo4j/pull/93
 
-  - Upgraded to Streamline 0.10, to hopefully fix a duplicate-callback bug
-    (issue [#76][]) and to take advantage of new *standalone* compilation,
-    meaning Streamline is no longer a regular (production) dependency!
+  - **Fixed:** callbacks that throw (rather than async'ly propagate)
+    synchronous errors are no longer called again with the error
+    (issue [#76][]).
 
 [#76]: https://github.com/thingdom/node-neo4j/issues/76
 

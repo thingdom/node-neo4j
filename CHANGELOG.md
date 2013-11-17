@@ -38,10 +38,10 @@
 
     Example:
 
-    ```coffee
-    str = JSON.stringify [node, {foo: bar: relationship}]
-    obj = JSON.parse str, db.reviveJSON
-    # obj[0] and obj.foo.bar are again Node and Relationship instances!
+    ```js
+    var str = JSON.stringify([node, {foo: bar: relationship}]);
+    var obj = JSON.parse(str, db.reviveJSON);
+    // obj[0] and obj[1].foo.bar are again Node and Relationship instances!
     ```
 
     This is perfect for caching, e.g. to disk or Redis. Try it out!

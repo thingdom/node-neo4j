@@ -36,6 +36,14 @@
     instance method that can be passed as the second argument to `JSON.parse()`;
     this method will take care of the automatic transformation above.
 
+    Example:
+
+    ```coffee
+    str = JSON.stringify [node, {foo: bar: relationship}]
+    obj = JSON.parse str, db.reviveJSON
+    # obj[0] and obj.foo.bar are again Node and Relationship instances!
+    ```
+
     This is perfect for caching, e.g. to disk or Redis. Try it out!
 
 [#75]: https://github.com/thingdom/node-neo4j/issues/75

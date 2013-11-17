@@ -14,6 +14,10 @@ adjustError = util.adjustError
 Relationship = require './Relationship'
 Node = require './Node'
 
+# The key we use in our serialized JSON to identify this library's objects.
+JSON_KEY = '_nodeNeo4j'
+
+
 #
 # The class corresponding to a Neo4j graph database. Start here.
 #
@@ -615,15 +619,16 @@ module.exports = class GraphDatabase
     # @return {Object}
     #
     _toJSON: (obj) ->
+        json = {}
         # save this lib's basic info both for identification purposes and in
         # case we ever need it in the future (e.g. for breaking changes):
-        package:
-            name: PACKAGE.name
+        json[JSON_KEY] =
             version: PACKAGE.version
-        # save the object's constructor name, so we can deserialize it:
-        constructor: obj.constructor.name
+            # save the object's constructor name, so we can deserialize it:
+            constructor: obj.constructor.name
         # important: we don't save this db's URL, because it might contain a
         # basic auth password!
+        json
 
     #
     # Transforms the given node or relationship object, parsed from JSON,
@@ -633,11 +638,12 @@ module.exports = class GraphDatabase
     # @return {PropertyContainer}
     #
     fromJSON: (obj) ->
-        if obj?.package?.name isnt PACKAGE.name
+        meta = obj?[JSON_KEY]
+
+        if typeof meta?.constructor isnt 'string'
             throw new Error "Invalid JSON object: #{JSON.stringify obj}"
 
-        {constructor} = obj
-        Constructor = require "./#{constructor}"
+        Constructor = require "./#{meta.constructor}"
         Constructor._fromJSON @, obj
 
     #
@@ -660,7 +666,7 @@ module.exports = class GraphDatabase
     #
     reviveJSON: (key, val) =>
         # only transform objects we recognize; ignore (pass through) the rest:
-        if val?.package?.name is PACKAGE.name
+        if typeof val?[JSON_KEY]?.constructor is 'string'
             @fromJSON val
         else
             val

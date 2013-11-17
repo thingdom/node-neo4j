@@ -58,6 +58,17 @@ module.exports = class Relationship extends PropertyContainer
     ### Methods: ###
 
     #
+    # Return a human-readable string representation of this relationship,
+    # suitable for development purposes (e.g. debugging).
+    #
+    # @return {String}
+    #
+    toString: ->
+        # this library has no notion of unsaved relationships,
+        # so assume this relationship has an id:
+        "relationship @#{@id} (#{@type})"
+
+    #
     # Persist or update this relationship in the database. "Returns" (via
     # callback) this same instance after the save.
     #

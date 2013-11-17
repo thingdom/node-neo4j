@@ -24,7 +24,8 @@ module.exports = class Node extends PropertyContainer
         super db, data
 
     #
-    # Return a string representation of this node.
+    # Return a human-readable string representation of this node,
+    # suitable for development purposes (e.g. debugging).
     #
     # @return {String}
     #

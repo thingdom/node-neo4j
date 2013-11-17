@@ -18,14 +18,14 @@
         "codo": "~1.5",
         "coffee-script": "~1.6",
         "mocha": "~1.3",
-        "streamline": "~0.10"
+        "streamline": "~0.10 >=0.10.1"
     },
     "engines": {
         "node": ">= 0.6"
     },
     "scripts": {
         "build": "coffee -m -c lib/ && _coffee -m -c lib/",
-        "clean": "rm lib/*.{js,map}",
+        "clean": "rm -f lib/*.{js,map}",
         "codo": "codo && codo --server",
         "prepublish": "npm run build",
         "postpublish": "npm run clean",

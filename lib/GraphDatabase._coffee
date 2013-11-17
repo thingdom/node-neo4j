@@ -611,6 +611,8 @@ module.exports = class GraphDatabase
     # GraphDatabase class will understand for *de*-serialization.
     #
     # @private
+    # @param obj {PropertyContainer}
+    # @return {Object}
     #
     _toJSON: (obj) ->
         # save this lib's basic info both for identification purposes and in
@@ -627,13 +629,16 @@ module.exports = class GraphDatabase
     # Transforms the given node or relationship object, parsed from JSON,
     # to its appropriate node or relationship instance.
     #
+    # @param obj {Object}
+    # @return {PropertyContainer}
+    #
     fromJSON: (obj) ->
         if obj?.package?.name isnt PACKAGE.name
             throw new Error "Invalid JSON object: #{JSON.stringify obj}"
 
         {constructor} = obj
         Constructor = require "./#{constructor}"
-        Constructor.fromJSON @, obj
+        Constructor._fromJSON @, obj
 
     #
     # A "reviver" function for JSON.parse() that'll transform any serialized
@@ -642,14 +647,23 @@ module.exports = class GraphDatabase
     # To use, pass this method as the second parameter to JSON.parse().
     # For convenience, it'll be bound to this GraphDatabase instance.
     #
-    # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
+    # @param key {String}
+    # @param val {Object}
+    # @return {Object}
+    # @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
+    # @example Serialize and deserialize nodes and relationships.
     #
-    reviveJSON: (k, v) =>
+    #   var obj = {foo: node, bar: [relationship]};
+    #   var str = JSON.stringify(obj);
+    #   var res = JSON.parse(str, db.reviveJSON);
+    #   // res.foo and res.bar[0] are Node and Relationship instances
+    #
+    reviveJSON: (key, val) =>
         # only transform objects we recognize; ignore (pass through) the rest:
-        if v?.package?.name is PACKAGE.name
-            @fromJSON v
+        if val?.package?.name is PACKAGE.name
+            @fromJSON val
         else
-            v
+            val
 
     ### Misc/Other: ###
 

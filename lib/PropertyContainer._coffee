@@ -120,6 +120,8 @@ module.exports = class PropertyContainer
     # Return a JSON representation of this property container, suitable for
     # serialization (e.g. caching).
     #
+    # @return {Object}
+    #
     toJSON: ->
         # take the basic info for this db, then just add the data object
         # directly since we need that for deserialization/construction.
@@ -134,6 +136,10 @@ module.exports = class PropertyContainer
     # Returns an instance of this property container for the given object,
     # parsed from JSON.
     #
-    @fromJSON: (db, obj) ->
+    # @private
+    # @param db {GraphDatabase}
+    # @param obj {Object}
+    #
+    @_fromJSON: (db, obj) ->
         {_data} = obj
         new @ db, _data

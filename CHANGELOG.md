@@ -1,4 +1,4 @@
-## Unreleased
+## Version 1.1.0 — November 17, 2013
 
   - **New:** `GraphDatabase` `queryRelationshipIndex()` method, similar to the
     existing `queryNodeIndex()` method.

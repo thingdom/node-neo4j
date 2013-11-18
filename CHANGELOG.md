@@ -1,3 +1,8 @@
+## Unreleased
+
+  - **New:** this library is now compiled under Streamline's "standalone"
+    mode, which means Streamline is no longer a runtime dependency.
+
 ## Version 1.1.0 — November 17, 2013
 
   - **New:** `GraphDatabase` `queryRelationshipIndex()` method, similar to the
@@ -8,7 +13,7 @@
     parameter after the index name.
     See the Neo4j manual ([Configuration and fulltext indexes][]) for more.
 
-  - Both of the above were contributed by [@sarpdoruk][] — thanks!
+    Both of the above were contributed by [@sarpdoruk][] — thanks!
     (Pull [#93][])
 
 [Configuration and fulltext indexes]: http://docs.neo4j.org/chunked/stable/indexing-create-advanced.html

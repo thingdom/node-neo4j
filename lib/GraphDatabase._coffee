@@ -107,6 +107,11 @@ module.exports = class GraphDatabase
             if response.statusCode isnt status.OK
                 throw response
 
+            # TODO support debug properly and fully:
+            # https://github.com/visionmedia/debug
+            if process.env['DEBUG'] is 'neo4j'
+                console.log 'Neo4j version:', response.body.neo4j_version
+
             return @_services = response.body
 
         catch error

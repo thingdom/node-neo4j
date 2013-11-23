@@ -5,3 +5,6 @@ node_js:
     - "0.8"
 services:
     - neo4j
+matrix:
+    allow_failures:
+        - node_js: "0.11"

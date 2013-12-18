@@ -31,7 +31,7 @@ Here's a simple example:
 var node = db.createNode({hello: 'world'});     // instantaneous, but...
 node.save(function (err, node) {    // ...this is what actually persists.
     if (err) {
-        console.err('Error saving new node to database:', err);
+        console.error('Error saving new node to database:', err);
     } else {
         console.log('Node saved to database with id:', node.id);
     }

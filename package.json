@@ -18,7 +18,7 @@
         "codo": "~1.5",
         "coffee-script": "~1.6",
         "mocha": "~1.3",
-        "streamline": "~0.10 >=0.10.1"
+        "streamline": "0.10.3"
     },
     "engines": {
         "node": ">= 0.6"

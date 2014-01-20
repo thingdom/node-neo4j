@@ -502,3 +502,46 @@ module.exports = class Node extends PropertyContainer
 
         catch error
             throw adjustError error
+  
+    traverse: (returnType, options={}, _) ->
+        try
+            type = encodeURIComponent returnType
+            traverseURL = @_data['traverse']?.replace '{returnType}', type
+
+            if not traverseURL
+                throw new Error 'Traverse not available.'
+
+            res = @_request.post
+                url: traverseURL
+                json: options
+            , _
+
+            if res.statusCode isnt status.OK
+                throw new Error "Unrecognized response code: #{res.statusCode}"
+
+            data = res.body
+
+            switch type
+              when 'node'
+                return data.map (data) => new Node @db, data
+              when 'relationship'
+                return data.map (data) =>
+                  if @self is data.start
+                    new Relationship @db, data, this, null
+                  else
+                    new Relationship @db, data, null, this
+              when 'path'
+                start = new Node this, {self: data.start}
+                end = new Node this, {self: data.end}
+                length = data.length
+                nodes = data.nodes.map (url) =>
+                  new Node this, {self: url}
+                relationships = data.relationships.map (url) =>
+                  new Relationship this, {self: url, type}
+                return new Path start, end, length, nodes, relationships
+              else
+                return null;
+
+        catch error
+            throw adjustError error
+

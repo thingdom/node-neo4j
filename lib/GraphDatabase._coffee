@@ -717,7 +717,7 @@ module.exports = class GraphDatabase
                 throw new Error 'Cypher plugin not installed'
 
             if typeof query isnt 'string'
-                throw new Error 'Query is expected to be a string, {#typeof query} given'
+                throw new Error 'Query is expected to be a string, #{typeof query} given'
 
             response = @_request.post
                 uri: endpoint

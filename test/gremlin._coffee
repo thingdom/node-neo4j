@@ -62,9 +62,10 @@ user6 = users[6]
             ]
 
         # create follow relationships for each user in parallel
-        flows.collect _,
-            for user, i in users
-                createFollowRelationships i, not _
+        # XXX parallelizing causes random Neo4j errors; TODO report!
+        # until then, doing these in serial order...
+        for user, i in users
+            createFollowRelationships i, _
 
     # TODO test returning relationships too, not just connected nodes
 

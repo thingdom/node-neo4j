@@ -3,6 +3,12 @@
   - **New:** this library is now compiled under Streamline's "standalone"
     mode, which means Streamline is no longer a runtime dependency.
 
+  - Minor: assert that Cypher queries are strings; sending an object seems to
+    trigger a Neo4j bug. (Pull [#94][]; thanks [@tasinet][]!)
+
+[#94]: https://github.com/thingdom/node-neo4j/pull/94
+[@tasinet]: https://github.com/tasinet
+
 ## Version 1.1.0 — November 17, 2013
 
   - **New:** `GraphDatabase` `queryRelationshipIndex()` method, similar to the

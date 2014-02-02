@@ -1,10 +1,21 @@
 language: node_js
+
 node_js:
     - "0.11"
     - "0.10"
     - "0.8"
+
+# TODO test multiple versions of Neo4j, not just the default latest stable:
+# TODO and is there a way to log what the version of Neo4j is?
 services:
     - neo4j
+
 matrix:
     allow_failures:
         - node_js: "0.11"
+
+# don't CI feature branches, but note that this *does* CI PR merge commits --
+# including before they're made! =)
+branches:
+  only:
+    - master

@@ -111,8 +111,8 @@ and you want the code compiled on-the-fly during development, you can create
 an `index.js` file under `lib/` with the following:
 
 ```js
-require('coffee-script');
-require('streamline').register();
+require('coffee-script/register');
+require('streamline/register');
 module.exports = require('./index._coffee');
 ```
 

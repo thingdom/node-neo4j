@@ -5,7 +5,12 @@
 This is a client library for accessing [Neo4j][], a graph database, from
 [Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api].
 
-This library supports and has been tested against Neo4j 1.5 through Neo4j 1.9.
+This library formally supports Neo4j 1.5 through Neo4j 1.9.
+It also works well and is tested against Neo4j 2.0, but new 2.0 features
+like labels and constraints are accessible only through Cypher for now.
+
+(Work is underway to redesign this module to support 2.0 only,
+in order to take full advantage of those features. Stay tuned!)
 
 
 ## Installation
@@ -40,7 +45,7 @@ node.save(function (err, node) {    // ...this is what actually persists.
 });
 ```
 
-Because async flow in Node.js can be significantly tricky to handle, we
+Because async flow in Node.js can be quite tricky to handle, we
 strongly recommend using a flow control tool or library to help.
 Our personal favorite is [Streamline.js][], but other popular choices are
 [async](https://github.com/caolan/async),
@@ -54,10 +59,10 @@ look at [@aseemk][aseemk]'s [node-neo4j-template][] app for a complete usage
 example. (The `models/User.js` file in particular is the one that interacts
 with this library.)
 
-This library is now officially "v1", but "v2" will almost certainly have
-breaking changes in order to support Neo4j 2.0 and generally improve the API
+This library is officially stable at "v1", but "v2" will almost certainly have
+breaking changes to support only Neo4j 2.0 and generally improve the API
 ([roadmap][]). You can be sheltered from these changes if you simply specify
-your node-neo4j dependency as `1.x` or `~1.0` instead of `*`.
+your package.json dependency as `1.x` or `~1.0` instead of `*`.
 
 [Roadmap]: https://github.com/thingdom/node-neo4j/wiki/Roadmap
 
@@ -68,29 +73,12 @@ your node-neo4j dependency as `1.x` or `~1.0` instead of `*`.
     cd node-neo4j
     npm install && npm run clean
 
-You'll also need a local Neo4j database instance for the tests:
-
-    NEO4J_VERSION=neo4j-community-1.9.4
-    curl http://dist.neo4j.org/$NEO4J_VERSION-unix.tar.gz --O $NEO4J_VERSION-unix.tar.gz
-    tar -zxvf $NEO4J_VERSION-unix.tar.gz
-    rm $NEO4J_VERSION-unix.tar.gz
-    ln -s $NEO4J_VERSION/bin/neo4j neo4j
-
-If you're new to Neo4j, read the [Getting Started][neo4j-getting-started] page.
-Start the server:
-
-    ./neo4j start
-
-Stop the server:
-
-    ./neo4j stop
+You'll need a local installation of Neo4j ([links](http://neo4j.org/download)),
+and it should be running on the default port of 7474 (`neo4j start`).
 
 To run the tests:
 
     npm test
-
-**Important:** The tests are written assuming Neo4j >=1.7 and will now fail on
-prior Neo4j versions, but the library supports prior Neo4j versions just fine.
 
 This library is written in [CoffeeScript][], using [Streamline.js][] syntax.
 The tests automatically compile the code on-the-fly, but you can also generate

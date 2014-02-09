@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/thingdom/node-neo4j.png?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
+
 # Node-Neo4j
 
 This is a client library for accessing [Neo4j][], a graph database, from

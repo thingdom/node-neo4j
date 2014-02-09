@@ -5,9 +5,6 @@ node_js:
     - "0.10"
     - "0.8"
 
-env:
-    - DEBUG=neo4j
-
 jdk:
     - oraclejdk7  # needed for local Neo4j 2.0+
 

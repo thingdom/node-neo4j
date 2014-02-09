@@ -5,17 +5,26 @@ node_js:
     - "0.10"
     - "0.8"
 
-# TODO test multiple versions of Neo4j, not just the default latest stable:
-# TODO and is there a way to log what the version of Neo4j is?
-services:
-    - neo4j
-
 env:
     - DEBUG=neo4j
 
+jdk:
+    - oraclejdk7  # needed for local Neo4j 2.0+
+
 matrix:
+    env:
+        # test across multiple versions of Neo4j:
+        - NEO4J_VERSION="2.0.1"
+        - NEO4J_VERSION="1.9.6"
+        - NEO4J_VERSION="1.8.3"
     allow_failures:
         - node_js: "0.11"
+
+before_install:
+    # install Neo4j locally:
+    - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
+    - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
+    - neo4j-community-$NEO4J_VERSION/bin/neo4j start
 
 # don't CI feature branches, but note that this *does* CI PR merge commits --
 # including before they're made! =)

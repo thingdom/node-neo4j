@@ -176,6 +176,5 @@ user9 = users[9]
             expect(err.originalError).to.be.an 'object'
             expect(err.originalError.message).to.be.an 'string'
             expect(err.originalError.exception).to.be.an 'string'
-            expect(err.originalError.fullname).to.be.an 'string'
             expect(err.originalError.stacktrace).to.be.an 'array'
             expect(err.originalError.message).to.eql err.message

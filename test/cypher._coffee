@@ -173,8 +173,14 @@ user9 = users[9]
                 START notfound=node(999999)
             """, _
         catch err
+            console.log err
+        
             expect(err.originalError).to.be.an 'object'
             expect(err.originalError.message).to.be.an 'string'
             expect(err.originalError.exception).to.be.an 'string'
             expect(err.originalError.stacktrace).to.be.an 'array'
-            expect(err.originalError.message).to.eql err.message
+            expect(err.originalError.message).to.be.an 'string'
+            expect(err.name).to.eql 'Neo4jError'
+            expect(err.exception).to.eql err.originalError.exception
+            expect(err.message).to.match /^Neo4j [A-Za-z]+Exception: /
+            expect(err.statusCode).to.eql 400

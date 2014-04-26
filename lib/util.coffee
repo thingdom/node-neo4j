@@ -93,6 +93,9 @@ exports.adjustError = (error) ->
 
         error = new Error
         error.message = serverError.message or serverError
+        
+        # Attach original error to expose neo4j's error stack and code
+        error.originalError = serverError
 
     if typeof error isnt 'object'
         error = new Error error
@@ -102,7 +105,7 @@ exports.adjustError = (error) ->
     # see: http://stackoverflow.com/a/9254101/132978
     if error.code is 'ECONNREFUSED'
         error.message = "Couldn't reach database (connection refused)."
-
+    
     return error
 
 #-----------------------------------------------------------------------------

@@ -173,8 +173,6 @@ user9 = users[9]
                 START notfound=node(999999)
             """, _
         catch err
-            console.log err
-        
             expect(err.originalError).to.be.an 'object'
             expect(err.originalError.message).to.be.an 'string'
             expect(err.originalError.exception).to.be.an 'string'

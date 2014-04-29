@@ -84,12 +84,8 @@ exports.adjustError = (error) ->
 
         # also in some cases, the response body is indeed an error object, but
         # it's a Neo4j exception without a message:
-        if serverError?.exception and not serverError.message
-            serverError.message = """
-                Neo4j #{serverError.exception}: #{
-                    JSON.stringify serverError.stacktrace or [], null, 2
-                }
-            """
+        if not serverError.message
+            serverError.message = "(no message)"
         
         status = error.statusCode
 
@@ -97,7 +93,7 @@ exports.adjustError = (error) ->
         
         message = serverError.message
         if serverError.exception
-            message = "Neo4j " + serverError.exception + ": " + message
+            message = "Neo4j #{serverError.exception}: #{message}"
             error.exception = serverError.exception
             error.name = "Neo4jError"
             
@@ -117,7 +113,7 @@ exports.adjustError = (error) ->
     # see: http://stackoverflow.com/a/9254101/132978
     if error.code is 'ECONNREFUSED'
         error.message = "Couldn't reach database (connection refused)."
-    
+
     return error
 
 #-----------------------------------------------------------------------------

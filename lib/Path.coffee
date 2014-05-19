@@ -14,11 +14,12 @@ module.exports = class Path
     # @param nodes {Array<Node>}
     # @param relationships {Array<Relationship>}
     #
-    constructor: (start, end, length, nodes, relationships) ->
+    constructor: (start, end, length, nodes, relationships, weight) ->
         @_start = start
         @_nodes = nodes
         @_length = length
         @_relationships = relationships
+        @_weight = weight
         @_end = end
 
     ### Language helpers: ###
@@ -54,3 +55,8 @@ module.exports = class Path
     # @property {Array<Relationship>} The relationships that make up this path.
     #
     get relationships: -> @_relationships || []
+    
+    #
+    # @property {Number} The weight of this path.
+    #
+    get weight: -> @_weight || 0

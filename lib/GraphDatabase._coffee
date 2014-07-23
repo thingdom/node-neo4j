@@ -685,6 +685,8 @@ module.exports = class GraphDatabase
     #
     # @param query {String} The Cypher query. Can be multi-line.
     # @param params {Object} A map of parameters for the Cypher query.
+    # @param options {Object} Options passed to HTTP library, e.g. specify
+    #   `headers` to add custom HTTP headers.
     # @param callback {Function}
     # @return {Array<Object>}
     # @example Fetch a user's likes.
@@ -707,7 +709,7 @@ module.exports = class GraphDatabase
     #     // ...
     #   });
     #
-    query: (query, params={}, _) ->
+    query: (query, params={}, options={}, _) ->
         try
             services = @getServices _
             endpoint = services.cypher or
@@ -719,8 +721,13 @@ module.exports = class GraphDatabase
             if typeof query isnt 'string'
                 throw new Error "Expected string query; got #{typeof query}."
 
+            if typeof options isnt 'object'
+                throw new Error "Expected object options;
+                    got #{typeof options}."
+
             response = @_request.post
                 uri: endpoint
+                headers: options.headers
                 json: {query, params}
             , _
 
@@ -770,7 +777,7 @@ module.exports = class GraphDatabase
     # XXX temporary backwards compatibility shim for query() argument order,
     # and also to support overloaded method signature:
     do (actual = @::query) =>
-        @::query = (query, params, callback) ->
+        @::query = (query, params, options, callback) ->
             if typeof query is 'function' and typeof params is 'string'
                 # instantiate a new error to derive the current stack, and
                 # show the relevant source line in a warning:
@@ -780,11 +787,16 @@ module.exports = class GraphDatabase
                 callback = query
                 query = params
                 params = null
+                options = null
             else if typeof params is 'function'
                 callback = params
                 params = null
+                options = null
+            else if typeof options is 'function'
+                callback = options
+                options = null
 
-            actual.call @, query, params, callback
+            actual.call @, query, params, options, callback
 
     #
     # Execute and "return" (via callback) the results of the given

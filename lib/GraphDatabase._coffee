@@ -783,6 +783,11 @@ module.exports = class GraphDatabase
             else if typeof params is 'function'
                 callback = params
                 params = null
+            else if typeof query isnot 'string'
+                throw new Error """
+                    Malformed query() call.
+                    query must be a string
+                """
 
             actual.call @, query, params, callback
 

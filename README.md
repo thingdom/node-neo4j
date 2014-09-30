@@ -3,14 +3,12 @@
 # Node-Neo4j
 
 This is a client library for accessing [Neo4j][], a graph database, from
-[Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api].
+[Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api], and supports
+Neo4j 1.5 through Neo4j 2.1.
 
-This library formally supports Neo4j 1.5 through Neo4j 1.9.
-It also works well and is tested against Neo4j 2.0, but new 2.0 features
-like labels and constraints are accessible only through Cypher for now.
-
-(Work is underway to redesign this module to support 2.0 only,
-in order to take full advantage of those features. Stay tuned!)
+(Note that new 2.0 features like labels and constraints are only accessible
+through Cypher for now -- but Cypher is the recommended interface for Neo4j
+anyway. This driver might change to wrap Cypher entirely.)
 
 
 ## Installation

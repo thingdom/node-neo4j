@@ -1,5 +1,17 @@
 ## Unreleased
 
+  - **New:** Pass HTTP headers to Neo4j using
+    `GraphDatabase::query(query, params={}, options={}, callback)` where
+    `options` can contain `headers` object, e.g.
+
+    ```javascript
+    options = {
+      headers: {
+        'X-Request-ID': '14159265359'
+      }
+    }
+    ```
+
   - **New:** this library is now compiled under Streamline's "standalone"
     mode, which means Streamline is no longer a runtime dependency.
 

@@ -6,8 +6,12 @@
   - Minor: assert that Cypher queries are strings; sending an object seems to
     trigger a Neo4j bug. (Pull [#94][]; thanks [@tasinet][]!)
 
+  - Minor: Re-compile w/ the latest Streamline, to improve error stack traces.
+    (Issue [#139])
+
 [#94]: https://github.com/thingdom/node-neo4j/pull/94
 [@tasinet]: https://github.com/tasinet
+[#139]: https://github.com/thingdom/node-neo4j/issues/139
 
 ## Version 1.1.0 — November 17, 2013
 

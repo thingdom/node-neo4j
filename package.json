@@ -10,7 +10,7 @@
     ],
     "main": "./lib",
     "dependencies": {
-        "http-status": "^0.1.8",
+        "http-status": "^0.1.0",
         "request": "^2.27.0"
     },
     "devDependencies": {

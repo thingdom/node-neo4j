@@ -3,7 +3,6 @@ language: node_js
 node_js:
     - "0.11"
     - "0.10"
-    - "0.8"
 
 jdk:
     - oraclejdk7  # needed for local Neo4j 2.0+
@@ -13,10 +12,6 @@ env:
     - NEO4J_VERSION="2.1.5"
     - NEO4J_VERSION="2.0.4"
     - NEO4J_VERSION="1.9.8"
-
-matrix:
-    allow_failures:
-        - node_js: "0.11"
 
 before_install:
     # install Neo4j locally:

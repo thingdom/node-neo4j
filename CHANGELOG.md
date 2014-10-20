@@ -1,4 +1,4 @@
-## Unreleased
+## Version 1.1.1 — October 19, 2014
 
   - **New:** this library is now compiled under Streamline's "standalone"
     mode, which means Streamline is no longer a runtime dependency.

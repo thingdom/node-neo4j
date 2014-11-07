@@ -18,6 +18,7 @@ Sections:
 - [Objects](#objects)
 - [Cypher](#cypher)
 - [Transactions](#transactions)
+- [Errors](#errors)
 
 
 ## General
@@ -220,3 +221,96 @@ TODO: Any more functionality needed for transactions?
 There's a notion of expiry, and the expiry timeout can be reset by making
 empty queries; should a notion of auto "renewal" (effectively, a higher
 timeout than the default) be built-in for convenience?
+
+
+## Errors
+
+**Throw meaningful and semantic errors.**
+
+Background reading — a huge source of inspiration that informs much of the
+API design here:
+
+http://www.joyent.com/developers/node/design/errors
+
+Neo4j v2 provides excellent error info for (transactional) Cypher requests:
+
+http://neo4j.com/docs/stable/status-codes.html
+
+Essentially, errors are grouped into three "classifications":
+**client errors**, **database errors**, and **transient errors**.
+There are additional "categories" and "titles", but the high-level
+classifications are just the right level of granularity for decision-making
+(e.g. whether to convey the error to the user, fail fast, or retry).
+
+```json
+{
+    "code": "Neo.ClientError.Statement.EntityNotFound",
+    "message": "Node with id 741073"
+}
+```
+
+Unfortunately, other endpoints return errors in a completely different format
+and style. E.g.:
+
+- [404 `NodeNotFoundException`](http://neo4j.com/docs/stable/rest-api-nodes.html#rest-api-get-non-existent-node)
+- [409 `OperationFailureException`](http://neo4j.com/docs/stable/rest-api-nodes.html#rest-api-nodes-with-relationships-cannot-be-deleted)
+- [400 `PropertyValueException`](http://neo4j.com/docs/stable/rest-api-node-properties.html#rest-api-property-values-can-not-be-null)
+- [400 `BadInputException` w/ nested `ConstraintViolationException` and `IllegalTokenNameException`](http://neo4j.com/docs/stable/rest-api-node-labels.html#rest-api-adding-a-label-with-an-invalid-name)
+
+```json
+{
+    "exception": "BadInputException",
+    "fullname": "org.neo4j.server.rest.repr.BadInputException",
+    "message": "Unable to add label, see nested exception.",
+    "stacktrace": [
+        "org.neo4j.server.rest.web.DatabaseActions.addLabelToNode(DatabaseActions.java:328)",
+        "org.neo4j.server.rest.web.RestfulGraphDatabase.addNodeLabel(RestfulGraphDatabase.java:447)",
+        "java.lang.reflect.Method.invoke(Method.java:606)",
+        "org.neo4j.server.rest.transactional.TransactionalRequestDispatcher.dispatch(TransactionalRequestDispatcher.java:139)",
+        "java.lang.Thread.run(Thread.java:744)"
+    ],
+    "cause": {...}
+}
+```
+
+One important distinction is that (transactional) Cypher errors *don't* have
+any associated HTTP status code (since the results are streamed),
+while the "legacy" exceptions do.
+Fortunately, HTTP 4xx and 5xx status codes map almost directly to
+"client error" and "database error" classifications, while
+"transient" errors can be detected by name.
+
+So when it comes to designing this driver's v2 error API,
+there are two open questions:
+
+1.  Should this driver abstract away this discrepancy in Neo4j error formats,
+    and present a uniform error API across the two?
+    Or should it expose these two different formats?
+
+2.  Should this driver return standard `Error` objects decorated w/ e.g. a
+    `neo4j` property? Or should it define its own `Error` subclasses?
+
+The current design of this API chooses to present a uniform (but minimal) API
+using `Error` subclasses. Importantly:
+
+- The subclasses correspond to the client/database/transient classifications
+  mentioned above, for easy decision-making via either the `instanceof`
+  operator or the `name` property.
+
+- Special care is taken to provide `message` and `stack` properties rich in
+  info, so that no special serialization is needed to debug production errors.
+
+- And all info returned by Neo4j is also available on the `Error` instances
+  under a `neo4j` property, for deeper introspection and analysis if desired.
+
+```coffee
+class Error {name, message, stack, neo4j}
+
+class ClientError extends Error
+class DatabaseError extends Error
+class TransientError extends Error
+```
+
+TODO: Should we name these classes with a `Neo4j` prefix?
+They'll only be exposed via this driver's `module.exports`, so it's not
+technically necessary, but that'd allow for e.g. destructuring.

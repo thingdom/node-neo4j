@@ -19,6 +19,7 @@ Sections:
 - [Cypher](#cypher)
 - [Transactions](#transactions)
 - [Errors](#errors)
+- [Schema](#schema)
 
 
 ## General
@@ -314,3 +315,79 @@ class TransientError extends Error
 TODO: Should we name these classes with a `Neo4j` prefix?
 They'll only be exposed via this driver's `module.exports`, so it's not
 technically necessary, but that'd allow for e.g. destructuring.
+
+
+## Schema
+
+**Let me manage the database schema: labels, indexes, and constraints.**
+
+Much of this is already possible with Cypher, but a few things aren't
+(e.g. listing all labels).
+Even for the things that are, this driver can provide convenience methods
+for those boilerplate Cypher queries.
+
+### Labels
+
+```coffee
+db.getLabels _
+```
+
+Methods to manipulate labels on nodes are purposely *not* provided,
+as those start to get into the territory of operations that should really be
+performed atomically within a Cypher query.
+(E.g. labels should generally be set on nodes right when they're created.)
+Conveniences for those kinds of things are perfect for an ORM/OGM to solve.
+
+Labels are simple strings.
+
+### Indexes
+
+```coffee
+db.getIndexes _             # across all labels
+db.getIndexes {label}, _    # for a particular label
+db.hasIndex {label, property}, _
+db.createIndex {label, property}, _
+db.deleteIndex {label, property}, _
+```
+
+Returned indexes are minimal `Index` objects:
+
+```coffee
+class Index {label, property}
+```
+
+TODO: Neo4j's REST API actually takes and returns *arrays* of properties,
+but AFAIK, all indexes today only deal with a single property.
+Should multiple properties be supported?
+
+### Constraints
+
+The only constraint type implemented by Neo4j today is the uniqueness
+constraint, so this API defaults to that.
+The design aims to be generic in order to support future constraint types,
+but it's still possible that the API may have to break when that happens.
+
+```coffee
+db.getConstraints _             # across all labels
+db.getConstraints {label}, _    # for a particular label
+db.hasConstraint {label, property}, _
+db.createConstraint {label, property}, _
+db.deleteConstraint {label, property}, _
+```
+
+Returned constraints are minimal `Constraint` objects:
+
+```coffee
+class Constraint {label, type, property}
+```
+
+TODO: Neo4j's REST API actually takes and returns *arrays* of properties,
+but uniqueness constraints today only deal with a single property.
+Should multiple properties be supported?
+
+### Misc
+
+```coffee
+db.getPropertyKeys _
+db.getRelationshipTypes _
+```

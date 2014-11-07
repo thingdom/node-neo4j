@@ -20,6 +20,7 @@ Sections:
 - [Transactions](#transactions)
 - [Errors](#errors)
 - [Schema](#schema)
+- [Legacy Indexing](#legacy-indexing)
 
 
 ## General
@@ -390,4 +391,111 @@ Should multiple properties be supported?
 ```coffee
 db.getPropertyKeys _
 db.getRelationshipTypes _
+```
+
+
+## Legacy Indexing
+
+Neo4j v2's constraint-based indexing has yet to implement much of the
+functionality provided by Neo4j v1's legacy indexing (e.g. relationships,
+support for arrays, fulltext indexing).
+This driver thus provides legacy indexing APIs.
+
+### Management
+
+```coffee
+db.getLegacyNodeIndexes _
+db.getLegacyNodeIndex {name}, _
+db.createLegacyNodeIndex {name, config}, _
+db.deleteLegacyNodeIndex {name}, _
+
+db.getLegacyRelationshipIndexes _
+db.getLegacyRelationshipIndex {name}, _
+db.createLegacyRelationshipIndex {name, config}, _
+db.deleteLegacyRelationshipIndex {name}, _
+```
+
+Both returned legacy node indexes and legacy relationship indexes are
+minimal `LegacyIndex` objects:
+
+```coffee
+class LegacyIndex {name, config}
+```
+
+The `config` property is e.g. `{provider: 'lucene', type: 'fulltext'}`;
+[full documentation here](http://neo4j.com/docs/stable/indexing-create-advanced.html).
+
+### Simple Usage
+
+```coffee
+db.addNodeToLegacyIndex {name, key, value, _id}
+db.getNodesFromLegacyIndex {name, key, value}   # key-value lookup
+db.getNodesFromLegacyIndex {name, query}        # arbitrary Lucene query
+db.removeNodeFromLegacyIndex {name, key, value, _id}    # key, value optional
+
+db.addRelationshipToLegacyIndex {name, key, value, _id}
+db.getRelationshipsFromLegacyIndex {name, key, value}   # key-value lookup
+db.getRelationshipsFromLegacyIndex {name, query}        # arbitrary Lucene query
+db.removeRelationshipFromLegacyIndex {name, key, value, _id}    # key, value optional
+```
+
+### Uniqueness
+
+Neo4j v1's legacy indexing provides a uniqueness constraint for
+adding (existing) and creating (new) nodes and relationships.
+It has two modes:
+
+- "Get or create": if an existing node or relationship is found for the given
+  key and value, return it, otherwise add this node or relationship
+  (creating it if it's new).
+
+- "Create or fail": if an existing node or relationship is found for the given
+  key and value, fail, otherwise add this node or relationship
+  (creating it if it's new).
+
+For adding existing nodes or relationships, simply pass `unique: true` to the
+`add` method.
+
+```coffee
+db.addNodeToLegacyIndex {name, key, value, _id, unique: true}
+db.addRelationshipToLegacyIndex {name, key, value, _id, unique: true}
+```
+
+This uses the "create or fail" mode.
+It's hard to imagine a real-world use case for "get or create" when adding
+existing nodes, but please offer feedback if you have one.
+
+For creating new nodes or relationships, the `create` method below corresponds
+with "create or fail", while `getOrCreate` corresponds with "get or create":
+
+```coffee
+db.createNodeFromLegacyIndex {name, key, value, properties}
+db.getOrCreateNodeFromLegacyIndex {name, key, value, properties}
+
+db.createRelationshipFromLegacyIndex {name, key, value, type, properties, _fromId, _toId}
+db.getOrCreateRelationshipFromLegacyIndex {name, key, value, type, properties, _fromId, _toId}
+```
+
+### Auto-Indexes
+
+Neo4j provides two automatic legacy indexes:
+`node_auto_index` and `relationship_auto_index`.
+Instead of hardcoding those index names in your app,
+Neo4j provides separate legacy auto-indexing APIs,
+which this driver exposes as well.
+
+The APIs are effectively the same as the above;
+just replace `LegacyIndex` with `LegacyAutoIndex` in all method names,
+then omit the `name` parameter.
+
+```coffee
+db.getNodesFromLegacyAutoIndex {key, value}     # key-value lookup
+db.getNodesFromLegacyAutoIndex {query}          # arbitrary Lucene query
+db.createNodeFromLegacyAutoIndex {key, value, properties}
+db.getOrCreateNodeFromLegacyAutoIndex {key, value, properties}
+
+db.getRelationshipsFromLegacyAutoIndex {key, value}     # key-value lookup
+db.getRelationshipsFromLegacyAutoIndex {query}          # arbitrary Lucene query
+db.createRelationshipFromLegacyAutoIndex {key, value, type, properties, _fromId, _toId}
+db.getOrCreateRelationshipFromLegacyAutoIndex {key, value, type, properties, _fromId, _toId}
 ```

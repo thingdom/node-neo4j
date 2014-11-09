@@ -1,16 +1,6 @@
 # Node-Neo4j API v2
 
-Scratchpad for designing a v2 of this library.
-
-For convenience, the code snippets below are written in
-[CoffeeScript](http://coffeescript.org/) and
-[Streamline](https://github.com/Sage/streamlinejs).
-Essentially, underscores (`_`) represent standard Node.js `(result, error)`
-callbacks, and "return" and "throw" refer to those callback args.
-
-These thoughts are written as scenarios followed by code snippets.
-
-Sections:
+This is a rough, work-in-progress redesign of the node-neo4j API.
 
 - [General](#general)
 - [Core](#core)
@@ -30,31 +20,34 @@ inspired by [React.js](http://facebook.github.io/react/).
 Some context doesn't typically change, though (e.g. the URL to the database),
 so this driver supports maintaining such context as simple state.
 
-This driver is geared towards the standard Node.js callback convention
-mentioned above, but streams are now also returned wherever possible.
+This driver continues to accept standard Node.js callbacks of the form
+`function (result, error)`, but streams are now also returned where possible.
 This allows both straightforward development using standard Node.js control
-flow tools and libraries, while also supporting more advanced streaming usage.
+flow tools and libraries, while also supporting more advanced streaming uses.
 You can freely use either, without worrying about the other.
 
-Importantly, if no callback is given (implying that the caller is streaming),
-this driver will take care to not buffer any content in memory for callbacks,
+Importantly, callbacks can be omitted when streaming, and in that case,
+this driver will take special care not to buffer results in memory,
 ensuring high performance and low memory usage.
 
 This v2 driver converges on an options-/hash-based API for most/all methods.
 This both conveys clearer intent and leaves room for future additions.
+For the sake of this rough spec, you can assume most options are optional,
+but this will be documented more precisely in the final API documentation.
 
 
 ## Core
 
 **Let me make a "connection" to the database.**
 
-```coffee
-neo4j = require 'neo4j'
+```js
+var neo4j = require('neo4j');
 
-db = new neo4j.GraphDatabase
-    url: 'http://localhost:7474'
-    headers: ...    # optional defaults, e.g. User-Agent
-    proxy: ...      # optional
+var db = new neo4j.GraphDatabase({
+    url: 'http://localhost:7474',
+    headers: {},    // optional defaults, e.g. User-Agent
+    proxy: '',      // optional
+});
 ```
 
 An upcoming version of Neo4j will likely add native authentication.
@@ -76,12 +69,14 @@ this driver not supporting a particular API.
 It'll also allow callers to interface with arbitrary plugins,
 including custom ones.
 
-```coffee
-db.http {method, path, headers, body}, _
+```js
+function cb(err, resp) {};
+
+var req = db.http({method, path, headers, body}, cb);
 ```
 
-This method will immediately return the raw, pipeable HTTP response stream,
-and "return" (via callback) the full HTTP response when it's finished.
+This method will immediately return the raw, pipeable HTTP request stream,
+then call the callback with the full HTTP response when it's finished.
 The body will be parsed as JSON, and nodes and relationships will be
 transformed into `Node` and `Relationship` objects (see below).
 
@@ -143,15 +138,18 @@ from database responses.
 
 **Let me make simple, parametrized Cypher queries.**
 
-```coffee
-db.cypher {query, params, headers, raw}, _
+```js
+function cb(err, results) {};
+
+var stream = db.cypher({query, params, headers, raw}, cb);
 ```
 
-This method will immediately return a pipeable "results" stream (a `data`
-event will be emitted for each result row), then "return" (via callback)
-the full results array at the end (similar to the `http()` method).
-Each result row will be a dictionary from column name to the row's value for
-that column.
+This method will immediately return a pipeable "results" stream
+(a `data` event will be emitted for each result row),
+then call the callback with the the full, aggregate results array
+(similar to the `http()` method).
+Each result row will be a dictionary from column name
+to the row's value for that column.
 
 By default, nodes and relationships will be transformed to `Node` and
 `Relationship` objects.
@@ -161,7 +159,7 @@ If you don't need the full knowledge of node and relationship metadata
 for a potential performance gain.
 
 If there's an error, the "results" stream will emit an `error` event,
-as well as "throw" (via callback) the error.
+and the callback will be called with the error.
 
 TODO: Should we formalize the "results" stream into a documented class?
 
@@ -195,8 +193,8 @@ so it could always be achieved automatically under-the-hood by this driver
 (e.g. by waiting until the next event loop tick to send the actual queries).
 Please provide feedback if you disagree!
 
-```coffee
-tx = db.beginTransaction {...}      # any options needed?
+```js
+var tx = db.beginTransaction();     // any options needed?
 ```
 
 This method returns a `Transaction` object, which mainly just encapsulates the
@@ -207,10 +205,16 @@ immediately, and has not actually persisted anything to the database yet.
 
 ```coffee
 class Transaction {_id}
+```
 
-tx.cypher {query, params, headers, raw, commit}, _
-tx.commit _
-tx.rollback _
+```js
+function cbResults(err, results) {};
+function cbDone(err) {};
+
+var stream = tx.cypher({query, params, headers, raw, commit}, cbResults);
+
+tx.commit(cbDone);
+tx.rollback(cbDone);
 ```
 
 The transactional `cypher` method is just like the regular `cypher` method,
@@ -329,8 +333,10 @@ for those boilerplate Cypher queries.
 
 ### Labels
 
-```coffee
-db.getLabels _
+```js
+function cb(err, labels) {};
+
+db.getLabels(cb);
 ```
 
 Methods to manipulate labels on nodes are purposely *not* provided,
@@ -343,12 +349,17 @@ Labels are simple strings.
 
 ### Indexes
 
-```coffee
-db.getIndexes _             # across all labels
-db.getIndexes {label}, _    # for a particular label
-db.hasIndex {label, property}, _
-db.createIndex {label, property}, _
-db.deleteIndex {label, property}, _
+```js
+function cbOne(err, index) {};
+function cbMany(err, indexes) {};
+function cbBool(err, bool) {};
+function cbDone(err) {};
+
+db.getIndexes(cbMany);              // across all labels
+db.getIndexes({label}, cbMany);     // for a particular label
+db.hasIndex({label, property}, cbBool);
+db.createIndex({label, property}, cbOne);
+db.deleteIndex({label, property}, cbDone);
 ```
 
 Returned indexes are minimal `Index` objects:
@@ -368,12 +379,17 @@ constraint, so this API defaults to that.
 The design aims to be generic in order to support future constraint types,
 but it's still possible that the API may have to break when that happens.
 
-```coffee
-db.getConstraints _             # across all labels
-db.getConstraints {label}, _    # for a particular label
-db.hasConstraint {label, property}, _
-db.createConstraint {label, property}, _
-db.deleteConstraint {label, property}, _
+```js
+function cbOne(err, constraint) {};
+function cbMany(err, constraints) {};
+function cbBool(err, bool) {};
+function cbDone(err) {};
+
+db.getConstraints(cbMany);              // across all labels
+db.getConstraints({label}, cbMany);     // for a particular label
+db.hasConstraint({label, property}, cbBool);
+db.createConstraint({label, property}, cbOne);
+db.deleteConstraint({label, property}, cbDone);
 ```
 
 Returned constraints are minimal `Constraint` objects:
@@ -388,9 +404,12 @@ Should multiple properties be supported?
 
 ### Misc
 
-```coffee
-db.getPropertyKeys _
-db.getRelationshipTypes _
+```js
+function cbKeys(err, keys) {};
+function cbTypes(err, types) {};
+
+db.getPropertyKeys(cbKeys);
+db.getRelationshipTypes(cbTypes);
 ```
 
 
@@ -403,16 +422,20 @@ This driver thus provides legacy indexing APIs.
 
 ### Management
 
-```coffee
-db.getLegacyNodeIndexes _
-db.getLegacyNodeIndex {name}, _
-db.createLegacyNodeIndex {name, config}, _
-db.deleteLegacyNodeIndex {name}, _
+```js
+function cbOne(err, index) {};
+function cbMany(err, indexes) {};
+function cbDone(err) {};
 
-db.getLegacyRelationshipIndexes _
-db.getLegacyRelationshipIndex {name}, _
-db.createLegacyRelationshipIndex {name, config}, _
-db.deleteLegacyRelationshipIndex {name}, _
+db.getLegacyNodeIndexes(cbMany);
+db.getLegacyNodeIndex({name}, cbOne);
+db.createLegacyNodeIndex({name, config}, cbOne);
+db.deleteLegacyNodeIndex({name}, cbDone);
+
+db.getLegacyRelationshipIndexes(cbMany);
+db.getLegacyRelationshipIndex({name}, cbOne);
+db.createLegacyRelationshipIndex({name, config}, cbOne);
+db.deleteLegacyRelationshipIndex({name}, cbDone);
 ```
 
 Both returned legacy node indexes and legacy relationship indexes are
@@ -427,16 +450,20 @@ The `config` property is e.g. `{provider: 'lucene', type: 'fulltext'}`;
 
 ### Simple Usage
 
-```coffee
-db.addNodeToLegacyIndex {name, key, value, _id}
-db.getNodesFromLegacyIndex {name, key, value}   # key-value lookup
-db.getNodesFromLegacyIndex {name, query}        # arbitrary Lucene query
-db.removeNodeFromLegacyIndex {name, key, value, _id}    # key, value optional
+```js
+function cbOne(err, node_or_rel) {};
+function cbMany(err, nodes_or_rels) {};
+function cbDone(err) {};
 
-db.addRelationshipToLegacyIndex {name, key, value, _id}
-db.getRelationshipsFromLegacyIndex {name, key, value}   # key-value lookup
-db.getRelationshipsFromLegacyIndex {name, query}        # arbitrary Lucene query
-db.removeRelationshipFromLegacyIndex {name, key, value, _id}    # key, value optional
+db.addNodeToLegacyIndex({name, key, value, _id}, cbOne);
+db.getNodesFromLegacyIndex({name, key, value}, cbMany);     // key-value lookup
+db.getNodesFromLegacyIndex({name, query}, cbMany);          // arbitrary Lucene query
+db.removeNodeFromLegacyIndex({name, key, value, _id}, cbDone);  // key, value optional
+
+db.addRelationshipToLegacyIndex({name, key, value, _id}, cbOne);
+db.getRelationshipsFromLegacyIndex({name, key, value}, cbMany);     // key-value lookup
+db.getRelationshipsFromLegacyIndex({name, query}, cbMany);          // arbitrary Lucene query
+db.removeRelationshipFromLegacyIndex({name, key, value, _id}, cbDone);  // key, value optional
 ```
 
 ### Uniqueness
@@ -456,9 +483,11 @@ It has two modes:
 For adding existing nodes or relationships, simply pass `unique: true` to the
 `add` method.
 
-```coffee
-db.addNodeToLegacyIndex {name, key, value, _id, unique: true}
-db.addRelationshipToLegacyIndex {name, key, value, _id, unique: true}
+```js
+function cb(err, node_or_rel) {};
+
+db.addNodeToLegacyIndex({name, key, value, _id, unique: true}, cb);
+db.addRelationshipToLegacyIndex({name, key, value, _id, unique: true}, cb);
 ```
 
 This uses the "create or fail" mode.
@@ -468,12 +497,14 @@ existing nodes, but please offer feedback if you have one.
 For creating new nodes or relationships, the `create` method below corresponds
 with "create or fail", while `getOrCreate` corresponds with "get or create":
 
-```coffee
-db.createNodeFromLegacyIndex {name, key, value, properties}
-db.getOrCreateNodeFromLegacyIndex {name, key, value, properties}
+```js
+function cb(err, node_or_rel) {};
 
-db.createRelationshipFromLegacyIndex {name, key, value, type, properties, _fromId, _toId}
-db.getOrCreateRelationshipFromLegacyIndex {name, key, value, type, properties, _fromId, _toId}
+db.createNodeFromLegacyIndex({name, key, value, properties}, cb);
+db.getOrCreateNodeFromLegacyIndex({name, key, value, properties}, cb);
+
+db.createRelationshipFromLegacyIndex({name, key, value, type, properties, _fromId, _toId}, cb);
+db.getOrCreateRelationshipFromLegacyIndex({name, key, value, type, properties, _fromId, _toId}, cb);
 ```
 
 ### Auto-Indexes
@@ -488,14 +519,17 @@ The APIs are effectively the same as the above;
 just replace `LegacyIndex` with `LegacyAutoIndex` in all method names,
 then omit the `name` parameter.
 
-```coffee
-db.getNodesFromLegacyAutoIndex {key, value}     # key-value lookup
-db.getNodesFromLegacyAutoIndex {query}          # arbitrary Lucene query
-db.createNodeFromLegacyAutoIndex {key, value, properties}
-db.getOrCreateNodeFromLegacyAutoIndex {key, value, properties}
+```js
+function cbOne(err, node_or_rel) {};
+function cbMany(err, nodes_or_rels) {};
 
-db.getRelationshipsFromLegacyAutoIndex {key, value}     # key-value lookup
-db.getRelationshipsFromLegacyAutoIndex {query}          # arbitrary Lucene query
-db.createRelationshipFromLegacyAutoIndex {key, value, type, properties, _fromId, _toId}
-db.getOrCreateRelationshipFromLegacyAutoIndex {key, value, type, properties, _fromId, _toId}
+db.getNodesFromLegacyAutoIndex({key, value}, cbMany);   // key-value lookup
+db.getNodesFromLegacyAutoIndex({query}, cbMany);        // arbitrary Lucene query
+db.createNodeFromLegacyAutoIndex({key, value, properties}, cbOne);
+db.getOrCreateNodeFromLegacyAutoIndex({key, value, properties}, cbOne);
+
+db.getRelationshipsFromLegacyAutoIndex({key, value}, cbMany);   // key-value lookup
+db.getRelationshipsFromLegacyAutoIndex({query}, cbMany);        // arbitrary Lucene query
+db.createRelationshipFromLegacyAutoIndex({key, value, type, properties, _fromId, _toId}, cbOne);
+db.getOrCreateRelationshipFromLegacyAutoIndex({key, value, type, properties, _fromId, _toId}, cbOne);
 ```

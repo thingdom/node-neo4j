@@ -21,14 +21,13 @@ Some context doesn't typically change, though (e.g. the URL to the database),
 so this driver supports maintaining such context as simple state.
 
 This driver continues to accept standard Node.js callbacks of the form
-`function (result, error)`, but streams are now also returned where possible.
-This allows both straightforward development using standard Node.js control
-flow tools and libraries, while also supporting more advanced streaming uses.
-You can freely use either, without worrying about the other.
+`function (result, error)`, for straightforward development using standard
+Node.js control flow tools and libraries.
 
-Importantly, callbacks can be omitted when streaming, and in that case,
-this driver will take special care not to buffer results in memory,
-ensuring high performance and low memory usage.
+In addition, however, this driver also supports streaming use cases now.
+Where specified, callbacks can be omitted to have get back streams instead.
+And importantly, in that case, this driver will take special care not to
+buffer results in memory, ensuring high performance and low memory usage.
 
 This v2 driver converges on an options-/hash-based API for most/all methods.
 This both conveys clearer intent and leaves room for future additions.
@@ -70,15 +69,26 @@ It'll also allow callers to interface with arbitrary plugins,
 including custom ones.
 
 ```js
-function cb(err, resp) {};
+function cb(err, body) {};
 
-var req = db.http({method, path, headers, body}, cb);
+var req = db.http({method, path, headers, body, raw}, cb);
 ```
 
-This method will immediately return the raw, pipeable HTTP request stream,
-then call the callback with the full HTTP response when it's finished.
-The body will be parsed as JSON, and nodes and relationships will be
-transformed into `Node` and `Relationship` objects (see below).
+This method will immediately return a duplex HTTP stream, to and from which
+both request and response body data can be piped or streamed.
+
+In addition, if a callback is given, it will be called with the final result.
+By default, this result will be the HTTP response body (parsed as JSON),
+with nodes and relationships transformed to
+[`Node` and `Relationship` objects](#objects),
+or an [`Error` object](#errors) both if there was a native error (e.g. DNS)
+or if the HTTP status code is `4xx` or `5xx`.
+
+Alternately, `raw: true` can be passed to have the callback receive the full
+HTTP response, with `statusCode`, `headers`, and `body` properties.
+The `body` will still be parsed as JSON, but nodes, relationships, and errors
+will *not* be transformed to node-neo4j objects in this case.
+In addition, `4xx` and `5xx` status code will *not* yield an error.
 
 Importantly, we don't want to leak the implementation details of which HTTP
 library we use. Both [request](https://github.com/request/request) and
@@ -87,11 +97,6 @@ it'd be nice to experiment with both (e.g. SuperAgent supports the browser).
 Does this mean we should do anything special when returning HTTP responses?
 E.g. should we document our own minimal HTTP `Response` interface that's the
 common subset of both libraries?
-
-Also worth asking: what about streaming the response JSON?
-It looks like [Oboe.js](http://oboejs.com/) supports reading an existing HTTP
-stream ([docs](http://oboejs.com/api#byo-stream)), but not in the browser.
-Is that fine?
 
 
 ## Objects
@@ -144,24 +149,22 @@ function cb(err, results) {};
 var stream = db.cypher({query, params, headers, raw}, cb);
 ```
 
-This method will immediately return a pipeable "results" stream
-(a `data` event will be emitted for each result row),
-then call the callback with the the full, aggregate results array
-(similar to the `http()` method).
-Each result row will be a dictionary from column name
-to the row's value for that column.
+If a callback is given, it'll be called with the array of results,
+or an error if there is one.
+Alternately, the results can be streamed back by omitting the callback.
+In that case, a stream will be returned, which will emit a `data` event
+for each result, or an `error` event if there is one.
+In both cases, each result will be a dictionary from column name to
+row value for that column.
 
-By default, nodes and relationships will be transformed to `Node` and
-`Relationship` objects.
-To do that, though, requires a heavier data format over the wire.
+In addition, by default, nodes and relationships will be transformed to
+`Node` and `Relationship` objects.
 If you don't need the full knowledge of node and relationship metadata
-(labels, types, native IDs), you can bypass this by passing `raw: true`
-for a potential performance gain.
+(labels, types, native IDs), you can bypass that by specifying `raw: true`,
+which will return just property data, for a potential performance gain.
 
-If there's an error, the "results" stream will emit an `error` event,
-and the callback will be called with the error.
-
-TODO: Should we formalize the "results" stream into a documented class?
+TODO: Should we formalize the streaming case into a documented Stream class?
+Or should we just link to cypher-stream?
 
 TODO: Should we allow access to other underlying data formats, e.g. "graph"?
 

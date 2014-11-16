@@ -1,5 +1,7 @@
 lib = require '../package.json'
 request = require 'request'
+KeepAlive = require 'keep-alive'
+securedKeepAlive = new KeepAlive.Secure()
 URL = require 'url'
 
 #-----------------------------------------------------------------------------
@@ -22,6 +24,7 @@ exports.wrapRequest = ({url, proxy}) ->
     req = request.defaults
         json: true
         proxy: proxy
+        agent: securedKeepAlive
 
     # parse auth info:
     auth = URL.parse(url).auth

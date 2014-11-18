@@ -1,7 +1,7 @@
 lib = require '../package.json'
 request = require 'request'
-KeepAlive = require 'keep-alive'
-securedKeepAlive = new KeepAlive.Secure()
+KeepAliveAgent = require 'keep-alive-agent'
+securedKeepAlive = new KeepAliveAgent.Secure()
 URL = require 'url'
 
 #-----------------------------------------------------------------------------

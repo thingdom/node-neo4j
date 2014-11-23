@@ -11,7 +11,7 @@
   "main": "./lib",
   "dependencies": {
     "http-status": "^0.1.0",
-    "keep-alive": "^0.1.0",
+    "keep-alive-agent": "0.0.1",
     "request": "^2.27.0"
   },
   "devDependencies": {

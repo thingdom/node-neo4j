@@ -7,7 +7,7 @@
         "Daniel Gasienica <daniel@gasienica.ch>",
         "Sergio Haro <sergio.haro.jr@gmail.com>"
     ],
-    "main": "./lib",
+    "main": "./lib-old",
     "dependencies": {
         "http-status": "^0.1.0",
         "request": "^2.27.0"
@@ -23,8 +23,8 @@
         "node": ">= 0.10"
     },
     "scripts": {
-        "build": "coffee -m -c lib/ && _coffee -m --standalone -c lib/",
-        "clean": "rm -f lib/*.{js,map}",
+        "build": "coffee -m -c lib-old/ && _coffee -m --standalone -c lib-old/",
+        "clean": "rm -f lib-old/*.{js,map}",
         "codo": "codo && codo --server",
         "prepublish": "npm run build",
         "postpublish": "npm run clean",

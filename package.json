@@ -1,11 +1,10 @@
 {
     "name": "neo4j",
     "description": "Neo4j driver (REST API client) for Node.js",
-    "version": "1.1.1",
-    "author": "The Thingdom <info@thethingdom.com>",
+    "version": "2.0.0-alpha1",
+    "author": "Aseem Kishore <aseem.kishore@gmail.com>",
     "contributors": [
         "Daniel Gasienica <daniel@gasienica.ch>",
-        "Aseem Kishore <aseem.kishore@gmail.com>",
         "Sergio Haro <sergio.haro.jr@gmail.com>"
     ],
     "main": "./lib",
@@ -21,7 +20,7 @@
         "streamline": "^0.10.16"
     },
     "engines": {
-        "node": ">= 0.6"
+        "node": ">= 0.10"
     },
     "scripts": {
         "build": "coffee -m -c lib/ && _coffee -m --standalone -c lib/",
@@ -32,7 +31,7 @@
         "test": "mocha"
     },
     "keywords": [
-        "neo4j", "graph", "database", "driver", "rest", "api", "client"
+        "neo4j", "graph", "database", "driver", "client", "cypher"
     ],
     "license": "Apache-2.0",
     "repository" : {

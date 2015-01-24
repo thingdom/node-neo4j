@@ -1,4 +1,5 @@
 $ = require 'underscore'
+errors = require './errors'
 lib = require '../package.json'
 Request = require 'request'
 URL = require 'url'
@@ -45,7 +46,7 @@ module.exports = class GraphDatabase
         , (err, resp) =>
 
             if err
-                # TODO: Properly check error and transform to semantic instance.
+                # TODO: Do we want to wrap or modify native errors?
                 return cb err
 
             if raw
@@ -55,13 +56,15 @@ module.exports = class GraphDatabase
             {body, headers, statusCode} = resp
 
             if statusCode >= 500
-                # TODO: Semantic errors.
-                err = new Error "Neo4j #{statusCode} response"
+                # TODO: Parse errors, and differentiate w/ TransientErrors.
+                err = new errors.DatabaseError 'TODO',
+                    http: {body, headers, statusCode}
                 return cb err
 
             if statusCode >= 400
-                # TODO: Semantic errors.
-                err = new Error "Neo4j #{statusCode} response"
+                # TODO: Parse errors.
+                err = new errors.ClientError 'TODO',
+                    http: {body, headers, statusCode}
                 return cb err
 
             # TODO: Parse nodes and relationships.

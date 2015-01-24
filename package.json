@@ -28,7 +28,7 @@
         "codo": "codo && codo --server",
         "prepublish": "npm run build",
         "postpublish": "npm run clean",
-        "test": "mocha"
+        "test": "mocha test-new"
     },
     "keywords": [
         "neo4j", "graph", "database", "driver", "client", "cypher"

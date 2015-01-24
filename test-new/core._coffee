@@ -1,6 +1,7 @@
+$ = require 'underscore'
 {expect} = require 'chai'
-{GraphDatabase} = require '../'
 http = require 'http'
+neo4j = require '../'
 
 
 # SHARED STATE
@@ -12,7 +13,50 @@ FAKE_PROXY = 'http://lorem.ipsum'
 FAKE_HEADERS =
     'x-foo': 'bar-baz'
     'x-lorem': 'ipsum'
-    # TODO: Test custom User-Agent behavior?
+    # TODO: Test overlap with default headers?
+    # TODO: Test custom User-Agent behavior, or blacklist X-Stream?
+
+
+## HELPERS
+
+#
+# Asserts that the given object is an instance of GraphDatabase,
+# pointing to the given URL, optionally using the given proxy URL.
+#
+expectDatabase = (db, url, proxy) ->
+    expect(db).to.be.an.instanceOf neo4j.GraphDatabase
+    expect(db.url).to.equal url
+    expect(db.proxy).to.equal proxy
+
+#
+# Asserts that the given GraphDatabase instance has its `headers` property set
+# to the union of the given headers and the default GraphDatabase `headers`,
+# with the given headers taking precedence.
+#
+# TODO: If we special-case User-Agent or blacklist X-Stream, update here.
+#
+expectHeaders = (db, headers) ->
+    expect(db.headers).to.be.an 'object'
+
+    defaultHeaders = neo4j.GraphDatabase::headers
+    defaultKeys = Object.keys defaultHeaders
+    givenKeys = Object.keys headers
+    expectedKeys = $.union defaultKeys, givenKeys   # This de-dupes too.
+
+    # This is an exact check, i.e. *only* these keys:
+    expect(db.headers).to.have.keys expectedKeys
+
+    for key, val of db.headers
+        expect(val).to.equal headers[key] or defaultHeaders[key]
+
+expectResponse = (resp, statusCode) ->
+    expect(resp).to.be.an.instanceOf http.IncomingMessage
+    expect(resp.statusCode).to.equal statusCode
+    expect(resp.headers).to.be.an 'object'
+
+expectNeo4jRoot = (body) ->
+    expect(body).to.be.an 'object'
+    expect(body).to.have.keys 'data', 'management'
 
 
 ## TESTS
@@ -20,44 +64,33 @@ FAKE_HEADERS =
 describe 'GraphDatabase::constructor', ->
 
     it 'should support full options', ->
-        DB = new GraphDatabase
+        DB = new neo4j.GraphDatabase
             url: URL
             proxy: FAKE_PROXY
             headers: FAKE_HEADERS
 
-        expect(DB).to.be.an.instanceOf GraphDatabase
-        expect(DB.url).to.equal URL
-        expect(DB.proxy).to.equal FAKE_PROXY
-        expect(DB.headers).to.be.an 'object'
-
-        # Default headers should include/contain our given ones,
-        # but may include extra default headers too (e.g. X-Stream):
-        for key, val of FAKE_HEADERS
-            expect(DB.headers[key]).to.equal val
+        expectDatabase DB, URL, FAKE_PROXY
+        expectHeaders DB, FAKE_HEADERS
 
     it 'should support just URL string', ->
-        DB = new GraphDatabase URL
+        DB = new neo4j.GraphDatabase URL
 
-        expect(DB).to.be.an.instanceOf GraphDatabase
-        expect(DB.url).to.equal URL
-        expect(DB.proxy).to.not.exist()
-        expect(DB.headers).to.be.an 'object'
+        expectDatabase DB, URL
+        expectHeaders DB, {}
 
     it 'should throw if no URL given', ->
-        fn = -> new GraphDatabase()
+        fn = -> new neo4j.GraphDatabase()
         expect(fn).to.throw TypeError
 
         # Also try giving an options argument, just with no URL:
-        fn = -> new GraphDatabase {proxy: FAKE_PROXY}
+        fn = -> new neo4j.GraphDatabase {proxy: FAKE_PROXY}
         expect(fn).to.throw TypeError
 
 describe 'GraphDatabase::http', ->
 
     it 'should support simple GET requests by default', (_) ->
         body = DB.http '/', _
-
-        expect(body).to.be.an 'object'
-        expect(body).to.have.keys 'data', 'management'
+        expectNeo4jRoot body
 
     it 'should support complex requests with options', (_) ->
         body = DB.http
@@ -66,8 +99,7 @@ describe 'GraphDatabase::http', ->
             headers: FAKE_HEADERS
         , _
 
-        expect(body).to.be.an 'object'
-        expect(body).to.have.keys 'data', 'management'
+        expectNeo4jRoot body
 
     it 'should throw errors for 4xx responses by default', (_) ->
         try
@@ -90,17 +122,9 @@ describe 'GraphDatabase::http', ->
             raw: true
         , _
 
-        expect(resp).to.be.an.instanceOf http.IncomingMessage
-
-        {statusCode, headers, body} = resp
-
-        expect(statusCode).to.equal 200
-
-        expect(headers).to.be.an 'object'
-        expect(headers['content-type']).to.match /// ^application/json\b ///
-
-        expect(body).to.be.an 'object'
-        expect(body).to.have.keys 'data', 'management'
+        expectResponse resp, 200
+        expect(resp.headers['content-type']).to.match /// ^application/json\b ///
+        expectNeo4jRoot resp.body
 
     it 'should not throw 4xx errors for raw responses', (_) ->
         resp = DB.http
@@ -109,11 +133,10 @@ describe 'GraphDatabase::http', ->
             raw: true
         , _
 
-        expect(resp).to.be.an.instanceOf http.IncomingMessage
-        expect(resp.statusCode).to.equal 405 # Method Not Allowed
+        expectResponse resp, 405 # Method Not Allowed
 
     it 'should throw native errors always', (_) ->
-        db = new GraphDatabase 'http://idontexist.foobarbaz.nodeneo4j'
+        db = new neo4j.GraphDatabase 'http://idontexist.foobarbaz.nodeneo4j'
 
         try
             thrown = false

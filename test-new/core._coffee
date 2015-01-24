@@ -110,8 +110,10 @@ describe 'GraphDatabase::http', ->
             , _
         catch err
             thrown = true
-            expect(err).to.be.an.instanceOf Error
-            # TODO: Deeper and more semantic assertions, e.g. status code.
+            expect(err).to.be.an.instanceOf neo4j.ClientError
+            expect(err.name).to.equal 'neo4j.ClientError'
+            expect(err.http).to.be.an 'object'
+            expect(err.http.statusCode).to.equal 405
 
         expect(thrown).to.be.true()
 
@@ -147,7 +149,9 @@ describe 'GraphDatabase::http', ->
         catch err
             thrown = true
             expect(err).to.be.an.instanceOf Error
-            # TODO: Deeper and more semantic assertions?
+            expect(err.name).to.equal 'Error'
+            expect(err.code).to.equal 'ENOTFOUND'
+            expect(err.syscall).to.equal 'getaddrinfo'
 
         expect(thrown).to.be.true()
 

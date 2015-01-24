@@ -309,20 +309,22 @@ using `Error` subclasses. Importantly:
 - Special care is taken to provide `message` and `stack` properties rich in
   info, so that no special serialization is needed to debug production errors.
 
-- And all info returned by Neo4j is also available on the `Error` instances
+- Structured info returned by Neo4j is also available on the `Error` instances
   under a `neo4j` property, for deeper introspection and analysis if desired.
+  In addition, if this error is associated with a full HTTP response, the HTTP
+  `statusCode`, `headers`, and `body` are available via an `http` property.
 
 ```coffee
-class Error {name, message, stack, neo4j}
+class Error {name, message, stack, http, neo4j}
 
 class ClientError extends Error
 class DatabaseError extends Error
 class TransientError extends Error
 ```
 
-TODO: Should we name these classes with a `Neo4j` prefix?
-They'll only be exposed via this driver's `module.exports`, so it's not
-technically necessary, but that'd allow for e.g. destructuring.
+Note that these class names do *not* have a `Neo4j` prefix, since they'll only
+be exposed via this driver's `module.exports`, but for convenience, instances'
+`name` properties *do* have a `neo4j.` prefix, e.g. `neo4j.ClientError`.
 
 
 ## Schema

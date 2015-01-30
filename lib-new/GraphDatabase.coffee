@@ -1,5 +1,5 @@
 $ = require 'underscore'
-errors = require './errors'
+{Error} = require './errors'
 lib = require '../package.json'
 Node = require './Node'
 Relationship = require './Relationship'
@@ -56,20 +56,10 @@ module.exports = class GraphDatabase
 
             {body, headers, statusCode} = resp
 
-            if statusCode >= 500
-                # TODO: Parse errors, and differentiate w/ TransientErrors.
-                err = new errors.DatabaseError 'TODO',
-                    http: {body, headers, statusCode}
+            if err = Error._fromResponse resp
                 return cb err
 
-            if statusCode >= 400
-                # TODO: Parse errors.
-                err = new errors.ClientError 'TODO',
-                    http: {body, headers, statusCode}
-                return cb err
-
-            # Parse nodes and relationships in the body, and return:
-            return cb null, _transform body
+            cb null, _transform body
 
 
 ## HELPERS

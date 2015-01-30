@@ -13,6 +13,8 @@ neo4j = require '../'
 
 {DB, TEST_LABEL, TEST_REL_TYPE} = fixtures
 
+[DB_VERSION_STR, DB_VERSION_NUM] = []
+
 TEST_NODE_A = new neo4j.Node
     # _id will get filled in once we persist
     labels: [TEST_LABEL]
@@ -182,6 +184,25 @@ describe 'GraphDatabase::http', ->
 
     ## Object parsing:
 
+    it '(query Neo4j version)', (_) ->
+        info = DB.http
+            method: 'GET'
+            path: '/db/data/'
+        , _
+
+        DB_VERSION_STR = info.neo4j_version or '0'
+        DB_VERSION_NUM = parseFloat DB_VERSION_STR, 10
+
+        if DB_VERSION_NUM < 2
+            throw new Error '*** node-neo4j v2 supports Neo4j v2+ only,
+                and you’re running Neo4j v1. These tests will fail! ***'
+
+        # Neo4j <2.1.5 didn't return label info, so returned nodes won't have
+        # the labels we expect. Account for that:
+        if DB_VERSION_STR < '2.1.5'
+            TEST_NODE_A.labels = null
+            TEST_NODE_B.labels = null
+
     it '(create test objects)', (_) ->
         # NOTE: Using the old Cypher endpoint for simplicity here.
         # Nicer than using the raw REST API to create these test objects,
@@ -263,9 +284,13 @@ describe 'GraphDatabase::http', ->
         , _
 
         expect(body).to.not.be.an.instanceOf neo4j.Node
-        expect(body.metadata).to.be.an 'object'
-        expect(body.metadata.id).to.equal TEST_NODE_A._id
-        expect(body.metadata.labels).to.eql TEST_NODE_A.labels
+
+        # NOTE: Neo4j <2.1.5 didn't return `metadata`, so can't rely on it:
+        if DB_VERSION_STR >= '2.1.5'
+            expect(body.metadata).to.be.an 'object'
+            expect(body.metadata.id).to.equal TEST_NODE_A._id
+            expect(body.metadata.labels).to.eql TEST_NODE_A.labels
+
         expect(body.data).to.eql TEST_NODE_A.properties
 
     it 'should not parse relationships for raw responses', (_) ->
@@ -275,9 +300,13 @@ describe 'GraphDatabase::http', ->
             raw: true
         , _
 
-        expect(body.metadata).to.be.an 'object'
-        expect(body.metadata.id).to.equal TEST_REL._id
         expect(body).to.not.be.an.instanceOf neo4j.Relationship
+
+        # NOTE: Neo4j <2.1.5 didn't return `metadata`, so can't rely on it:
+        if DB_VERSION_STR >= '2.1.5'
+            expect(body.metadata).to.be.an 'object'
+            expect(body.metadata.id).to.equal TEST_REL._id
+
         expect(body.type).to.equal TEST_REL.type
         expect(body.data).to.eql TEST_REL.properties
 

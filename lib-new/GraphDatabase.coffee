@@ -1,6 +1,8 @@
 $ = require 'underscore'
 errors = require './errors'
 lib = require '../package.json'
+Node = require './Node'
+Relationship = require './Relationship'
 Request = require 'request'
 URL = require 'url'
 
@@ -36,7 +38,6 @@ module.exports = class GraphDatabase
         method or= 'GET'
         headers or= {}
 
-        # TODO: Parse response body before calling back.
         # TODO: Do we need to do anything special to support streaming response?
         req = Request
             method: method
@@ -67,5 +68,39 @@ module.exports = class GraphDatabase
                     http: {body, headers, statusCode}
                 return cb err
 
-            # TODO: Parse nodes and relationships.
-            return cb null, body
+            # Parse nodes and relationships in the body, and return:
+            return cb null, _transform body
+
+
+## HELPERS
+
+#
+# Deep inspects the given object -- which could be a simple primitive, a map,
+# an array with arbitrary other objects, etc. -- and transforms any objects that
+# look like nodes and relationships into Node and Relationship instances.
+# Returns the transformed object, and does not mutate the input object.
+#
+_transform = (obj) ->
+    # Nothing to transform for primitives and null:
+    if (not obj) or (typeof obj isnt 'object')
+        return obj
+
+    # Process arrays:
+    # (NOTE: Not bothering to detect arrays made in other JS contexts.)
+    if obj instanceof Array
+        return obj.map _transform
+
+    # Feature-detect (AKA "duck-type") Node & Relationship objects, by simply
+    # trying to parse them as such.
+    # Important: check relationships first, for precision/specificity.
+    # TODO: If we add a Path class, we'll need to check for that here too.
+    if rel = Relationship._fromRaw obj
+        return rel
+    if node = Node._fromRaw obj
+        return node
+
+    # Otherwise, process as a dictionary/map:
+    map = {}
+    for key, val of obj
+        map[key] = _transform val
+    map

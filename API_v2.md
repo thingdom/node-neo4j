@@ -308,14 +308,14 @@ using `Error` subclasses. Importantly:
 
 - Special care is taken to provide `message` and `stack` properties rich in
   info, so that no special serialization is needed to debug production errors.
+  That is, simply logging the `stack` (as most error handlers tend to do)
+  should get you meaningful and useful data.
 
 - Structured info returned by Neo4j is also available on the `Error` instances
   under a `neo4j` property, for deeper introspection and analysis if desired.
-  In addition, if this error is associated with a full HTTP response, the HTTP
-  `statusCode`, `headers`, and `body` are available via an `http` property.
 
 ```coffee
-class Error {name, message, stack, http, neo4j}
+class Error {name, message, stack, neo4j}
 
 class ClientError extends Error
 class DatabaseError extends Error

@@ -47,6 +47,19 @@ expectNeo4jRoot = (body) ->
     expect(body).to.be.an 'object'
     expect(body).to.have.keys 'data', 'management'
 
+#
+# Asserts that the given object is a proper instance of the given Neo4j Error
+# subclass, including with the given message.
+# Additional checks, e.g. of the `neo4j` property's contents, are up to you.
+#
+expectError = (err, ErrorClass, message) ->
+    expect(err).to.be.an.instanceOf ErrorClass
+    expect(err.name).to.equal "neo4j.#{ErrorClass.name}"
+    expect(err.neo4j).to.be.an 'object'
+    expect(err.message).to.equal message
+    expect(err.stack).to.contain '\n'
+    expect(err.stack.split('\n')[0]).to.equal "#{err.name}: #{err.message}"
+
 
 ## TESTS
 
@@ -66,21 +79,53 @@ describe 'GraphDatabase::http', ->
 
         expectNeo4jRoot body
 
-    it 'should throw errors for 4xx responses by default', (_) ->
-        try
-            thrown = false
-            DB.http
-                method: 'POST'
-                path: '/'
-            , _
-        catch err
-            thrown = true
-            expect(err).to.be.an.instanceOf neo4j.ClientError
-            expect(err.name).to.equal 'neo4j.ClientError'
-            expect(err.http).to.be.an 'object'
-            expect(err.http.statusCode).to.equal 405
+    it 'should throw errors for 4xx responses by default', (done) ->
+        DB.http
+            method: 'POST'
+            path: '/'
+        , (err, body) ->
+            try
+                expect(err).to.exist()
+                expect(body).to.not.exist()
 
-        expect(thrown).to.be.true()
+                expectError err, neo4j.ClientError,
+                    '[405] Method Not Allowed response for POST /'
+                expect(err.neo4j).to.be.empty()
+
+            catch assertionErr
+                return done assertionErr
+
+            done()
+
+    it 'should properly parse Neo4j exceptions', (done) ->
+        DB.http
+            method: 'GET'
+            path: '/db/data/node/-1'
+        , (err, body) ->
+            try
+                expect(err).to.exist()
+                expect(body).to.not.exist()
+
+                expectError err, neo4j.ClientError, '[404] [NodeNotFoundException]
+                    Cannot find node with id [-1] in database.'
+
+                expect(err.neo4j).to.be.an 'object'
+                expect(err.neo4j.exception).to.equal 'NodeNotFoundException'
+                expect(err.neo4j.fullname).to.equal '
+                    org.neo4j.server.rest.web.NodeNotFoundException'
+                expect(err.neo4j.message).to.equal '
+                    Cannot find node with id [-1] in database.'
+
+                expect(err.neo4j.stacktrace).to.be.an 'array'
+                expect(err.neo4j.stacktrace).to.not.be.empty()
+                for line in err.neo4j.stacktrace
+                    expect(line).to.be.a 'string'
+                    expect(line).to.not.be.empty()
+
+            catch assertionErr
+                return done assertionErr
+
+            done()
 
     it 'should support returning raw responses', (_) ->
         resp = DB.http
@@ -102,23 +147,32 @@ describe 'GraphDatabase::http', ->
 
         expectResponse resp, 405 # Method Not Allowed
 
-    it 'should throw native errors always', (_) ->
+    it 'should throw native errors always', (done) ->
         db = new neo4j.GraphDatabase 'http://idontexist.foobarbaz.nodeneo4j'
+        db.http
+            path: '/'
+            raw: true
+        , (err, resp) ->
+            try
+                expect(err).to.exist()
+                expect(resp).to.not.exist()
 
-        try
-            thrown = false
-            db.http
-                path: '/'
-                raw: true
-            , _
-        catch err
-            thrown = true
-            expect(err).to.be.an.instanceOf Error
-            expect(err.name).to.equal 'Error'
-            expect(err.code).to.equal 'ENOTFOUND'
-            expect(err.syscall).to.equal 'getaddrinfo'
+                # NOTE: *Not* using `expectError` here, because we explicitly
+                # don't wrap native (non-Neo4j) errors.
+                expect(err).to.be.an.instanceOf Error
+                expect(err.name).to.equal 'Error'
+                expect(err.code).to.equal 'ENOTFOUND'
+                expect(err.syscall).to.equal 'getaddrinfo'
+                expect(err.message).to.contain "#{err.syscall} #{err.code}"
+                    # NOTE: Node 0.12 adds the hostname to the message.
+                expect(err.stack).to.contain '\n'
+                expect(err.stack.split('\n')[0]).to.equal \
+                    "#{err.name}: #{err.message}"
 
-        expect(thrown).to.be.true()
+            catch assertionErr
+                return done assertionErr
+
+            done()
 
     it 'should support streaming (TODO)'
         # Test that it immediately returns a duplex HTTP stream.

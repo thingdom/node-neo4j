@@ -38,6 +38,26 @@ class @Error extends Error
 
         new ErrorClass message, body
 
+    #
+    # Accepts the given error object from a transactional Cypher response, and
+    # creates and returns the appropriate Error instance for it.
+    #
+    @_fromTransaction: (obj) ->
+        # http://neo4j.com/docs/stable/rest-api-transactional.html#rest-api-handling-errors
+        # http://neo4j.com/docs/stable/status-codes.html
+        {code, message} = obj
+        [neo, classification, category, title] = code.split '.'
+
+        ErrorClass = exports[classification]    # e.g. DatabaseError
+        message = "[#{category}.#{title}] #{message or '(no message)'}"
+
+        # TODO: Some errors (always DatabaseErrors?) can also apparently have a
+        # `stack` property with the Java stack trace. Should we include it in
+        # our own message/stack, in the DatabaseError case at least?
+        # (This'd be analagous to including the body for 5xx responses above.)
+
+        new ErrorClass message, obj
+
     # TODO: Helper to rethrow native/inner errors? Not sure if we need one.
 
 class @ClientError extends @Error

@@ -5,6 +5,8 @@ Node = require './Node'
 Relationship = require './Relationship'
 Request = require 'request'
 URL = require 'url'
+utils = require './utils'
+
 
 module.exports = class GraphDatabase
 
@@ -60,6 +62,71 @@ module.exports = class GraphDatabase
                 return cb err
 
             cb null, _transform body
+
+    cypher: (opts={}, cb) ->
+        if typeof opts is 'string'
+            opts = {query: opts}
+
+        {query, params, headers, raw} = opts
+
+        method = 'POST'
+        path = '/db/data/transaction/commit'
+
+        # NOTE: Lowercase 'rest' matters here for parsing.
+        format = if raw then 'row' else 'rest'
+        statements = []
+        body = {statements}
+
+        # TODO: Support batching multiple queries in this request?
+        if query
+            statements.push
+                statement: query
+                parameters: params or {}
+                resultDataContents: [format]
+
+        # TODO: Support streaming!
+        @http {method, path, headers, body}, (err, body) =>
+
+            if err
+                # TODO: Do we want to wrap or modify native errors?
+                # NOTE: This includes our own errors for non-2xx responses.
+                return cb err
+
+            {results, errors} = body
+
+            if errors.length
+                # TODO: Is it possible to get back more than one error?
+                # If so, is it fine for us to just use the first one?
+                [error] = errors
+                return cb Error._fromTransaction error
+
+            # If there are no results, it means no statements were sent
+            # (e.g. to commit, rollback, or renew a transaction in isolation),
+            # so nothing to return, i.e. a void call in that case.
+            # Important: we explicitly don't return an empty array, because that
+            # implies we *did* send a query, that just didn't match anything.
+            if not results.length
+                return cb null, null
+
+            # The top-level `results` is an array of results corresponding to
+            # the `statements` (queries) inputted.
+            # We send only one statement/query, so we have only one result.
+            [result] = results
+            {columns, data} = result
+
+            # The `data` is an array of result rows, but each of its elements is
+            # actually a dictionary of results keyed by *response format*.
+            # We only request one format, `rest` by default, `row` if `raw`.
+            # In both cases, the value is an array of rows, where each row is an
+            # array of column values.
+            # We transform those rows into dictionaries keyed by column names.
+            results = $(data).pluck(format).map (row) ->
+                result = {}
+                for column, i in columns
+                    result[column] = row[i]
+                result
+
+            cb null, results
 
 
 ## HELPERS

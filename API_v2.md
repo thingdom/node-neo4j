@@ -147,6 +147,9 @@ from database responses.
 function cb(err, results) {};
 
 var stream = db.cypher({query, params, headers, raw}, cb);
+
+// Alternate simple version -- no params, no headers, not raw:
+var stream = db.cypher(query, cb);
 ```
 
 If a callback is given, it'll be called with the array of results,

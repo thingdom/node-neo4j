@@ -4,8 +4,8 @@ lib = require '../package.json'
 Node = require './Node'
 Relationship = require './Relationship'
 Request = require 'request'
+Transaction = require './Transaction'
 URL = require 'url'
-utils = require './utils'
 
 
 module.exports = class GraphDatabase
@@ -63,14 +63,38 @@ module.exports = class GraphDatabase
 
             cb null, _transform body
 
-    cypher: (opts={}, cb) ->
+    cypher: (opts={}, cb, _tx) ->
         if typeof opts is 'string'
             opts = {query: opts}
 
-        {query, params, headers, raw} = opts
+        {query, params, headers, raw, commit, rollback} = opts
+
+        if not _tx and rollback
+            throw new Error 'Illegal state: rolling back without a transaction!'
+
+        if not _tx?._id and rollback
+            # No query has been made within transaction yet, so this transaction
+            # doesn't even exist yet from Neo4j's POV; nothing to do.
+            cb null, null
+            return
+
+        if commit and rollback
+            throw new Error 'Illegal state: both committing and rolling back!'
+
+        if not _tx and commit is false
+            throw new TypeError 'Can’t refuse to commit without a transaction!
+                To begin a new transaction without committing, call
+                `db.beginTransaction()`, and then call `cypher` on that.'
+
+        if not _tx and not query
+            throw new TypeError 'Query required'
 
         method = 'POST'
-        path = '/db/data/transaction/commit'
+        method = 'DELETE' if rollback
+
+        path = '/db/data/transaction'
+        path += "/#{_tx._id}" if _tx?._id
+        path += "/commit" if commit or not _tx
 
         # NOTE: Lowercase 'rest' matters here for parsing.
         format = if raw then 'row' else 'rest'
@@ -91,6 +115,8 @@ module.exports = class GraphDatabase
                 # TODO: Do we want to wrap or modify native errors?
                 # NOTE: This includes our own errors for non-2xx responses.
                 return cb err
+
+            _tx?._updateFromResponse body
 
             {results, errors} = body
 
@@ -127,6 +153,9 @@ module.exports = class GraphDatabase
                 result
 
             cb null, results
+
+    beginTransaction: ->
+        new Transaction @
 
 
 ## HELPERS

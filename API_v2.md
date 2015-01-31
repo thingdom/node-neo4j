@@ -200,17 +200,24 @@ so it could always be achieved automatically under-the-hood by this driver
 Please provide feedback if you disagree!
 
 ```js
-var tx = db.beginTransaction();     // any options needed?
+var tx = db.beginTransaction();
 ```
-
-This method returns a `Transaction` object, which mainly just encapsulates the
-state of a "transaction ID" returned by Neo4j from the first query.
 
 This method is named "begin" instead of "create" to reflect that it returns
 immediately, and has not actually persisted anything to the database yet.
 
+This method returns a `Transaction` object, which mainly just encapsulates the
+state of a "transaction ID" returned by Neo4j from the first query.
+In addition, though, `Transaction` instances expose helpful properties to let
+you know a transaction's precise state, e.g. whether it was automatically
+rolled back by Neo4j due to a fatal error.
+This precise state tracking also lets this driver prevent predictable errors,
+which may be signs of code bugs, and provide more helpful error messaging.
+
 ```coffee
-class Transaction {_id}
+class Transaction {_id, expiresAt, expiresIn, state}
+# `expiresAt` is a Date, while `expiresIn` is a millisecond count.
+# `state` is one of 'open', 'pending', 'committed, 'rolled back', or 'expired'.
 ```
 
 ```js
@@ -221,18 +228,16 @@ var stream = tx.cypher({query, params, headers, raw, commit}, cbResults);
 
 tx.commit(cbDone);
 tx.rollback(cbDone);
+tx.renew(cbDone);
 ```
 
 The transactional `cypher` method is just like the regular `cypher` method,
 except that it supports an additional `commit` option, which can be set to
-`true` to automatically attempt to commit the transaction after this query.
+`true` to automatically attempt to commit the transaction with this query.
 
 Otherwise, transactions can be committed and rolled back independently.
-
-TODO: Any more functionality needed for transactions?
-There's a notion of expiry, and the expiry timeout can be reset by making
-empty queries; should a notion of auto "renewal" (effectively, a higher
-timeout than the default) be built-in for convenience?
+They can also be explicitly renewed, as Neo4j expires them if idle too long,
+but every query in a transaction implicitly renews the transaction as well.
 
 
 ## Errors

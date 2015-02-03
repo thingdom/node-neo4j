@@ -11,24 +11,9 @@ neo4j = require '../'
 
 ## SHARED STATE
 
-{DB, TEST_LABEL, TEST_REL_TYPE} = fixtures
+{DB} = fixtures
 
-[DB_VERSION_STR, DB_VERSION_NUM] = []
-
-TEST_NODE_A = new neo4j.Node
-    # _id will get filled in once we persist
-    labels: [TEST_LABEL]
-    properties: {suite: module.filename, name: 'a'}
-
-TEST_NODE_B = new neo4j.Node
-    # _id will get filled in once we persist
-    labels: [TEST_LABEL]
-    properties: {suite: module.filename, name: 'b'}
-
-TEST_REL = new neo4j.Relationship
-    # _id, _fromId (node A), _toId (node B) will get filled in once we persist
-    type: TEST_REL_TYPE
-    properties: {suite: module.filename, name: 'r'}
+[TEST_NODE_A, TEST_NODE_B, TEST_REL] = []
 
 
 ## HELPERS
@@ -184,55 +169,9 @@ describe 'GraphDatabase::http', ->
 
     ## Object parsing:
 
-    it '(query Neo4j version)', (_) ->
-        info = DB.http
-            method: 'GET'
-            path: '/db/data/'
-        , _
-
-        DB_VERSION_STR = info.neo4j_version or '0'
-        DB_VERSION_NUM = parseFloat DB_VERSION_STR, 10
-
-        if DB_VERSION_NUM < 2
-            throw new Error '*** node-neo4j v2 supports Neo4j v2+ only,
-                and you’re running Neo4j v1. These tests will fail! ***'
-
-        # Neo4j <2.1.5 didn't return label info, so returned nodes won't have
-        # the labels we expect. Account for that:
-        if DB_VERSION_STR < '2.1.5'
-            TEST_NODE_A.labels = null
-            TEST_NODE_B.labels = null
-
-    it '(create test objects)', (_) ->
-        # NOTE: Using the old Cypher endpoint for simplicity here.
-        # Nicer than using the raw REST API to create these test objects,
-        # but also nice to neither use this driver's Cypher functionality
-        # (which is tested in a higher-level test suite), nor re-implement it.
-        # http://neo4j.com/docs/stable/rest-api-cypher.html#rest-api-use-parameters
-        {data} = DB.http
-            method: 'POST'
-            path: '/db/data/cypher'
-            body:
-                query: """
-                    CREATE (a:#{TEST_LABEL} {propsA})
-                    CREATE (b:#{TEST_LABEL} {propsB})
-                    CREATE (a) -[r:#{TEST_REL_TYPE} {propsR}]-> (b)
-                    RETURN ID(a), ID(b), ID(r)
-                """
-                params:
-                    propsA: TEST_NODE_A.properties
-                    propsB: TEST_NODE_B.properties
-                    propsR: TEST_REL.properties
-        , _
-
-        [row] = data
-        [idA, idB, idR] = row
-
-        TEST_NODE_A._id = idA
-        TEST_NODE_B._id = idB
-        TEST_REL._id = idR
-        TEST_REL._fromId = idA
-        TEST_REL._toId = idB
+    it '(create test graph)', (_) ->
+        [TEST_NODE_A, TEST_REL, TEST_NODE_B] =
+            fixtures.createTestGraph module, 2, _
 
     it 'should parse nodes by default', (_) ->
         node = DB.http
@@ -286,7 +225,7 @@ describe 'GraphDatabase::http', ->
         expect(body).to.not.be.an.instanceOf neo4j.Node
 
         # NOTE: Neo4j <2.1.5 didn't return `metadata`, so can't rely on it:
-        if DB_VERSION_STR >= '2.1.5'
+        if fixtures.DB_VERSION_STR >= '2.1.5'
             expect(body.metadata).to.be.an 'object'
             expect(body.metadata.id).to.equal TEST_NODE_A._id
             expect(body.metadata.labels).to.eql TEST_NODE_A.labels
@@ -303,24 +242,12 @@ describe 'GraphDatabase::http', ->
         expect(body).to.not.be.an.instanceOf neo4j.Relationship
 
         # NOTE: Neo4j <2.1.5 didn't return `metadata`, so can't rely on it:
-        if DB_VERSION_STR >= '2.1.5'
+        if fixtures.DB_VERSION_STR >= '2.1.5'
             expect(body.metadata).to.be.an 'object'
             expect(body.metadata.id).to.equal TEST_REL._id
 
         expect(body.type).to.equal TEST_REL.type
         expect(body.data).to.eql TEST_REL.properties
 
-    it '(delete test objects)', (_) ->
-        DB.http
-            method: 'POST'
-            path: '/db/data/cypher'
-            body:
-                query: """
-                    START a = node({idA}), b = node({idB}), r = rel({idR})
-                    DELETE a, b, r
-                """
-                params:
-                    idA: TEST_NODE_A._id
-                    idB: TEST_NODE_B._id
-                    idR: TEST_REL._id
-        , _
+    it '(delete test graph)', (_) ->
+        fixtures.deleteTestGraph module, _

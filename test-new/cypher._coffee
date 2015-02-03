@@ -9,26 +9,10 @@ neo4j = require '../'
 
 
 ## SHARED STATE
-# TODO: De-dupe these with the HTTP test suite.
 
-{DB, TEST_LABEL, TEST_REL_TYPE} = fixtures
+{DB} = fixtures
 
-[DB_VERSION_STR, DB_VERSION_NUM] = []
-
-TEST_NODE_A = new neo4j.Node
-    # _id will get filled in once we persist
-    labels: [TEST_LABEL]
-    properties: {suite: module.filename, name: 'a'}
-
-TEST_NODE_B = new neo4j.Node
-    # _id will get filled in once we persist
-    labels: [TEST_LABEL]
-    properties: {suite: module.filename, name: 'b'}
-
-TEST_REL = new neo4j.Relationship
-    # _id, _fromId (node A), _toId (node B) will get filled in once we persist
-    type: TEST_REL_TYPE
-    properties: {suite: module.filename, name: 'r'}
+[TEST_NODE_A, TEST_NODE_B, TEST_REL] = []
 
 
 ## HELPERS
@@ -136,25 +120,9 @@ describe 'GraphDatabase::cypher', ->
 
             done()
 
-    # TODO: De-dupe with the HTTP test suite.
-    it '(query Neo4j version)', (_) ->
-        info = DB.http
-            method: 'GET'
-            path: '/db/data/'
-        , _
-
-        DB_VERSION_STR = info.neo4j_version or '0'
-        DB_VERSION_NUM = parseFloat DB_VERSION_STR, 10
-
-        if DB_VERSION_NUM < 2
-            throw new Error '*** node-neo4j v2 supports Neo4j v2+ only,
-                and you’re running Neo4j v1. These tests will fail! ***'
-
-        # Neo4j <2.1.5 didn't return label info, so returned nodes won't have
-        # the labels we expect. Account for that:
-        if DB_VERSION_STR < '2.1.5'
-            TEST_NODE_A.labels = null
-            TEST_NODE_B.labels = null
+    it '(create test graph)', (_) ->
+        [TEST_NODE_A, TEST_REL, TEST_NODE_B] =
+            fixtures.createTestGraph module, 2, _
 
     it 'should properly parse nodes & relationships', (_) ->
         # We do a complex return to test nested/wrapped objects too.
@@ -163,63 +131,44 @@ describe 'GraphDatabase::cypher', ->
         # We overcome this by explicitly indexing and ordering.
         results = DB.cypher
             query: """
-                CREATE (a:#{TEST_LABEL} {propsA})
-                CREATE (b:#{TEST_LABEL} {propsB})
-                CREATE (a) -[r:#{TEST_REL_TYPE} {propsR}]-> (b)
+                START a = node({idA})
+                MATCH (a) -[r]-> (b)
                 WITH [
-                    {i: 0, elmt: a, id: ID(a)},
-                    {i: 1, elmt: b, id: ID(b)},
-                    {i: 2, elmt: r, id: ID(r)}
+                    {i: 0, elmt: a},
+                    {i: 1, elmt: b},
+                    {i: 2, elmt: r}
                 ] AS array
                 UNWIND array AS obj
-                RETURN obj.i, obj.id AS _id, [{
+                RETURN obj.i AS i, [{
                     inner: obj.elmt
                 }] AS outer
-                ORDER BY obj.i
+                ORDER BY i
             """
             params:
-                propsA: TEST_NODE_A.properties
-                propsB: TEST_NODE_B.properties
-                propsR: TEST_REL.properties
+                idA: TEST_NODE_A._id
         , _
 
-        # We need to grab the native IDs of the objects we created, but after
-        # that, we can just compare object equality for simplicity.
-
-        expect(results).to.have.length 3
-
-        [resultA, resultB, resultR] = results
-
-        TEST_NODE_A._id = resultA._id
-        TEST_NODE_B._id = resultB._id
-        TEST_REL._id = resultR._id
-        TEST_REL._fromId = TEST_NODE_A._id
-        TEST_REL._toId = TEST_NODE_B._id
-
         expect(results).to.eql [
-            'obj.i': 0
-            _id: TEST_NODE_A._id
+            i: 0
             outer: [
                 inner: TEST_NODE_A
             ]
         ,
-            'obj.i': 1
-            _id: TEST_NODE_B._id
+            i: 1
             outer: [
                 inner: TEST_NODE_B
             ]
         ,
-            'obj.i': 2
-            _id: TEST_REL._id
+            i: 2
             outer: [
                 inner: TEST_REL
             ]
         ]
 
         # But also test that the returned objects are proper instances:
-        expect(resultA.outer[0].inner).to.be.an.instanceOf neo4j.Node
-        expect(resultB.outer[0].inner).to.be.an.instanceOf neo4j.Node
-        expect(resultR.outer[0].inner).to.be.an.instanceOf neo4j.Relationship
+        expect(results[0].outer[0].inner).to.be.an.instanceOf neo4j.Node
+        expect(results[1].outer[0].inner).to.be.an.instanceOf neo4j.Node
+        expect(results[2].outer[0].inner).to.be.an.instanceOf neo4j.Relationship
 
     it 'should not parse nodes & relationships if raw', (_) ->
         results = DB.cypher
@@ -241,14 +190,5 @@ describe 'GraphDatabase::cypher', ->
 
     it 'should support streaming (TODO)'
 
-    it '(delete test objects)', (_) ->
-        DB.cypher
-            query: """
-                START a = node({idA}), b = node({idB}), r = rel({idR})
-                DELETE a, b, r
-            """
-            params:
-                idA: TEST_NODE_A._id
-                idB: TEST_NODE_B._id
-                idR: TEST_REL._id
-        , _
+    it '(delete test graph)', (_) ->
+        fixtures.deleteTestGraph module, _

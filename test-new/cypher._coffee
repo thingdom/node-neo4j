@@ -110,10 +110,36 @@ describe 'GraphDatabase::cypher', ->
         DB.cypher 'RETURN {foo}', (err, results) ->
             try
                 expect(err).to.exist()
-                expect(results).to.not.exist()
-
                 expectError err, 'ClientError', 'Statement',
                     'ParameterMissing', 'Expected a parameter named foo'
+
+                # Whether `results` are returned or not depends on the error;
+                # Neo4j will return an array if the query could be executed,
+                # and then it'll return whatever results it could manage to get
+                # before the error. In this case, the query began execution,
+                # so we expect an array, but no actual results.
+                expect(results).to.be.an 'array'
+                expect(results).to.be.empty()
+
+            catch assertionErr
+                return done assertionErr
+
+            done()
+
+    it 'should properly return null result on syntax errors', (done) ->
+        DB.cypher '(syntax error)', (err, results) ->
+            try
+                expect(err).to.exist()
+
+                # Simplified error checking, since the message is complex:
+                expect(err).to.be.an.instanceOf neo4j.ClientError
+                expect(err.neo4j).to.be.an 'object'
+                expect(err.neo4j.code).to.equal \
+                    'Neo.ClientError.Statement.InvalidSyntax'
+
+                # Unlike the previous test case, since Neo4j could not be
+                # executed, no results should have been returned at all:
+                expect(results).to.not.exist()
 
             catch assertionErr
                 return done assertionErr
@@ -187,6 +213,95 @@ describe 'GraphDatabase::cypher', ->
             b: TEST_NODE_B.properties
             r: TEST_REL.properties
         ]
+
+    it 'should support simple batching', (_) ->
+        results = DB.cypher [
+            query: '''
+                START a = node({idA})
+                RETURN a
+            '''
+            params:
+                idA: TEST_NODE_A._id
+        ,
+            query: '''
+                START b = node({idB})
+                RETURN b
+            '''
+            params:
+                idB: TEST_NODE_B._id
+        ,
+            query: '''
+                START r = rel({idR})
+                RETURN r
+            '''
+            params:
+                idR: TEST_REL._id
+        ], _
+
+        expect(results).to.be.an 'array'
+        expect(results).to.have.length 3
+
+        [resultsA, resultsB, resultsR] = results
+
+        expect(resultsA).to.eql [
+            a: TEST_NODE_A
+        ]
+
+        expect(resultsB).to.eql [
+            b: TEST_NODE_B
+        ]
+
+        expect(resultsR).to.eql [
+            r: TEST_REL
+        ]
+
+    it 'should handle complex batching with errors', (done) ->
+        DB.cypher
+            queries: [
+                query: '''
+                    START a = node({idA})
+                    RETURN a
+                '''
+                params:
+                    idA: TEST_NODE_A._id
+                raw: true
+            ,
+                'RETURN {foo}'
+            ,
+                query: '''
+                    START r = rel({idR})
+                    RETURN r
+                '''
+                params:
+                    idR: TEST_REL._id
+            ]
+        , (err, results) ->
+            try
+                expect(err).to.exist()
+                expectError err, 'ClientError', 'Statement', 'ParameterMissing',
+                    'Expected a parameter named foo'
+
+                # NOTE: With batching, we *do* return any results that we
+                # received before the error, in case of an open transaction.
+                # This means that we'll always return an array here, and it'll
+                # have just as many elements as queries that returned an array
+                # before the error. In this case, a ParameterMissing error in
+                # the second query means the second array *was* returned (since
+                # Neo4j could begin executing the query; see note in the first
+                # error handling test case in this suite), so two results.
+                expect(results).to.be.an 'array'
+                expect(results).to.have.length 2
+
+                [resultsA, resultsB] = results
+                expect(resultsA).to.eql [
+                    a: TEST_NODE_A.properties
+                ]
+                expect(resultsB).to.be.empty()
+
+            catch assertionErr
+                return done assertionErr
+
+            done()
 
     it 'should support streaming (TODO)'
 

@@ -172,32 +172,38 @@ Or should we just link to cypher-stream?
 TODO: Should we allow access to other underlying data formats, e.g. "graph"?
 
 
+## Batching
+
+**Let me make multiple, separate Cypher queries in one network request.**
+
+```js
+function cbMany(err, arraysOfResults) {}
+
+var streams = db.cypher({queries, headers}, cbMany);
+
+// Alternate simple version -- no custom headers:
+var streams = db.cypher(queries, cbMany);
+```
+
+In both cases, `queries` is an array of queries, where each query can be a
+`{query, params, raw}` object or a simple string.
+
+**Important:** batch queries are executed transactionally —
+either they all succeed, or they all fail.
+
+If a callback is given, it'll be called with an array containing an array of
+results for each query (in matching order), or an error if there is any.
+Alternately, the results can be streamed back by omitting the callback.
+In that case, an array will be returned, containing a stream for each query
+(in matching order).
+
+TODO: Is it valuable to return a stream of results *across all queries*?
+
+
 ## Transactions
 
 **Let me make multiple queries, across multiple network requests,
 all within a single transaction.**
-
-This is the trickiest part of the API to design.
-I've tried my best to design this using the use cases we have at FiftyThree,
-but it's very hard to know whether this is designed well for a broader set of
-use cases without having more experience or feedback.
-
-Example use case: complex delete.
-I want to delete an image, which has some image-specific business logic,
-but in addition, I need to delete any likes and comments on the image.
-Each of those has its own specific business logic (which may also be
-recursive), so our code can't capture everything in a single query.
-Thus, we need to make one query to delete the comments and likes (which may
-actually be multiple queries, as well), then a second one to delete the image.
-We want to do all of that transactionally, so that if any one query fails,
-we abort/rollback and either retry or report failure to the user.
-
-Given a use case like that, this API is optimized for **one query per network
-request**, *not* multiple queries per network request ("batching").
-I *think* batching is always an optimization (never a true *requirement*),
-so it could always be achieved automatically under-the-hood by this driver
-(e.g. by waiting until the next event loop tick to send the actual queries).
-Please provide feedback if you disagree!
 
 ```js
 var tx = db.beginTransaction();
@@ -231,7 +237,8 @@ tx.rollback(cbDone);
 tx.renew(cbDone);
 ```
 
-The transactional `cypher` method is just like the regular `cypher` method,
+The transactional `cypher` method is just like the regular `cypher` method
+(e.g. it supports simple strings, as well as batching),
 except that it supports an additional `commit` option, which can be set to
 `true` to automatically attempt to commit the transaction with this query.
 

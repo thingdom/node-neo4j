@@ -1,4 +1,5 @@
 $ = require 'underscore'
+assert = require 'assert'
 {Error} = require './errors'
 lib = require '../package.json'
 Node = require './Node'
@@ -67,7 +68,10 @@ module.exports = class GraphDatabase
         if typeof opts is 'string'
             opts = {query: opts}
 
-        {query, params, headers, raw, commit, rollback} = opts
+        if opts instanceof Array
+            opts = {queries: opts}
+
+        {queries, query, params, headers, raw, commit, rollback} = opts
 
         if not _tx and rollback
             throw new Error 'Illegal state: rolling back without a transaction!'
@@ -86,8 +90,20 @@ module.exports = class GraphDatabase
                 To begin a new transaction without committing, call
                 `db.beginTransaction()`, and then call `cypher` on that.'
 
-        if not _tx and not query
-            throw new TypeError 'Query required'
+        if not _tx and not query and not queries
+            throw new TypeError 'Query or queries required'
+
+        if query and queries
+            throw new TypeError 'Can’t supply both a single query
+                and a batch of queries! Do you have a bug in your code?'
+
+        if queries and params
+            throw new TypeError 'When batching multiple queries,
+                params must be supplied with each query, not globally.'
+
+        if queries and raw
+            throw new TypeError 'When batching multiple queries,
+                `raw` must be specified with each query, not globally.'
 
         method = 'POST'
         method = 'DELETE' if rollback
@@ -96,17 +112,40 @@ module.exports = class GraphDatabase
         path += "/#{_tx._id}" if _tx?._id
         path += "/commit" if commit or not _tx
 
-        # NOTE: Lowercase 'rest' matters here for parsing.
-        format = if raw then 'row' else 'rest'
-        statements = []
-        body = {statements}
-
-        # TODO: Support batching multiple queries in this request?
+        # Normalize input query or queries to an array of queries always,
+        # but remember whether a single query was given (not a batch).
+        # Also handle the case where no queries were given; this is either a
+        # void action (e.g. rollback), or legitimately an empty batch.
         if query
-            statements.push
-                statement: query
-                parameters: params or {}
-                resultDataContents: [format]
+            queries = [{query, params, raw}]
+            single = true
+        else
+            single = not queries    # void action, *not* empty [] given
+            queries or= []
+
+        # Generate the request body by transforming each query (which is
+        # potentially a simple string) into Neo4j's `statement` format.
+        # We need to remember what result format we requested for each query.
+        formats = []
+        body =
+            statements:
+                for query in queries
+                    if typeof query is 'string'
+                        query = {query}
+
+                    if query.headers
+                        throw new TypeError 'When batching multiple queries,
+                            custom request headers cannot be supplied per query;
+                            they must be supplied globally.'
+
+                    {query, params, raw} = query
+
+                    # NOTE: Lowercase 'rest' matters here for parsing.
+                    formats.push format = if raw then 'row' else 'rest'
+
+                    statement: query
+                    parameters: params or {}
+                    resultDataContents: [format]
 
         # TODO: Support streaming!
         @http {method, path, headers, body}, (err, body) =>
@@ -120,39 +159,66 @@ module.exports = class GraphDatabase
 
             {results, errors} = body
 
+            # Parse any results first, before errors, in case this is a batch
+            # request, where we want to return results alongside errors.
+            # The top-level `results` is an array of results corresponding to
+            # the `statements` (queries) inputted.
+            # We want to transform each query's results from Neo4j's complex
+            # format to a simple array of dictionaries.
+            results =
+                for result, i in results
+                    {columns, data} = result
+                    format = formats[i]
+
+                    # The `data` for each query is an array of rows, but each of
+                    # its elements is actually a dictionary of results keyed by
+                    # response format. We only request one format per query.
+                    # The value of each format is an array of rows, where each
+                    # row is an array of column values. We transform those rows
+                    # into dictionaries keyed by column names. Phew!
+                    $(data).pluck(format).map (row) ->
+                        result = {}
+                        for column, j in columns
+                            result[column] = row[j]
+                        result
+
+            # What exactly we return depends on how we were called:
+            #
+            # - Batch: if an array of queries were given, we always return an
+            #   array of each query's results.
+            #
+            # - Single: if a single query was given, we always return just that
+            #   query's results.
+            #
+            # - Void: if neither was given, we explicitly return null.
+            #   This is for transaction actions, e.g. commit, rollback, renew.
+            #
+            # We're already set up for the batch case by default, so we only
+            # need to account for the other cases.
+            #
+            if single
+                # This means a batch of queries was *not* given, but we still
+                # normalized to an array of queries...
+                if queries.length
+                    # This means a single query was given:
+                    assert.equal queries.length, 1,
+                        'There should be *exactly* one query given.'
+                    assert results.length <= 1,
+                        'There should be *at most* one set of results.'
+                    results = results[0]
+                else
+                    # This means no query was given:
+                    assert.equal results.length, 0,
+                        'There should be *no* results.'
+                    results = null
+
             if errors.length
                 # TODO: Is it possible to get back more than one error?
                 # If so, is it fine for us to just use the first one?
                 [error] = errors
-                return cb Error._fromTransaction error
+                err = Error._fromTransaction error
 
-            # If there are no results, it means no statements were sent
-            # (e.g. to commit, rollback, or renew a transaction in isolation),
-            # so nothing to return, i.e. a void call in that case.
-            # Important: we explicitly don't return an empty array, because that
-            # implies we *did* send a query, that just didn't match anything.
-            if not results.length
-                return cb null, null
-
-            # The top-level `results` is an array of results corresponding to
-            # the `statements` (queries) inputted.
-            # We send only one statement/query, so we have only one result.
-            [result] = results
-            {columns, data} = result
-
-            # The `data` is an array of result rows, but each of its elements is
-            # actually a dictionary of results keyed by *response format*.
-            # We only request one format, `rest` by default, `row` if `raw`.
-            # In both cases, the value is an array of rows, where each row is an
-            # array of column values.
-            # We transform those rows into dictionaries keyed by column names.
-            results = $(data).pluck(format).map (row) ->
-                result = {}
-                for column, i in columns
-                    result[column] = row[i]
-                result
-
-            cb null, results
+            cb err, results
 
     beginTransaction: ->
         new Transaction @

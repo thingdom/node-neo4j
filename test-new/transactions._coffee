@@ -494,6 +494,124 @@ describe 'Transactions', ->
 
     # TODO: Is there any way to trigger and test transient errors?
 
+    it 'should properly handle errors with batching', (_) ->
+        tx = DB.beginTransaction()
+
+        results = tx.cypher [
+            query: '''
+                START nodeA = node({idA})
+                SET nodeA.test = 'errors with batching'
+            '''
+            params:
+                idA: TEST_NODE_A._id
+        ,
+            query: '''
+                START nodeA = node({idA})
+                SET nodeA.i = 1
+                RETURN nodeA
+            '''
+            params:
+                idA: TEST_NODE_A._id
+        ], _
+
+        expect(results).to.be.an 'array'
+        expect(results).to.have.length 2
+
+        for result in results
+            expect(result).to.be.an 'array'
+
+        expect(results[0]).to.be.empty()
+        expect(results[1]).to.have.length 1
+
+        [{nodeA}] = results[1]
+
+        expect(nodeA.properties.test).to.equal 'errors with batching'
+        expect(nodeA.properties.i).to.equal 1
+
+        expect(tx.state).to.equal 'open'
+
+        # Now trigger a client error within another batch; this should *not*
+        # rollback (and thus destroy) the transaction.
+        # For precision, implementing this step without Streamline.
+        do (cont=_) =>
+            tx.cypher
+                queries: [
+                    query: '''
+                        START nodeA = node({idA})
+                        SET nodeA.i = 2
+                        RETURN nodeA
+                    '''
+                    params:
+                        idA: TEST_NODE_A._id
+                    raw: true
+                ,
+                    '(syntax error)'
+                ,
+                    query: '''
+                        START nodeA = node({idA})
+                        SET nodeA.i = 3
+                        RETURN nodeA
+                    '''
+                    params:
+                        idA: TEST_NODE_A._id
+                ]
+            , (err, results) =>
+                try
+                    expect(err).to.exist()
+
+                    # Simplified error checking, since the message is complex:
+                    expect(err).to.be.an.instanceOf neo4j.ClientError
+                    expect(err.neo4j).to.be.an 'object'
+                    expect(err.neo4j.code).to.equal \
+                        'Neo.ClientError.Statement.InvalidSyntax'
+
+                    expect(results).to.be.an 'array'
+                    expect(results).to.have.length 1
+
+                    [result] = results
+
+                    expect(result).to.be.an 'array'
+                    expect(result).to.have.length 1
+
+                    [{nodeA}] = result
+
+                    # We requested `raw: true`, so `nodeA` is just properties:
+                    expect(nodeA.test).to.equal 'errors with batching'
+                    expect(nodeA.i).to.equal 2
+
+                catch assertionErr
+                    return cont assertionErr
+
+                cont()
+
+        expect(tx.state).to.equal 'open'
+
+        # Because of that, the effects of the first query in the batch (before
+        # the error) should still be visible within the transaction:
+        results = tx.cypher [
+            query: '''
+                START nodeA = node({idA})
+                RETURN nodeA
+            '''
+            params:
+                idA: TEST_NODE_A._id
+        ], _
+
+        expect(results).to.be.an 'array'
+        expect(results).to.have.length 1
+
+        [{nodeA}] = results[0]
+
+        expect(nodeA.properties.test).to.equal 'errors with batching'
+        expect(nodeA.properties.i).to.equal 2
+
+        # NOTE: But the transaction won't commit successfully apparently, both
+        # manually or automatically. So we manually rollback instead.
+        # TODO: Is this a bug in Neo4j? Or my understanding?
+        expect(tx.state).to.equal 'open'
+        tx.rollback _
+        expect(tx.state).to.equal 'rolled back'
+
     it 'should support streaming (TODO)'
 
     it '(delete test graph)', (_) ->

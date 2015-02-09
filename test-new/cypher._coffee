@@ -196,7 +196,7 @@ describe 'GraphDatabase::cypher', ->
         expect(results[1].outer[0].inner).to.be.an.instanceOf neo4j.Node
         expect(results[2].outer[0].inner).to.be.an.instanceOf neo4j.Relationship
 
-    it 'should not parse nodes & relationships if raw', (_) ->
+    it 'should not parse nodes & relationships if lean', (_) ->
         results = DB.cypher
             query: """
                 START a = node({idA})
@@ -205,7 +205,7 @@ describe 'GraphDatabase::cypher', ->
             """
             params:
                 idA: TEST_NODE_A._id
-            raw: true
+            lean: true
         , _
 
         expect(results).to.eql [
@@ -264,7 +264,7 @@ describe 'GraphDatabase::cypher', ->
                 '''
                 params:
                     idA: TEST_NODE_A._id
-                raw: true
+                lean: true
             ,
                 'RETURN {foo}'
             ,

@@ -543,7 +543,7 @@ describe 'Transactions', ->
                     '''
                     params:
                         idA: TEST_NODE_A._id
-                    raw: true
+                    lean: true
                 ,
                     '(syntax error)'
                 ,
@@ -575,7 +575,7 @@ describe 'Transactions', ->
 
                     [{nodeA}] = result
 
-                    # We requested `raw: true`, so `nodeA` is just properties:
+                    # We requested `lean: true`, so `nodeA` is just properties:
                     expect(nodeA.test).to.equal 'errors with batching'
                     expect(nodeA.i).to.equal 2
 

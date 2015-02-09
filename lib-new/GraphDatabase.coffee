@@ -69,7 +69,7 @@ module.exports = class GraphDatabase
         if opts instanceof Array
             opts = {queries: opts}
 
-        {queries, query, params, headers, raw, commit, rollback} = opts
+        {queries, query, params, headers, lean, commit, rollback} = opts
 
         if not _tx and rollback
             throw new Error 'Illegal state: rolling back without a transaction!'
@@ -99,9 +99,9 @@ module.exports = class GraphDatabase
             throw new TypeError 'When batching multiple queries,
                 params must be supplied with each query, not globally.'
 
-        if queries and raw
+        if queries and lean
             throw new TypeError 'When batching multiple queries,
-                `raw` must be specified with each query, not globally.'
+                `lean` must be specified with each query, not globally.'
 
         method = 'POST'
         method = 'DELETE' if rollback
@@ -115,7 +115,7 @@ module.exports = class GraphDatabase
         # Also handle the case where no queries were given; this is either a
         # void action (e.g. rollback), or legitimately an empty batch.
         if query
-            queries = [{query, params, raw}]
+            queries = [{query, params, lean}]
             single = true
         else
             single = not queries    # void action, *not* empty [] given
@@ -136,10 +136,10 @@ module.exports = class GraphDatabase
                             custom request headers cannot be supplied per query;
                             they must be supplied globally.'
 
-                    {query, params, raw} = query
+                    {query, params, lean} = query
 
                     # NOTE: Lowercase 'rest' matters here for parsing.
-                    formats.push format = if raw then 'row' else 'rest'
+                    formats.push format = if lean then 'row' else 'rest'
 
                     statement: query
                     parameters: params or {}
@@ -147,9 +147,8 @@ module.exports = class GraphDatabase
 
         # TODO: Support streaming!
         #
-        # NOTE: Specifying `raw: true` to `http` to save on parsing work
-        # (see `_transform` helper at the bottom of this file) if `raw: true`
-        # was specified to *us* (so no parsing of nodes & rels is needed).
+        # NOTE: Specifying `raw: true` to save on parsing work (see `_transform`
+        # helper at the bottom of this file) if any queries are `lean: true`.
         # Easy enough for us to parse ourselves, which we do, when needed.
         #
         @http {method, path, headers, body, raw: true}, (err, resp) =>

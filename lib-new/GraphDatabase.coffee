@@ -41,14 +41,16 @@ module.exports = class GraphDatabase
         method or= 'GET'
         headers or= {}
 
-        # TODO: Do we need to do anything special to support streaming response?
         req = Request
             method: method
             url: URL.resolve @url, path
             headers: $(headers).defaults @headers
             json: body ? true
-        , (err, resp) =>
 
+        # Important: only pass a callback to Request if a callback was passed
+        # to us. This prevents Request from doing unnecessary JSON parse work
+        # if the caller prefers to stream the response instead of buffer it.
+        , cb and (err, resp) =>
             if err
                 # TODO: Do we want to wrap or modify native errors?
                 return cb err
@@ -61,6 +63,13 @@ module.exports = class GraphDatabase
                 return cb err
 
             cb null, _transform resp.body
+
+        # Instead of leaking our (third-party) Request instance, make sure to
+        # explicitly return only its internal native ClientRequest instance.
+        # https://github.com/request/request/blob/v2.53.1/request.js#L904
+        # This is only populated when the request is `start`ed, so `start` it!
+        req.start()
+        req.req
 
     cypher: (opts={}, cb, _tx) ->
         if typeof opts is 'string'

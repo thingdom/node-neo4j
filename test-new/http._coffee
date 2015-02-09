@@ -5,6 +5,7 @@
 
 {expect} = require 'chai'
 fixtures = require './fixtures'
+fs = require 'fs'
 http = require 'http'
 neo4j = require '../'
 
@@ -161,10 +162,62 @@ describe 'GraphDatabase::http', ->
 
             done()
 
-    it 'should support streaming (TODO)'
-        # Test that it immediately returns a duplex HTTP stream.
-        # Test writing request data to this stream.
-        # Test reading response data from this stream.
+    it 'should support streaming', (done) ->
+        opts =
+            method: 'PUT'
+            path: '/db/data/node/-1/properties'
+            headers:
+                # Node recommends setting this property when streaming:
+                # http://nodejs.org/api/http.html#http_request_write_chunk_encoding_callback
+                'Transfer-Encoding': 'chunked'
+                'X-Foo': 'Bar'  # This one's just for testing/verifying
+
+        req = DB.http opts
+
+        expect(req).to.be.an.instanceOf http.ClientRequest
+        expect(req.method).to.equal opts.method
+        expect(req.path).to.equal opts.path
+
+        # Special-case for headers since they're stored differently:
+        for name, val of opts.headers
+            expect(req.getHeader name).to.equal val
+
+        # Native errors are emitted on this request, so fail-fast if any:
+        req.on 'error', done
+
+        # Now stream some fake JSON to the request:
+        fs.createReadStream "#{__dirname}/fixtures/fake.json"
+            .pipe req
+
+        # Verify that the request fully waits for our stream to finish
+        # before returning a response:
+        finished = false
+        req.on 'finish', -> finished = true
+
+        # When the response is received, stream down its JSON too:
+        req.on 'response', (resp) ->
+            expect(finished).to.be.true()
+            expectResponse resp, 404
+
+            resp.setEncoding 'utf8'
+            body = ''
+
+            resp.on 'data', (str) -> body += str
+            resp.on 'error', done
+            resp.on 'close', -> done new Error 'Response closed!'
+            resp.on 'end', ->
+                try
+                    body = JSON.parse body
+
+                    # Simplified error parsing; just verifying stream:
+                    expect(body).to.be.an 'object'
+                    expect(body.exception).to.equal 'NodeNotFoundException'
+                    expect(body.stacktrace).to.be.an 'array'
+
+                catch err
+                    return done err
+
+                done()
 
 
     ## Object parsing:

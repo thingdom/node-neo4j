@@ -74,8 +74,13 @@ function cb(err, body) {};
 var req = db.http({method, path, headers, body, raw}, cb);
 ```
 
-This method will immediately return a duplex HTTP stream, to and from which
-both request and response body data can be piped or streamed.
+This method will immediately return a native HTTP [`ClientRequest`][],
+to which request data can be streamed, and which emits a `'response'` event
+yielding a native HTTP [`IncomingMessage`][], from which (raw chunks of)
+response data can be streamed.
+
+[`ClientRequest`]: http://nodejs.org/api/http.html#http_class_http_clientrequest
+[`IncomingMessage`]: http://nodejs.org/api/http.html#http_http_incomingmessage
 
 In addition, if a callback is given, it will be called with the final result.
 By default, this result will be the HTTP response body (parsed as JSON),
@@ -89,14 +94,6 @@ HTTP response, with `statusCode`, `headers`, and `body` properties.
 The `body` will still be parsed as JSON, but nodes, relationships, and errors
 will *not* be transformed to node-neo4j objects in this case.
 In addition, `4xx` and `5xx` status code will *not* yield an error.
-
-Importantly, we don't want to leak the implementation details of which HTTP
-library we use. Both [request](https://github.com/request/request) and
-[SuperAgent](http://visionmedia.github.io/superagent/#piping-data) are great;
-it'd be nice to experiment with both (e.g. SuperAgent supports the browser).
-Does this mean we should do anything special when returning HTTP responses?
-E.g. should we document our own minimal HTTP `Response` interface that's the
-common subset of both libraries?
 
 
 ## Objects

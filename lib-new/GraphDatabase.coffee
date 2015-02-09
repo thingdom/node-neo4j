@@ -57,12 +57,10 @@ module.exports = class GraphDatabase
                 # TODO: Do we want to return our own Response object?
                 return cb null, resp
 
-            {body, headers, statusCode} = resp
-
             if err = Error._fromResponse resp
                 return cb err
 
-            cb null, _transform body
+            cb null, _transform resp.body
 
     cypher: (opts={}, cb, _tx) ->
         if typeof opts is 'string'
@@ -148,16 +146,25 @@ module.exports = class GraphDatabase
                     resultDataContents: [format]
 
         # TODO: Support streaming!
-        @http {method, path, headers, body}, (err, body) =>
+        #
+        # NOTE: Specifying `raw: true` to `http` to save on parsing work
+        # (see `_transform` helper at the bottom of this file) if `raw: true`
+        # was specified to *us* (so no parsing of nodes & rels is needed).
+        # Easy enough for us to parse ourselves, which we do, when needed.
+        #
+        @http {method, path, headers, body, raw: true}, (err, resp) =>
 
             if err
                 # TODO: Do we want to wrap or modify native errors?
                 # NOTE: This includes our own errors for non-2xx responses.
                 return cb err
 
-            _tx?._updateFromResponse body
+            if err = Error._fromResponse resp
+                return cb err
 
-            {results, errors} = body
+            _tx?._updateFromResponse resp
+
+            {results, errors} = resp.body
 
             # Parse any results first, before errors, in case this is a batch
             # request, where we want to return results alongside errors.
@@ -175,11 +182,18 @@ module.exports = class GraphDatabase
                     # response format. We only request one format per query.
                     # The value of each format is an array of rows, where each
                     # row is an array of column values. We transform those rows
-                    # into dictionaries keyed by column names. Phew!
+                    # into dictionaries keyed by column names. Finally, we also
+                    # parse nodes & relationships into object instances if this
+                    # query didn't request a raw format. Phew!
                     $(data).pluck(format).map (row) ->
                         result = {}
+
                         for column, j in columns
                             result[column] = row[j]
+
+                        if format is 'rest'
+                            result = _transform result
+
                         result
 
             # What exactly we return depends on how we were called:

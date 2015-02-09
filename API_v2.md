@@ -146,9 +146,9 @@ from database responses.
 ```js
 function cb(err, results) {};
 
-var stream = db.cypher({query, params, headers, raw}, cb);
+var stream = db.cypher({query, params, headers, lean}, cb);
 
-// Alternate simple version -- no params, no headers, not raw:
+// Alternate simple version -- no params, no headers, not lean:
 var stream = db.cypher(query, cb);
 ```
 
@@ -163,7 +163,7 @@ row value for that column.
 In addition, by default, nodes and relationships will be transformed to
 `Node` and `Relationship` objects.
 If you don't need the full knowledge of node and relationship metadata
-(labels, types, native IDs), you can bypass that by specifying `raw: true`,
+(labels, types, native IDs), you can bypass that by specifying `lean: true`,
 which will return just property data, for a potential performance gain.
 
 TODO: Should we formalize the streaming case into a documented Stream class?
@@ -186,7 +186,7 @@ var streams = db.cypher(queries, cbMany);
 ```
 
 In both cases, `queries` is an array of queries, where each query can be a
-`{query, params, raw}` object or a simple string.
+`{query, params, lean}` object or a simple string.
 
 **Important:** batch queries are executed transactionally —
 either they all succeed, or they all fail.
@@ -230,7 +230,7 @@ class Transaction {_id, expiresAt, expiresIn, state}
 function cbResults(err, results) {};
 function cbDone(err) {};
 
-var stream = tx.cypher({query, params, headers, raw, commit}, cbResults);
+var stream = tx.cypher({query, params, headers, lean, commit}, cbResults);
 
 tx.commit(cbDone);
 tx.rollback(cbDone);

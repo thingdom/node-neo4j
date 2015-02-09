@@ -134,32 +134,36 @@ module.exports = class Transaction
 
     #
     # Updates this Transaction instance with data from the given transactional
-    # response body.
+    # endpoint response.
     #
-    _updateFromResponse: (body) ->
-        if not body
-            throw new Error 'Unexpected: no transactional response body!'
+    _updateFromResponse: (resp) ->
+        if not resp
+            throw new Error 'Unexpected: no transactional response!'
 
-        {transaction, commit} = body
+        {body, headers, statusCode} = resp
+        {transaction} = body
 
-        if not transaction and not commit
+        if not transaction
             # This transaction has been destroyed (either committed or rolled
             # back). Our state will get updated in the `cypher` callback above.
             @_id = @_expires = null
             return
 
-        if not commit
-            throw new Error 'Unexpected: transaction object, but no commit URL!'
-
-        if not transaction
-            throw new Error 'Unexpected: commit URL, but no transaction object!'
-
+        # Otherwise, this transaction exists.
+        # The returned object always includes an updated expiry time...
         @_expires = new Date transaction.expires
 
-        # Unfortunately, there's no simple `id` property on returned
-        # transaction objects, so we need to parse it out of a URL.
-        # The canonical URL is returned via a `Location` header in the
-        # initial 201 response, but we don't have access to that.
-        # Fortunately, a `commit` URL is returned on every transaction
-        # response, and we can parse the ID out of that.
-        @_id = utils.parseId commit
+        # ...but only includes the URL (from which we can parse its ID)
+        # the first time, via a Location header for a 201 Created response.
+        # We can short-circuit if we already have our ID.
+        return if @_id
+
+        if statusCode isnt 201
+            throw new Error 'Unexpected: transaction returned by Neo4j,
+                but it was never 201 Created, so we have no ID!'
+
+        if not transactionURL = headers['location']
+            throw new Error 'Unexpected: transaction response is 201 Created,
+                but with no Location header!'
+
+        @_id = utils.parseId transactionURL

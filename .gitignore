@@ -3,7 +3,5 @@
 node_modules/
 npm-debug.log
 
-/doc/
-
 /neo4j-*
 /neo4j

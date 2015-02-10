@@ -281,7 +281,7 @@
 ## Version 0.2.3 — January 25, 2012
 
   - Updated library to support Neo4j 1.5. Still supports 1.4.
-  - Added a GraphDatabase::getVersion(_) method. Neo4j 1.5 onwards returns the
+  - Added a `GraphDatabase::getVersion(_)` method. Neo4j 1.5 onwards returns the
     version number, so this method returns 1.4 for older versions of Neo4j.
 
 ## Version 0.2.2 – January 25, 2012

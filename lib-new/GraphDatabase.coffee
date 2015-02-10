@@ -251,6 +251,43 @@ module.exports = class GraphDatabase
         new Transaction @
 
 
+    ## SCHEMA
+
+    getLabels: (cb) ->
+        # This endpoint returns the array of labels directly:
+        # http://neo4j.com/docs/stable/rest-api-node-labels.html#rest-api-list-all-labels
+        # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
+        # TODO: Would it be better for us to handle other non-200 responses too?
+        @http
+            method: 'GET'
+            path: '/db/data/labels'
+        , cb
+
+    getPropertyKeys: (cb) ->
+        # This endpoint returns the array of property keys directly:
+        # http://neo4j.com/docs/stable/rest-api-property-values.html#rest-api-list-all-property-keys
+        # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
+        # TODO: Would it be better for us to handle other non-200 responses too?
+        @http
+            method: 'GET'
+            path: '/db/data/propertykeys'
+        , cb
+
+    getRelationshipTypes: (cb) ->
+        # This endpoint returns the array of relationship types directly:
+        # http://neo4j.com/docs/stable/rest-api-relationship-types.html#rest-api-get-relationship-types
+        # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
+        # TODO: Would it be better for us to handle other non-200 responses too?
+        @http
+            method: 'GET'
+            path: '/db/data/relationship/types'
+        , cb
+
+    # TODO: Indexes
+    # TODO: Constraints
+    # TODO: Legacy indexing
+
+
 ## HELPERS
 
 #

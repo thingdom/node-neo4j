@@ -45,7 +45,8 @@ var neo4j = require('neo4j');
 var db = new neo4j.GraphDatabase({
     url: 'http://localhost:7474',
     headers: {},    // optional defaults, e.g. User-Agent
-    proxy: '',      // optional
+    proxy: '',      // optional URL
+    agent: null,    // optional http.Agent instance, for custom socket pooling
 });
 ```
 

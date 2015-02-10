@@ -1,57 +1,85 @@
+<!--
+Possible badges:
+
 [![Build Status](https://travis-ci.org/thingdom/node-neo4j.svg?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
 
-# Node-Neo4j
+[![npm version](https://badge.fury.io/js/neo4j.svg)](http://badge.fury.io/js/neo4j)
 
-This is a client library for accessing [Neo4j][], a graph database, from
-[Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api], and supports
-Neo4j 1.5 through Neo4j 2.1.
+[![NPM](https://nodei.co/npm/neo4j.png?compact=true)](https://nodei.co/npm/neo4j/)
 
-(Note that new 2.0 features like labels and constraints are only accessible
-through Cypher for now -- but Cypher is the recommended interface for Neo4j
-anyway. This driver might change to wrap Cypher entirely.)
+We choose to use the first two, but we write them as HTML so that we can inline
+and `float: right` them in the Node-Neo4j header. (Admittedly, yucky markup.)
+-->
 
-<em>**Update: [node-neo4j v2][] is under development and almost finished!**
-[Read the full spec here][v2 spec], and follow the progress in [pull #145][].
-If you're comfortable using pre-release code, alpha versions are available on
-npm; we at [FiftyThree][] are running them in production. =)</em>
+# Node-Neo4j <a href="https://travis-ci.org/thingdom/node-neo4j" style="float: right; margin-left: 0.25em;"><img src="https://travis-ci.org/thingdom/node-neo4j.png?branch=master"/></a> <a href="http://badge.fury.io/js/neo4j" style="float: right;"><img src="https://badge.fury.io/js/neo4j.svg" alt="npm version" height="18"></a>
 
-[node-neo4j v2]: https://github.com/thingdom/node-neo4j/tree/v2#readme
-[v2 spec]: https://github.com/thingdom/node-neo4j/blob/v2/API_v2.md
-[pull #145]: https://github.com/thingdom/node-neo4j/pull/145
-[FiftyThree]: http://www.fiftythree.com/
+This is a Node.js driver for [Neo4j](http://neo4j.com/), a graph database.
+
+**This driver has undergone a complete rewrite for Neo4j v2.**
+It now *only* supports Neo4j 2.x — but it supports it really well.
+(If you're still on Neo4j 1.x, you can still use
+[node-neo4j v1](https://github.com/thingdom/node-neo4j/tree/v1).)
+
+<!-- TODO: E.g. "Take a look at the instructions below,
+then read the full [API docs](./docs) for details?" -->
+
+<!-- TODO: Mention goals of driver? E.g. comprehensive, robust.
+Similarly, mention used in production by FiftyThree? -->
 
 
 ## Installation
 
-    npm install neo4j@1.x --save
+```sh
+npm install neo4j --save
+```
 
 
 ## Usage
 
-To start, create a new instance of the `GraphDatabase` class pointing to your
-Neo4j instance:
-
 ```js
 var neo4j = require('neo4j');
 var db = new neo4j.GraphDatabase('http://localhost:7474');
+
+db.cypher({
+    query: 'MATCH (u:User {email: {email}}) RETURN u',
+    params: {
+        email: 'alice@example.com',
+    },
+}, function (err, results) {
+    if (err) throw err;
+    var result = results[0];
+    if (!result) {
+        console.log('No user found.');
+    } else {
+        var user = result['u'];
+        console.log(JSON.stringify(user, null, 4));
+    }
+});
 ```
+
+Yields e.g.:
+
+```json
+{
+    "_id": 12345678,
+    "labels": [
+        "User",
+        "Admin"
+    ],
+    "properties": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "emailVerified": true,
+        "passwordHash": "..."
+    }
+}
+```
+
+<!-- TODO: Update the below. -->
 
 Node.js is asynchronous, which means this library is too: most functions take
 callbacks and return immediately, with the callbacks being invoked when the
 corresponding HTTP requests and responses finish.
-
-Here's a simple example:
-
-```js
-var node = db.createNode({hello: 'world'});     // instantaneous, but...
-node.save(function (err, node) {    // ...this is what actually persists.
-    if (err) {
-        console.error('Error saving new node to database:', err);
-    } else {
-        console.log('Node saved to database with id:', node.id);
-    }
-});
-```
 
 Because async flow in Node.js can be quite tricky to handle, we
 strongly recommend using a flow control tool or library to help.

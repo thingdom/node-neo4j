@@ -20,7 +20,7 @@ module.exports = class GraphDatabase
         if typeof opts is 'string'
             opts = {url: opts}
 
-        {@url, @headers, @proxy} = opts
+        {@url, @headers, @proxy, @agent} = opts
 
         if not @url
             throw new TypeError 'URL to Neo4j required'
@@ -41,11 +41,16 @@ module.exports = class GraphDatabase
         method or= 'GET'
         headers or= {}
 
+        # TODO: Would be good to test custom proxy and agent, but difficult.
+        # Same with Neo4j returning gzipped responses (e.g. through an LB).
         req = Request
             method: method
             url: URL.resolve @url, path
+            proxy: @proxy
             headers: $(headers).defaults @headers
+            agent: @agent
             json: body ? true
+            gzip: true  # This is only for responses: decode if gzipped.
 
         # Important: only pass a callback to Request if a callback was passed
         # to us. This prevents Request from doing unnecessary JSON parse work

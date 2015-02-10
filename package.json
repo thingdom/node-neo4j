@@ -14,7 +14,6 @@
     },
     "devDependencies": {
         "chai": "^1.9.2",
-        "codo": "^2.0.9",
         "coffee-script": "1.8.x",
         "mocha": "^2.0.1",
         "streamline": "^0.10.16"
@@ -25,7 +24,6 @@
     "scripts": {
         "build": "coffee -m -c lib-new/",
         "clean": "rm -f lib-new/*.{js,map}",
-        "codo": "codo && codo --server",
         "prepublish": "npm run build",
         "postpublish": "npm run clean",
         "test": "mocha test-new"

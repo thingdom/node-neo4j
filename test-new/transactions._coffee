@@ -21,18 +21,38 @@ neo4j = require '../'
 #
 # Asserts that the given object is an instance of the proper Neo4j Error
 # subclass, representing the given transactional Neo4j error info.
-# TODO: Consider consolidating with a similar helper in the `http` test suite.
+# TODO: De-duplicate with same helper in Cypher test suite!
 #
 expectError = (err, classification, category, title, message) ->
     expect(err).to.be.an.instanceOf neo4j[classification]   # e.g. DatabaseError
     expect(err.name).to.equal "neo4j.#{classification}"
-    expect(err.message).to.equal "[#{category}.#{title}] #{message}"
+
+    # If the actual error message is multi-line, it includes the Neo4j stack
+    # trace; test that in a simple way by just checking the first line of the
+    # trace (subsequent lines can be different, e.g. "Caused by"), but also test
+    # that the first line of the message matches the expected message:
+    expect(err.message).to.be.a 'string'
+    [errMessageLine1, errMessageLine2, ...] = err.message.split '\n'
+    expect(errMessageLine1).to.equal "[#{category}.#{title}] #{message}"
+    expect(errMessageLine2).to.match ///
+        ^ \s+ at\ [^(]+ \( [^)]+ [.]java:\d+ \)
+    /// if errMessageLine2
+
+    expect(err.stack).to.be.a 'string'
     expect(err.stack).to.contain '\n'
-    expect(err.stack.split('\n')[0]).to.equal "#{err.name}: #{err.message}"
+    expect(err.stack).to.contain "#{err.name}: #{err.message}"
+    [errStackLine1, ...] = err.stack.split '\n'
+    expect(errStackLine1).to.equal "#{err.name}: #{errMessageLine1}"
+
     expect(err.neo4j).to.be.an 'object'
-    expect(err.neo4j).to.contain
-        code: "Neo.#{classification}.#{category}.#{title}"
-        message: message
+    expect(err.neo4j.code).to.equal "Neo.#{classification}.#{category}.#{title}"
+    # If the actual error message was multi-line, that means it was the Neo4j
+    # stack trace, which can include a larger message than the returned one.
+    if errMessageLine2
+        expect(err.neo4j.message).to.be.a 'string'
+        expect(message).to.contain err.neo4j.message
+    else
+        expect(err.neo4j.message).to.equal message
 
 
 ## TESTS
@@ -469,7 +489,8 @@ describe 'Transactions', ->
                 try
                     expect(err).to.exist()
                     expectError err, 'DatabaseError', 'Transaction',
-                        'CouldNotCommit', 'javax.transaction.RollbackException:
+                        'CouldNotCommit', 'java.lang.RuntimeException:
+                            javax.transaction.RollbackException:
                             Failed to commit, transaction rolled back'
                 catch assertionErr
                     return cont assertionErr

@@ -45,18 +45,39 @@ class @Error extends Error
     @_fromTransaction: (obj) ->
         # http://neo4j.com/docs/stable/rest-api-transactional.html#rest-api-handling-errors
         # http://neo4j.com/docs/stable/status-codes.html
-        {code, message} = obj
+        {code, message, stackTrace} = obj
         [neo, classification, category, title] = code.split '.'
 
         ErrorClass = exports[classification]    # e.g. DatabaseError
-        message = "[#{category}.#{title}] #{message or '(no message)'}"
 
-        # TODO: Some errors (always DatabaseErrors?) can also apparently have a
-        # `stack` property with the Java stack trace. Should we include it in
-        # our own message/stack, in the DatabaseError case at least?
-        # (This'd be analagous to including the body for 5xx responses above.)
+        # Prefix all messages with the classification details:
+        fullMessage = "[#{category}.#{title}] "
 
-        new ErrorClass message, obj
+        # If this is a database error with a Java stack trace from Neo4j,
+        # include that stack, for bug reporting to the Neo4j team.
+        # Also include the stack if there's no summary message.
+        # TODO: Should we make it configurable to always include it?
+        # NOTE: The stack seems to be returned as a string, not an array.
+        if stackTrace and (classification is 'DatabaseError' or not message)
+            # It seems that this stack trace includes the summary message,
+            # but checking just in case it doesn't, and adding it if so.
+            if message and (stackTrace.indexOf message) is -1
+                stackTrace = "#{message}: #{stackTrace}"
+
+            # Stack traces can include "Caused by" lines which aren't indented,
+            # and indented lines use tabs. Normalize to 4 spaces, and indent
+            # everything one extra level, to differentiate from Node.js lines.
+            stackTrace = stackTrace
+                .replace /\t/g, '    '
+                .replace /\n/g, '\n    '
+
+            fullMessage += stackTrace
+
+        # Otherwise, e.g. for client errors, omit any stack; just the message:
+        else
+            fullMessage += message
+
+        new ErrorClass fullMessage, obj
 
     # TODO: Helper to rethrow native/inner errors? Not sure if we need one.
 

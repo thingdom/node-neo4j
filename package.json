@@ -7,7 +7,7 @@
         "Daniel Gasienica <daniel@gasienica.ch>",
         "Sergio Haro <sergio.haro.jr@gmail.com>"
     ],
-    "main": "./lib-new",
+    "main": "./lib-new/exports",
     "dependencies": {
         "request": "^2.27.0",
         "underscore": "1.7.x"

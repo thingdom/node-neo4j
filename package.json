@@ -30,6 +30,8 @@
     "codo": "codo && codo --server",
     "prepublish": "npm run build",
     "postpublish": "npm run clean",
+    "postinstall": "npm run build",
+    "preinstall": "npm run clean",
     "test": "mocha"
   },
   "keywords": [

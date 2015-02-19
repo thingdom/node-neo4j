@@ -10,6 +10,16 @@ Neo4j 1.5 through Neo4j 2.1.
 through Cypher for now -- but Cypher is the recommended interface for Neo4j
 anyway. This driver might change to wrap Cypher entirely.)
 
+<em>**Update: [node-neo4j v2][] is under development and almost finished!**
+[Read the full spec here][v2 spec], and follow the progress in [pull #145][].
+If you're comfortable using pre-release code, alpha versions are available on
+npm; we at [FiftyThree][] are running them in production. =)</em>
+
+[node-neo4j v2]: https://github.com/thingdom/node-neo4j/tree/v2#readme
+[v2 spec]: https://github.com/thingdom/node-neo4j/blob/v2/API_v2.md
+[pull #145]: https://github.com/thingdom/node-neo4j/pull/145
+[FiftyThree]: http://www.fiftythree.com/
+
 
 ## Installation
 

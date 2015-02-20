@@ -23,7 +23,7 @@ npm; we at [FiftyThree][] are running them in production. =)</em>
 
 ## Installation
 
-    npm install neo4j
+    npm install neo4j@1.x
 
 
 ## Usage

@@ -23,7 +23,7 @@ npm; we at [FiftyThree][] are running them in production. =)</em>
 
 ## Installation
 
-    npm install neo4j@1.x
+    npm install neo4j@1.x --save
 
 
 ## Usage
@@ -70,7 +70,7 @@ with this library.)
 This library is officially stable at "v1", but "v2" will almost certainly have
 breaking changes to support only Neo4j 2.0 and generally improve the API
 ([roadmap][]). You can be sheltered from these changes if you simply specify
-your package.json dependency as `1.x` or `~1.0` instead of `*`.
+your package.json dependency as e.g. `1.x` or `^1.0` instead of `*`.
 
 [Roadmap]: https://github.com/thingdom/node-neo4j/wiki/Roadmap
 

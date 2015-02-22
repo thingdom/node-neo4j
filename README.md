@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/thingdom/node-neo4j.png?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
+[![Build Status](https://travis-ci.org/thingdom/node-neo4j.svg?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
 
 # Node-Neo4j
 

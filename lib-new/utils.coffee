@@ -7,6 +7,9 @@
 # e.g. nodes, relationships, even transactions.
 #
 @parseId = (url) ->
-    match = url.match /// /db/data/\w+/(\d+)($|/) ///
+    # NOTE: Neo4j 2.1.7 shipped a bug with hypermedia links returned from the
+    # transactional endpoint, so we have to account for that:
+    # https://github.com/neo4j/neo4j/issues/4076
+    match = url.match /// (?:commit|/)db/data/\w+/(\d+)($|/) ///
     return null if not match
     return parseInt match[1], 10

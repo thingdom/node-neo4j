@@ -22,7 +22,7 @@ class @Error extends Error
         ErrorType = if statusCode >= 500 then 'Database' else 'Client'
         ErrorClass = exports["#{ErrorType}Error"]
 
-        message = "[#{statusCode}] "
+        message = "#{statusCode} "
         logBody = statusCode >= 500     # TODO: Config to always log body?
 
         if body?.exception
@@ -50,8 +50,8 @@ class @Error extends Error
 
         ErrorClass = exports[classification]    # e.g. DatabaseError
 
-        # Prefix all messages with the classification details:
-        fullMessage = "[#{category}.#{title}] "
+        # Prefix all messages with the full semantic code, for at-a-glance-ness:
+        fullMessage = "[#{code}] "
 
         # If this is a database error with a Java stack trace from Neo4j,
         # include that stack, for bug reporting to the Neo4j team.

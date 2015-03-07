@@ -24,6 +24,8 @@ neo4j = require '../'
 # TODO: De-duplicate with same helper in Cypher test suite!
 #
 expectError = (err, classification, category, title, message) ->
+    code = "Neo.#{classification}.#{category}.#{title}"
+
     expect(err).to.be.an.instanceOf neo4j[classification]   # e.g. DatabaseError
     expect(err.name).to.equal "neo4j.#{classification}"
 
@@ -33,7 +35,7 @@ expectError = (err, classification, category, title, message) ->
     # that the first line of the message matches the expected message:
     expect(err.message).to.be.a 'string'
     [errMessageLine1, errMessageLine2, ...] = err.message.split '\n'
-    expect(errMessageLine1).to.equal "[#{category}.#{title}] #{message}"
+    expect(errMessageLine1).to.equal "[#{code}] #{message}"
     expect(errMessageLine2).to.match ///
         ^ \s+ at\ [^(]+ \( [^)]+ [.](java|scala):\d+ \)
     /// if errMessageLine2
@@ -45,7 +47,8 @@ expectError = (err, classification, category, title, message) ->
     expect(errStackLine1).to.equal "#{err.name}: #{errMessageLine1}"
 
     expect(err.neo4j).to.be.an 'object'
-    expect(err.neo4j.code).to.equal "Neo.#{classification}.#{category}.#{title}"
+    expect(err.neo4j.code).to.equal code
+
     # If the actual error message was multi-line, that means it was the Neo4j
     # stack trace, which can include a larger message than the returned one.
     if errMessageLine2

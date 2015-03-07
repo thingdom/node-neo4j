@@ -503,6 +503,69 @@ describe 'Transactions', ->
 
     # TODO: Is there any way to trigger and test transient errors?
 
+    it 'should properly handle non-fatal errors on the first query', (_) ->
+        tx = DB.beginTransaction()
+        expect(tx.state).to.equal 'open'
+
+        # For precision, implementing this step without Streamline.
+        do (cont=_) =>
+            tx.cypher 'RETURN {foo}', (err, results) =>
+                try
+                    expect(err).to.exist()
+                    expectError err, 'ClientError', 'Statement',
+                        'ParameterMissing', 'Expected a parameter named foo'
+                catch assertionErr
+                    return cont assertionErr
+                cont()
+
+        expect(tx.state).to.equal 'open'
+
+    it 'should properly handle fatal client errors
+            on an auto-commit first query', (_) ->
+        tx = DB.beginTransaction()
+        expect(tx.state).to.equal 'open'
+
+        # For precision, implementing this step without Streamline.
+        do (cont=_) =>
+            tx.cypher
+                query: 'RETURN {foo}'
+                commit: true
+            , (err, results) =>
+                try
+                    expect(err).to.exist()
+                    expectError err, 'ClientError', 'Statement',
+                        'ParameterMissing', 'Expected a parameter named foo'
+                catch assertionErr
+                    return cont assertionErr
+                cont()
+
+        expect(tx.state).to.equal 'rolled back'
+
+    it 'should properly handle fatal database errors on the first query', (_) ->
+        tx = DB.beginTransaction()
+        expect(tx.state).to.equal 'open'
+
+        # HACK: Depending on a known bug to trigger a DatabaseError;
+        # that makes this test brittle, since the bug could get fixed!
+        # https://github.com/neo4j/neo4j/issues/3870#issuecomment-76650113
+        # For precision, implementing this step without Streamline.
+        do (cont=_) =>
+            tx.cypher
+                query: 'CREATE (n {props})'
+                params:
+                    props: {foo: null}
+            , (err) =>
+                try
+                    expect(err).to.exist()
+                    expectError err,
+                        'DatabaseError', 'Statement', 'ExecutionFailure',
+                        'scala.MatchError: (foo,null) (of class scala.Tuple2)'
+                catch assertionErr
+                    return cont assertionErr
+                cont()
+
+        expect(tx.state).to.equal 'rolled back'
+
     it 'should properly handle errors with batching', (_) ->
         tx = DB.beginTransaction()
 

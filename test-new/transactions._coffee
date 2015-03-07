@@ -165,6 +165,13 @@ describe 'Transactions', ->
 
         expect(nodeA.properties.test).to.equal 'committing'
 
+    it 'should support committing before any queries', (_) ->
+        tx = DB.beginTransaction()
+        expect(tx.state).to.equal 'open'
+
+        tx.commit _
+        expect(tx.state).to.equal 'committed'
+
     it 'should support auto-committing', (_) ->
         tx = DB.beginTransaction()
 
@@ -253,7 +260,7 @@ describe 'Transactions', ->
 
         expect(nodeA.properties.test).to.not.equal 'rolling back'
 
-    it 'should support rolling back before any commits', (_) ->
+    it 'should support rolling back before any queries', (_) ->
         tx = DB.beginTransaction()
         expect(tx.state).to.equal 'open'
 
@@ -554,7 +561,7 @@ describe 'Transactions', ->
                 query: 'CREATE (n {props})'
                 params:
                     props: {foo: null}
-            , (err) =>
+            , (err, results) =>
                 try
                     expect(err).to.exist()
                     expectError err,

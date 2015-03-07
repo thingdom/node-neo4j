@@ -23,15 +23,17 @@ neo4j = require '../'
 # TODO: Consider consolidating with a similar helper in the `http` test suite.
 #
 expectError = (err, classification, category, title, message) ->
+    code = "Neo.#{classification}.#{category}.#{title}"
+
     expect(err).to.be.an.instanceOf neo4j[classification]   # e.g. DatabaseError
     expect(err.name).to.equal "neo4j.#{classification}"
-    expect(err.message).to.equal "[#{category}.#{title}] #{message}"
+    expect(err.message).to.equal "[#{code}] #{message}"
+
     expect(err.stack).to.contain '\n'
     expect(err.stack.split('\n')[0]).to.equal "#{err.name}: #{err.message}"
+
     expect(err.neo4j).to.be.an 'object'
-    expect(err.neo4j).to.eql
-        code: "Neo.#{classification}.#{category}.#{title}"
-        message: message
+    expect(err.neo4j).to.eql {code, message}
 
 
 ## TESTS

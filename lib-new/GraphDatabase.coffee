@@ -88,21 +88,18 @@ module.exports = class GraphDatabase
         if not _tx and rollback
             throw new Error 'Illegal state: rolling back without a transaction!'
 
-        if not _tx?._id and rollback
-            # No query has been made within transaction yet, so this transaction
-            # doesn't even exist yet from Neo4j's POV; nothing to do.
-            cb null, null
-            return
-
         if commit and rollback
             throw new Error 'Illegal state: both committing and rolling back!'
+
+        if rollback and (query or queries)
+            throw new Error 'Illegal state: rolling back with query/queries!'
 
         if not _tx and commit is false
             throw new TypeError 'Can’t refuse to commit without a transaction!
                 To begin a new transaction without committing, call
                 `db.beginTransaction()`, and then call `cypher` on that.'
 
-        if not _tx and not query and not queries
+        if not _tx and not (query or queries)
             throw new TypeError 'Query or queries required'
 
         if query and queries
@@ -116,6 +113,14 @@ module.exports = class GraphDatabase
         if queries and lean
             throw new TypeError 'When batching multiple queries,
                 `lean` must be specified with each query, not globally.'
+
+        if (commit or rollback) and not (query or queries) and not _tx._id
+            # (Note that we've already required query or queries if no
+            # transaction present, so this means a transaction is present.)
+            # This transaction hasn't even been created yet from Neo4j's POV
+            # (because transactions are created lazily), so nothing to do.
+            cb null, null
+            return
 
         method = 'POST'
         method = 'DELETE' if rollback

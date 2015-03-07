@@ -35,7 +35,7 @@ expectError = (err, classification, category, title, message) ->
     [errMessageLine1, errMessageLine2, ...] = err.message.split '\n'
     expect(errMessageLine1).to.equal "[#{category}.#{title}] #{message}"
     expect(errMessageLine2).to.match ///
-        ^ \s+ at\ [^(]+ \( [^)]+ [.]java:\d+ \)
+        ^ \s+ at\ [^(]+ \( [^)]+ [.](java|scala):\d+ \)
     /// if errMessageLine2
 
     expect(err.stack).to.be.a 'string'
@@ -465,33 +465,21 @@ describe 'Transactions', ->
         expect(nodeA.properties.test).to.equal 'fatal database errors'
         expect(nodeA.properties.i).to.equal 1
 
-        # The only way I know how to trigger a database error is to trigger a
-        # client error, and then *separately* attempt to commit the transaction.
-        # TODO: Is there any better way?
-        try
-            tx.cypher
-                query: '''
-                    START nodeA = node({idA})
-                    SET nodeA.i = 2
-                    RETURN {foo}
-                '''
-                params:
-                    idA: TEST_NODE_A._id
-            , _
-        catch err
-            expect(err).to.exist()
-            expectError err, 'ClientError', 'Statement',
-                'ParameterMissing', 'Expected a parameter named foo'
-
+        # HACK: Depending on a known bug to trigger a DatabaseError;
+        # that makes this test brittle, since the bug could get fixed!
+        # https://github.com/neo4j/neo4j/issues/3870#issuecomment-76650113
         # For precision, implementing this step without Streamline.
         do (cont=_) =>
-            tx.commit (err) =>
+            tx.cypher
+                query: 'CREATE (n {props})'
+                params:
+                    props: {foo: null}
+            , (err, results) =>
                 try
                     expect(err).to.exist()
-                    expectError err, 'DatabaseError', 'Transaction',
-                        'CouldNotCommit', 'java.lang.RuntimeException:
-                            javax.transaction.RollbackException:
-                            Failed to commit, transaction rolled back'
+                    expectError err,
+                        'DatabaseError', 'Statement', 'ExecutionFailure',
+                        'scala.MatchError: (foo,null) (of class scala.Tuple2)'
                 catch assertionErr
                     return cont assertionErr
                 cont()

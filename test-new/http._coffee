@@ -77,7 +77,7 @@ describe 'GraphDatabase::http', ->
                 expect(body).to.not.exist()
 
                 expectError err, neo4j.ClientError,
-                    '[405] Method Not Allowed response for POST /'
+                    '405 Method Not Allowed response for POST /'
                 expect(err.neo4j).to.be.empty()
 
             catch assertionErr
@@ -94,7 +94,7 @@ describe 'GraphDatabase::http', ->
                 expect(err).to.exist()
                 expect(body).to.not.exist()
 
-                expectError err, neo4j.ClientError, '[404] [NodeNotFoundException]
+                expectError err, neo4j.ClientError, '404 [NodeNotFoundException]
                     Cannot find node with id [-1] in database.'
 
                 expect(err.neo4j).to.be.an 'object'

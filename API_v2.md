@@ -44,15 +44,25 @@ var neo4j = require('neo4j');
 
 var db = new neo4j.GraphDatabase({
     url: 'http://localhost:7474',
+    auth: null,     // optional; see below for more details
     headers: {},    // optional defaults, e.g. User-Agent
-    proxy: '',      // optional URL
+    proxy: null,    // optional URL
     agent: null,    // optional http.Agent instance, for custom socket pooling
 });
 ```
 
-An upcoming version of Neo4j will likely add native authentication.
-We already support HTTP Basic Auth in the URL, but we may then need to add
-ways to manage the auth (e.g. generate and reset tokens).
+To specify auth credentials, the username and password can be provided either
+directly in the URL, e.g. `'http://user:pass@localhost:7474'`,
+or via an `auth` option, which can either be a `'username:password'` string
+or a `{username, password}` object. The auth option takes precedence.
+
+If credentials are given in any form, they will be normalized to a
+`{username, password}` object and set as the `auth` property on the
+constructed `GraphDatabase` instance.
+In addition, the `url` property will have its credentials cleared if an `auth`
+option was provided as well.
+An empty string/object `auth` can be provided to clear auth in this way;
+the `auth` property will be normalized to `null` in this case.
 
 The current v1 of the driver is hypermedia-driven, so it discovers the
 `/db/data` endpoint. We may hardcode that in v2 for efficiency and simplicity,

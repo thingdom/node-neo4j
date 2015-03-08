@@ -20,10 +20,20 @@ module.exports = class GraphDatabase
         if typeof opts is 'string'
             opts = {url: opts}
 
-        {@url, @headers, @proxy, @agent} = opts
+        {@url, @auth, @headers, @proxy, @agent} = opts
 
         if not @url
             throw new TypeError 'URL to Neo4j required'
+
+        # Process auth, whether through option or URL creds or both.
+        # Option takes precedence, and we clear the URL creds if option given.
+        uri = URL.parse @url
+        if uri.auth and @auth?
+            delete uri.auth
+            @url = URL.format uri
+
+        # We also normalize any given auth to an object or null:
+        @auth = _normalizeAuth @auth ? uri.auth
 
         # TODO: Do we want to special-case User-Agent? Blacklist X-Stream?
         @headers or= {}
@@ -47,6 +57,7 @@ module.exports = class GraphDatabase
             method: method
             url: URL.resolve @url, path
             proxy: @proxy
+            auth: @auth
             headers: $(headers).defaults @headers
             agent: @agent
             json: body ? true
@@ -294,6 +305,25 @@ module.exports = class GraphDatabase
 
 
 ## HELPERS
+
+#
+# Normalizes the given auth value, which can be a 'username:password' string
+# or a {username, password} object, to an object or null always.
+#
+_normalizeAuth = (auth) ->
+    # Support empty string for no auth:
+    return null if not auth
+
+    # Parse string if given, being robust to colons in the password:
+    if typeof auth is 'string'
+        [username, passwordParts...] = auth.split ':'
+        password = passwordParts.join ':'
+        auth = {username, password}
+
+    # Support empty object for no auth also:
+    return null if (Object.keys auth).length is 0
+
+    auth
 
 #
 # Deep inspects the given object -- which could be a simple primitive, a map,

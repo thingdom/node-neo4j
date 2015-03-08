@@ -78,11 +78,8 @@ describe 'Transactions', ->
             expect(tx.state).to.equal 'pending'
 
         cb = (err, results) ->
-            try
-                expect(err).to.not.exist()
-                expect(tx.state).to.equal 'open'
-            catch assertionErr
-                return done assertionErr
+            expect(err).to.not.exist()
+            expect(tx.state).to.equal 'open'
             done()
 
         fn()
@@ -364,12 +361,9 @@ describe 'Transactions', ->
                 params:
                     idA: TEST_NODE_A._id
             , (err, results) =>
-                try
-                    expect(err).to.exist()
-                    expectError err, 'ClientError', 'Statement',
-                        'ParameterMissing', 'Expected a parameter named foo'
-                catch assertionErr
-                    return cont assertionErr
+                expect(err).to.exist()
+                expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
         expect(tx.state).to.equal 'open'
@@ -431,12 +425,9 @@ describe 'Transactions', ->
                     idA: TEST_NODE_A._id
                 commit: true
             , (err, results) =>
-                try
-                    expect(err).to.exist()
-                    expectError err, 'ClientError', 'Statement',
-                        'ParameterMissing', 'Expected a parameter named foo'
-                catch assertionErr
-                    return cont assertionErr
+                expect(err).to.exist()
+                expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
         expect(tx.state).to.equal 'rolled back'
@@ -485,13 +476,10 @@ describe 'Transactions', ->
                 params:
                     props: {foo: null}
             , (err, results) =>
-                try
-                    expect(err).to.exist()
-                    expectError err,
-                        'DatabaseError', 'Statement', 'ExecutionFailure',
-                        'scala.MatchError: (foo,null) (of class scala.Tuple2)'
-                catch assertionErr
-                    return cont assertionErr
+                expect(err).to.exist()
+                expectError err,
+                    'DatabaseError', 'Statement', 'ExecutionFailure',
+                    'scala.MatchError: (foo,null) (of class scala.Tuple2)'
                 cont()
 
         expect(tx.state).to.equal 'rolled back'
@@ -520,12 +508,9 @@ describe 'Transactions', ->
         # For precision, implementing this step without Streamline.
         do (cont=_) =>
             tx.cypher 'RETURN {foo}', (err, results) =>
-                try
-                    expect(err).to.exist()
-                    expectError err, 'ClientError', 'Statement',
-                        'ParameterMissing', 'Expected a parameter named foo'
-                catch assertionErr
-                    return cont assertionErr
+                expect(err).to.exist()
+                expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
         expect(tx.state).to.equal 'open'
@@ -541,12 +526,9 @@ describe 'Transactions', ->
                 query: 'RETURN {foo}'
                 commit: true
             , (err, results) =>
-                try
-                    expect(err).to.exist()
-                    expectError err, 'ClientError', 'Statement',
-                        'ParameterMissing', 'Expected a parameter named foo'
-                catch assertionErr
-                    return cont assertionErr
+                expect(err).to.exist()
+                expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
         expect(tx.state).to.equal 'rolled back'
@@ -565,13 +547,10 @@ describe 'Transactions', ->
                 params:
                     props: {foo: null}
             , (err, results) =>
-                try
-                    expect(err).to.exist()
-                    expectError err,
-                        'DatabaseError', 'Statement', 'ExecutionFailure',
-                        'scala.MatchError: (foo,null) (of class scala.Tuple2)'
-                catch assertionErr
-                    return cont assertionErr
+                expect(err).to.exist()
+                expectError err,
+                    'DatabaseError', 'Statement', 'ExecutionFailure',
+                    'scala.MatchError: (foo,null) (of class scala.Tuple2)'
                 cont()
 
         expect(tx.state).to.equal 'rolled back'
@@ -638,31 +617,27 @@ describe 'Transactions', ->
                         idA: TEST_NODE_A._id
                 ]
             , (err, results) =>
-                try
-                    expect(err).to.exist()
+                expect(err).to.exist()
 
-                    # Simplified error checking, since the message is complex:
-                    expect(err).to.be.an.instanceOf neo4j.ClientError
-                    expect(err.neo4j).to.be.an 'object'
-                    expect(err.neo4j.code).to.equal \
-                        'Neo.ClientError.Statement.InvalidSyntax'
+                # Simplified error checking, since the message is complex:
+                expect(err).to.be.an.instanceOf neo4j.ClientError
+                expect(err.neo4j).to.be.an 'object'
+                expect(err.neo4j.code).to.equal \
+                    'Neo.ClientError.Statement.InvalidSyntax'
 
-                    expect(results).to.be.an 'array'
-                    expect(results).to.have.length 1
+                expect(results).to.be.an 'array'
+                expect(results).to.have.length 1
 
-                    [result] = results
+                [result] = results
 
-                    expect(result).to.be.an 'array'
-                    expect(result).to.have.length 1
+                expect(result).to.be.an 'array'
+                expect(result).to.have.length 1
 
-                    [{nodeA}] = result
+                [{nodeA}] = result
 
-                    # We requested `lean: true`, so `nodeA` is just properties:
-                    expect(nodeA.test).to.equal 'errors with batching'
-                    expect(nodeA.i).to.equal 2
-
-                catch assertionErr
-                    return cont assertionErr
+                # We requested `lean: true`, so `nodeA` is just properties:
+                expect(nodeA.test).to.equal 'errors with batching'
+                expect(nodeA.i).to.equal 2
 
                 cont()
 

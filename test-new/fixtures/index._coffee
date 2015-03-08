@@ -7,8 +7,11 @@ $ = require 'underscore'
 {expect} = require 'chai'
 neo4j = require '../../'
 
-@DB =
-    new neo4j.GraphDatabase process.env.NEO4J_URL or 'http://localhost:7474'
+@DB = new neo4j.GraphDatabase
+    # Support specifying database info via environment variables,
+    # but assume Neo4j installation defaults.
+    url: process.env.NEO4J_URL or 'http://neo4j:neo4j@localhost:7474'
+    auth: process.env.NEO4J_AUTH
 
 # We fill these in, and cache them, the first time tests request them:
 @DB_VERSION_NUM = null

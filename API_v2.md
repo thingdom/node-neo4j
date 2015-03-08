@@ -4,6 +4,7 @@ This is a rough, work-in-progress redesign of the node-neo4j API.
 
 - [General](#general)
 - [Core](#core)
+- [Auth](#auth)
 - [HTTP](#http)
 - [Objects](#objects)
 - [Cypher](#cypher)
@@ -67,6 +68,24 @@ the `auth` property will be normalized to `null` in this case.
 The current v1 of the driver is hypermedia-driven, so it discovers the
 `/db/data` endpoint. We may hardcode that in v2 for efficiency and simplicity,
 but if we do, do we need to make that customizable/overridable too?
+
+
+## Auth
+
+**Let me manage database authentication.**
+
+Note that this section only matters for *managing* auth, not *specifying* it.
+
+```js
+function cbBool(err, bool) {}
+function cbDone(err) {}
+
+db.checkPasswordChangeNeeded(cbBool);
+db.changePassword({password}, cbDone);
+```
+
+For convenience, changing the password will automatically update the `auth`
+property on the `GraphDatabase` instance, so that subsequent requests will work.
 
 
 ## HTTP

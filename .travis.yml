@@ -9,16 +9,15 @@ jdk:
 
 env:
   # test across multiple versions of Neo4j:
-  - NEO4J_VERSION="2.2.0-M03"
+  - NEO4J_VERSION="2.2.0-RC01"
   - NEO4J_VERSION="2.1.7"
   - NEO4J_VERSION="2.0.4"
 
 matrix:
-  # but we may want to allow our tests to fail against future, unstable
-  # versions of Neo4j. E.g. 2.2 introduces auth, and sets it by default.
-  # TODO: remove this once we've added auth support and fixed it for 2.2.
+  # but we may want to allow our tests to fail against *some* Neo4j versions,
+  # e.g. due to unstability, bugs, or breaking changes for our test code.
   allow_failures:
-    - env: NEO4J_VERSION="2.2.0-M03"
+    - env: NEO4J_VERSION="2.0.4"  # seems to have transaction bugs
 
 before_install:
   # install Neo4j locally:

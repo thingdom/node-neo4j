@@ -310,7 +310,7 @@ module.exports = class GraphDatabase
                 # TODO: Is it possible to get back more than one error?
                 # If so, is it fine for us to just use the first one?
                 [error] = errors
-                err = Error._fromTransaction error
+                err = Error._fromObject error
 
             cb err, results
 

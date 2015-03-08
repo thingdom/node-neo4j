@@ -11,10 +11,16 @@
 # If auth is disabled or not present, every test here will be skipped.
 #
 
+$ = require 'underscore'
 crypto = require 'crypto'
 {expect} = require 'chai'
 fixtures = require './fixtures'
 neo4j = require '../'
+
+
+## CONSTANTS
+
+AUTH_ERROR_CODE = 'Neo.ClientError.Security.AuthorizationFailed'
 
 
 ## SHARED STATE
@@ -46,6 +52,18 @@ tryGetDbVersion = (_) ->
         fixtures.DB_VERSION_NUM
     catch err
         NaN     # since a boolean comparison of NaN with any number is false
+
+# TODO: De-duplicate this kind of helper between our test suites:
+expectAuthError = (err, message) ->
+    expect(err).to.be.an.instanceof neo4j.ClientError
+    expect(err.name).to.equal 'neo4j.ClientError'
+    expect(err.message).to.equal "[#{AUTH_ERROR_CODE}] #{message}"
+
+    expect(err.stack).to.contain '\n'
+    expect(err.stack.split('\n')[0]).to.equal "#{err.name}: #{err.message}"
+
+    expect(err.neo4j).to.be.an 'object'
+    expect(err.neo4j).to.eql {code: AUTH_ERROR_CODE, message}
 
 
 ## TESTS
@@ -85,11 +103,44 @@ describe 'Auth', ->
             disable 'Error checking auth'
             throw err
 
-    it 'should fail when auth is required but not set'
+    it 'should fail when auth is required but not set', (done) ->
+        db = new neo4j.GraphDatabase
+            url: DB.url
+            auth: {}    # Explicitly clears auth
 
-    it 'should fail when auth is incorrect (username)'
+        # NOTE: Explicitly not using `db.checkPasswordChangeNeeded` since that
+        # rejects calls when no auth is set.
+        db.http '/db/data/', (err, data) ->
+            expect(err).to.exist()
+            expectAuthError err, 'No authorization header supplied.'
+            expect(data).to.not.exist()
+            done()
 
-    it 'should fail when auth is incorrect (password)'
+    it 'should fail when auth is incorrect (username)', (done) ->
+        db = new neo4j.GraphDatabase
+            url: DB.url
+            auth: $(DB.auth).clone()
+
+        db.auth.username = RANDOM_PASSWORD
+
+        db.checkPasswordChangeNeeded (err, bool) ->
+            expect(err).to.exist()
+            expectAuthError err, 'Invalid username or password.'
+            expect(bool).to.not.exist()
+            done()
+
+    it 'should fail when auth is incorrect (password)', (done) ->
+        db = new neo4j.GraphDatabase
+            url: DB.url
+            auth: $(DB.auth).clone()
+
+        db.auth.password = RANDOM_PASSWORD
+
+        db.checkPasswordChangeNeeded (err, bool) ->
+            expect(err).to.exist()
+            expectAuthError err, 'Invalid username or password.'
+            expect(bool).to.not.exist()
+            done()
 
     it 'should support checking whether a password change is needed', (_) ->
         needed = DB.checkPasswordChangeNeeded _

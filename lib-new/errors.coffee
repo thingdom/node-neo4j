@@ -17,6 +17,13 @@ class @Error extends Error
 
         return null if statusCode < 400
 
+        # If this is a Neo4j v2-style error response, prefer that:
+        if body?.errors?.length
+            # TODO: Is it possible to get back more than one error?
+            # If so, is it fine for us to just use the first one?
+            [error] = body.errors
+            return @_fromObject error
+
         # TODO: Do some status codes (or perhaps inner `exception` names)
         # signify Transient errors rather than Database ones?
         ErrorType = if statusCode >= 500 then 'Database' else 'Client'
@@ -39,10 +46,10 @@ class @Error extends Error
         new ErrorClass message, body
 
     #
-    # Accepts the given error object from a transactional Cypher response, and
-    # creates and returns the appropriate Error instance for it.
+    # Accepts the given (Neo4j v2) error object, and creates and returns the
+    # appropriate Error instance for it.
     #
-    @_fromTransaction: (obj) ->
+    @_fromObject: (obj) ->
         # http://neo4j.com/docs/stable/rest-api-transactional.html#rest-api-handling-errors
         # http://neo4j.com/docs/stable/status-codes.html
         {code, message, stackTrace} = obj

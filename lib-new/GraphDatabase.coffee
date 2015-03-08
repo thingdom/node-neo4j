@@ -11,6 +11,9 @@ URL = require 'url'
 
 module.exports = class GraphDatabase
 
+
+    ## CORE
+
     # Default HTTP headers:
     headers:
         'User-Agent': "node-neo4j/#{lib.version}"
@@ -38,6 +41,9 @@ module.exports = class GraphDatabase
         # TODO: Do we want to special-case User-Agent? Blacklist X-Stream?
         @headers or= {}
         $(@headers).defaults @constructor::headers
+
+
+    ## HTTP
 
     http: (opts={}, cb) ->
         if typeof opts is 'string'
@@ -86,6 +92,51 @@ module.exports = class GraphDatabase
         # This is only populated when the request is `start`ed, so `start` it!
         req.start()
         req.req
+
+
+    ## AUTH
+
+    checkPasswordChangeNeeded: (cb) ->
+        if not @auth?.username
+            throw new TypeError 'No `auth` specified in constructor!'
+
+        @http
+            method: 'GET'
+            path: "/user/#{encodeURIComponent @auth.username}"
+        , (err, user) ->
+            if err
+                return cb err
+
+            cb null, user.password_change_required
+
+    changePassword: (opts={}, cb) ->
+        if typeof opts is 'string'
+            opts = {password: opts}
+
+        {password} = opts
+
+        if not @auth?.username
+            throw new TypeError 'No `auth` specified in constructor!'
+
+        if not password
+            throw new TypeError 'Password required'
+
+        @http
+            method: 'POST'
+            path: "/user/#{encodeURIComponent @auth.username}/password"
+            body: {password}
+        , (err) =>
+            if err
+                return cb err
+
+            # Since successful, update our saved state for subsequent requests:
+            @auth.password = password
+
+            # Void method:
+            cb null
+
+
+    ## CYPHER
 
     cypher: (opts={}, cb, _tx) ->
         if typeof opts is 'string'

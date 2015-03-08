@@ -9,13 +9,16 @@ $ = require 'underscore'
 
 ## CONSTANTS
 
-URL = 'http://foo:bar@baz:1234'
-PROXY = 'http://lorem.ipsum'
+URL = 'https://example.com:1234'
+PROXY = 'https://some.proxy:5678'
 HEADERS =
     'x-foo': 'bar-baz'
     'x-lorem': 'ipsum'
     # TODO: Test overlap with default headers?
     # TODO: Test custom User-Agent behavior, or blacklist X-Stream?
+
+USERNAME = 'alice'
+PASSWORD = 'p4ssw0rd'
 
 
 ## HELPERS
@@ -50,6 +53,12 @@ expectHeaders = (db, headers) ->
     for key, val of db.headers
         expect(val).to.equal headers[key] or defaultHeaders[key]
 
+expectAuth = (db, username, password) ->
+    expect(db.auth).to.eql {username, password}
+
+expectNoAuth = (db) ->
+    expect(db.auth).to.not.exist()
+
 
 ## TESTS
 
@@ -63,17 +72,92 @@ describe 'GraphDatabase::constructor', ->
 
         expectDatabase db, URL, PROXY
         expectHeaders db, HEADERS
+        expectNoAuth db
 
     it 'should support just URL string', ->
         db = new GraphDatabase URL
 
         expectDatabase db, URL
         expectHeaders db, {}
+        expectNoAuth db
 
     it 'should throw if no URL given', ->
         fn = -> new GraphDatabase()
-        expect(fn).to.throw TypeError
+        expect(fn).to.throw TypeError, /URL to Neo4j required/
 
         # Also try giving an options argument, just with no URL:
         fn = -> new GraphDatabase {proxy: PROXY}
-        expect(fn).to.throw TypeError
+        expect(fn).to.throw TypeError, /URL to Neo4j required/
+
+    it 'should support and parse auth in URL', ->
+        url = "https://#{USERNAME}:#{PASSWORD}@auth.test:9876"
+        db = new GraphDatabase url
+
+        expectDatabase db, url
+        expectAuth db, USERNAME, PASSWORD
+
+    it 'should support and parse auth as separate string option', ->
+        db = new GraphDatabase
+            url: URL
+            auth: "#{USERNAME}:#{PASSWORD}"
+
+        expectDatabase db, URL
+        expectAuth db, USERNAME, PASSWORD
+
+    it 'should support and parse auth as separate object option', ->
+        db = new GraphDatabase
+            url: URL
+            auth:
+                username: USERNAME
+                password: PASSWORD
+
+        expectDatabase db, URL
+        expectAuth db, USERNAME, PASSWORD
+
+    it 'should prefer separate auth option over auth in the URL
+            (and should clear auth in URL then)', ->
+        host = 'auth.test:9876'
+        wrong1 = "#{Math.random()}"[2..]
+        wrong2 = "#{Math.random()}"[2..]
+
+        db = new GraphDatabase
+            url: "https://#{wrong1}:#{wrong2}@#{host}"
+            auth: "#{USERNAME}:#{PASSWORD}"
+
+        # NOTE: The constructor adds a trailing slash, but that's okay.
+        expectDatabase db, "https://#{host}/"
+        expectAuth db, USERNAME, PASSWORD
+
+    it 'should support clearing auth via empty string option', ->
+        host = "auth.test:9876"
+        url = "https://#{USERNAME}:#{PASSWORD}@#{host}"
+
+        db = new GraphDatabase
+            url: url
+            auth: ''
+
+        # NOTE: The constructor adds a trailing slash, but that's okay.
+        expectDatabase db, "https://#{host}/"
+        expectNoAuth db
+
+    it 'should support clearing auth via empty object option', ->
+        host = "auth.test:9876"
+        url = "https://#{USERNAME}:#{PASSWORD}@#{host}"
+
+        db = new GraphDatabase
+            url: url
+            auth: {}
+
+        # NOTE: The constructor adds a trailing slash, but that's okay.
+        expectDatabase db, "https://#{host}/"
+        expectNoAuth db
+
+    it 'should be robust to colons in the password with string option', ->
+        password = "#{PASSWORD}:#{PASSWORD}:#{PASSWORD}"
+
+        db = new GraphDatabase
+            url: URL
+            auth: "#{USERNAME}:#{password}"
+
+        expectDatabase db, URL
+        expectAuth db, USERNAME, password

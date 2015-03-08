@@ -95,11 +95,12 @@ property on the `GraphDatabase` instance, so that subsequent requests will work.
 This will allow callers to make any API requests; no one will be blocked by
 this driver not supporting a particular API.
 
-It'll also allow callers to interface with arbitrary plugins,
-including custom ones.
+It'll also allow callers to interface with arbitrary Neo4j plugins
+(e.g. [neo4j-spatial](http://neo4j-contrib.github.io/spatial/#spatial-server-plugin)),
+even custom ones.
 
 ```js
-function cb(err, body) {};
+function cb(err, body) {}
 
 var req = db.http({method, path, headers, body, raw}, cb);
 ```
@@ -171,7 +172,7 @@ from database responses.
 **Let me make simple, parametrized Cypher queries.**
 
 ```js
-function cb(err, results) {};
+function cb(err, results) {}
 
 var stream = db.cypher({query, params, headers, lean}, cb);
 
@@ -254,8 +255,8 @@ class Transaction {_id, expiresAt, expiresIn, state}
 ```
 
 ```js
-function cbResults(err, results) {};
-function cbDone(err) {};
+function cbResults(err, results) {}
+function cbDone(err) {}
 
 var stream = tx.cypher({query, params, headers, lean, commit}, cbResults);
 
@@ -381,7 +382,7 @@ for those boilerplate Cypher queries.
 ### Labels
 
 ```js
-function cb(err, labels) {};
+function cb(err, labels) {}
 
 db.getLabels(cb);
 ```
@@ -397,10 +398,10 @@ Labels are simple strings.
 ### Indexes
 
 ```js
-function cbOne(err, index) {};
-function cbMany(err, indexes) {};
-function cbBool(err, bool) {};
-function cbDone(err) {};
+function cbOne(err, index) {}
+function cbMany(err, indexes) {}
+function cbBool(err, bool) {}
+function cbDone(err) {}
 
 db.getIndexes(cbMany);              // across all labels
 db.getIndexes({label}, cbMany);     // for a particular label
@@ -427,10 +428,10 @@ The design aims to be generic in order to support future constraint types,
 but it's still possible that the API may have to break when that happens.
 
 ```js
-function cbOne(err, constraint) {};
-function cbMany(err, constraints) {};
-function cbBool(err, bool) {};
-function cbDone(err) {};
+function cbOne(err, constraint) {}
+function cbMany(err, constraints) {}
+function cbBool(err, bool) {}
+function cbDone(err) {}
 
 db.getConstraints(cbMany);              // across all labels
 db.getConstraints({label}, cbMany);     // for a particular label
@@ -452,8 +453,8 @@ Should multiple properties be supported?
 ### Misc
 
 ```js
-function cbKeys(err, keys) {};
-function cbTypes(err, types) {};
+function cbKeys(err, keys) {}
+function cbTypes(err, types) {}
 
 db.getPropertyKeys(cbKeys);
 db.getRelationshipTypes(cbTypes);
@@ -470,9 +471,9 @@ This driver thus provides legacy indexing APIs.
 ### Management
 
 ```js
-function cbOne(err, index) {};
-function cbMany(err, indexes) {};
-function cbDone(err) {};
+function cbOne(err, index) {}
+function cbMany(err, indexes) {}
+function cbDone(err) {}
 
 db.getLegacyNodeIndexes(cbMany);
 db.getLegacyNodeIndex({name}, cbOne);
@@ -498,9 +499,9 @@ The `config` property is e.g. `{provider: 'lucene', type: 'fulltext'}`;
 ### Simple Usage
 
 ```js
-function cbOne(err, node_or_rel) {};
-function cbMany(err, nodes_or_rels) {};
-function cbDone(err) {};
+function cbOne(err, node_or_rel) {}
+function cbMany(err, nodes_or_rels) {}
+function cbDone(err) {}
 
 db.addNodeToLegacyIndex({name, key, value, _id}, cbOne);
 db.getNodesFromLegacyIndex({name, key, value}, cbMany);     // key-value lookup
@@ -531,7 +532,7 @@ For adding existing nodes or relationships, simply pass `unique: true` to the
 `add` method.
 
 ```js
-function cb(err, node_or_rel) {};
+function cb(err, node_or_rel) {}
 
 db.addNodeToLegacyIndex({name, key, value, _id, unique: true}, cb);
 db.addRelationshipToLegacyIndex({name, key, value, _id, unique: true}, cb);
@@ -545,7 +546,7 @@ For creating new nodes or relationships, the `create` method below corresponds
 with "create or fail", while `getOrCreate` corresponds with "get or create":
 
 ```js
-function cb(err, node_or_rel) {};
+function cb(err, node_or_rel) {}
 
 db.createNodeFromLegacyIndex({name, key, value, properties}, cb);
 db.getOrCreateNodeFromLegacyIndex({name, key, value, properties}, cb);
@@ -567,8 +568,8 @@ just replace `LegacyIndex` with `LegacyAutoIndex` in all method names,
 then omit the `name` parameter.
 
 ```js
-function cbOne(err, node_or_rel) {};
-function cbMany(err, nodes_or_rels) {};
+function cbOne(err, node_or_rel) {}
+function cbMany(err, nodes_or_rels) {}
 
 db.getNodesFromLegacyAutoIndex({key, value}, cbMany);   // key-value lookup
 db.getNodesFromLegacyAutoIndex({query}, cbMany);        // arbitrary Lucene query

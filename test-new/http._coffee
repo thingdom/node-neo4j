@@ -72,16 +72,12 @@ describe 'GraphDatabase::http', ->
             method: 'POST'
             path: '/'
         , (err, body) ->
-            try
-                expect(err).to.exist()
-                expect(body).to.not.exist()
+            expect(err).to.exist()
+            expect(body).to.not.exist()
 
-                expectError err, neo4j.ClientError,
-                    '405 Method Not Allowed response for POST /'
-                expect(err.neo4j).to.be.empty()
-
-            catch assertionErr
-                return done assertionErr
+            expectError err, neo4j.ClientError,
+                '405 Method Not Allowed response for POST /'
+            expect(err.neo4j).to.be.empty()
 
             done()
 
@@ -90,28 +86,24 @@ describe 'GraphDatabase::http', ->
             method: 'GET'
             path: '/db/data/node/-1'
         , (err, body) ->
-            try
-                expect(err).to.exist()
-                expect(body).to.not.exist()
+            expect(err).to.exist()
+            expect(body).to.not.exist()
 
-                expectError err, neo4j.ClientError, '404 [NodeNotFoundException]
-                    Cannot find node with id [-1] in database.'
+            expectError err, neo4j.ClientError, '404 [NodeNotFoundException]
+                Cannot find node with id [-1] in database.'
 
-                expect(err.neo4j).to.be.an 'object'
-                expect(err.neo4j.exception).to.equal 'NodeNotFoundException'
-                expect(err.neo4j.fullname).to.equal '
-                    org.neo4j.server.rest.web.NodeNotFoundException'
-                expect(err.neo4j.message).to.equal '
-                    Cannot find node with id [-1] in database.'
+            expect(err.neo4j).to.be.an 'object'
+            expect(err.neo4j.exception).to.equal 'NodeNotFoundException'
+            expect(err.neo4j.fullname).to.equal '
+                org.neo4j.server.rest.web.NodeNotFoundException'
+            expect(err.neo4j.message).to.equal '
+                Cannot find node with id [-1] in database.'
 
-                expect(err.neo4j.stacktrace).to.be.an 'array'
-                expect(err.neo4j.stacktrace).to.not.be.empty()
-                for line in err.neo4j.stacktrace
-                    expect(line).to.be.a 'string'
-                    expect(line).to.not.be.empty()
-
-            catch assertionErr
-                return done assertionErr
+            expect(err.neo4j.stacktrace).to.be.an 'array'
+            expect(err.neo4j.stacktrace).to.not.be.empty()
+            for line in err.neo4j.stacktrace
+                expect(line).to.be.a 'string'
+                expect(line).to.not.be.empty()
 
             done()
 
@@ -141,24 +133,20 @@ describe 'GraphDatabase::http', ->
             path: '/'
             raw: true
         , (err, resp) ->
-            try
-                expect(err).to.exist()
-                expect(resp).to.not.exist()
+            expect(err).to.exist()
+            expect(resp).to.not.exist()
 
-                # NOTE: *Not* using `expectError` here, because we explicitly
-                # don't wrap native (non-Neo4j) errors.
-                expect(err).to.be.an.instanceOf Error
-                expect(err.name).to.equal 'Error'
-                expect(err.code).to.equal 'ENOTFOUND'
-                expect(err.syscall).to.equal 'getaddrinfo'
-                expect(err.message).to.contain "#{err.syscall} #{err.code}"
-                    # NOTE: Node 0.12 adds the hostname to the message.
-                expect(err.stack).to.contain '\n'
-                expect(err.stack.split('\n')[0]).to.equal \
-                    "#{err.name}: #{err.message}"
-
-            catch assertionErr
-                return done assertionErr
+            # NOTE: *Not* using `expectError` here, because we explicitly
+            # don't wrap native (non-Neo4j) errors.
+            expect(err).to.be.an.instanceOf Error
+            expect(err.name).to.equal 'Error'
+            expect(err.code).to.equal 'ENOTFOUND'
+            expect(err.syscall).to.equal 'getaddrinfo'
+            expect(err.message).to.contain "#{err.syscall} #{err.code}"
+                # NOTE: Node 0.12 adds the hostname to the message.
+            expect(err.stack).to.contain '\n'
+            expect(err.stack.split('\n')[0]).to.equal \
+                "#{err.name}: #{err.message}"
 
             done()
 

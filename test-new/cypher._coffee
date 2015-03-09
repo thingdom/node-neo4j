@@ -56,6 +56,24 @@ expectError = (err, classification, category, title, message) ->
     else
         expect(err.neo4j.message).to.equal message
 
+# TEMP: Neo4j 2.2.0-RC01 incorrectly classifies `ParameterMissing` errors as
+# `DatabaseError` rather than `ClientError`.
+# https://github.com/neo4j/neo4j/issues/4144
+expectParameterMissingError = (err) ->
+    try
+        expectError err, 'ClientError', 'Statement', 'ParameterMissing',
+            'Expected a parameter named foo'
+
+    catch assertionErr
+        # Check for the Neo4j 2.2.0-RC01 case, but if it's not,
+        # throw the original assertion error, not a new one.
+        try
+            expectError err, 'DatabaseError', 'Statement', 'ExecutionFailure',
+                'org.neo4j.graphdb.QueryExecutionException:
+                    Expected a parameter named foo'
+        catch doubleErr
+            throw assertionErr
+
 
 ## TESTS
 
@@ -132,8 +150,7 @@ describe 'GraphDatabase::cypher', ->
     it 'should properly parse and throw Neo4j errors', (done) ->
         DB.cypher 'RETURN {foo}', (err, results) ->
             expect(err).to.exist()
-            expectError err, 'ClientError', 'Statement',
-                'ParameterMissing', 'Expected a parameter named foo'
+            expectParameterMissingError err
 
             # Whether `results` are returned or not depends on the error;
             # Neo4j will return an array if the query could be executed,
@@ -292,8 +309,7 @@ describe 'GraphDatabase::cypher', ->
             ]
         , (err, results) ->
             expect(err).to.exist()
-            expectError err, 'ClientError', 'Statement', 'ParameterMissing',
-                'Expected a parameter named foo'
+            expectParameterMissingError err
 
             # NOTE: With batching, we *do* return any results that we
             # received before the error, in case of an open transaction.

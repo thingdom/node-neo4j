@@ -57,6 +57,27 @@ expectError = (err, classification, category, title, message) ->
     else
         expect(err.neo4j.message).to.equal message
 
+# TEMP: Neo4j 2.2.0-RC01 incorrectly classifies `ParameterMissing` errors as
+# `DatabaseError` rather than `ClientError`.
+# https://github.com/neo4j/neo4j/issues/4144
+# Returns whether we did have to account for this bug or not.
+expectParameterMissingError = (err) ->
+    try
+        expectError err, 'ClientError', 'Statement', 'ParameterMissing',
+            'Expected a parameter named foo'
+        return false
+
+    catch assertionErr
+        # Check for the Neo4j 2.2.0-RC01 case, but if it's not,
+        # throw the original assertion error, not a new one.
+        try
+            expectError err, 'DatabaseError', 'Statement', 'ExecutionFailure',
+                'org.neo4j.graphdb.QueryExecutionException:
+                    Expected a parameter named foo'
+            return true
+
+        throw assertionErr
+
 
 ## TESTS
 
@@ -362,8 +383,7 @@ describe 'Transactions', ->
                     idA: TEST_NODE_A._id
             , (err, results) =>
                 expect(err).to.exist()
-                expectError err, 'ClientError', 'Statement',
-                    'ParameterMissing', 'Expected a parameter named foo'
+                expectParameterMissingError err
                 cont()
 
         expect(tx.state).to.equal 'open'
@@ -426,8 +446,7 @@ describe 'Transactions', ->
                 commit: true
             , (err, results) =>
                 expect(err).to.exist()
-                expectError err, 'ClientError', 'Statement',
-                    'ParameterMissing', 'Expected a parameter named foo'
+                expectParameterMissingError err
                 cont()
 
         expect(tx.state).to.equal 'rolled back'
@@ -506,14 +525,17 @@ describe 'Transactions', ->
         expect(tx.state).to.equal 'open'
 
         # For precision, implementing this step without Streamline.
+        dbErred = null
         do (cont=_) =>
             tx.cypher 'RETURN {foo}', (err, results) =>
                 expect(err).to.exist()
-                expectError err, 'ClientError', 'Statement',
-                    'ParameterMissing', 'Expected a parameter named foo'
+                dbErred = expectParameterMissingError err
                 cont()
 
-        expect(tx.state).to.equal 'open'
+        # TEMP: Because Neo4j 2.2.0-RC01 incorrectly throws a `DatabaseError`
+        # for the above error (see `expectParameterMissingError` for details),
+        # the transaction does get rolled back.
+        expect(tx.state).to.equal (if dbErred then 'rolled back' else 'open')
 
     it 'should properly handle fatal client errors
             on an auto-commit first query', (_) ->
@@ -527,8 +549,7 @@ describe 'Transactions', ->
                 commit: true
             , (err, results) =>
                 expect(err).to.exist()
-                expectError err, 'ClientError', 'Statement',
-                    'ParameterMissing', 'Expected a parameter named foo'
+                expectParameterMissingError err
                 cont()
 
         expect(tx.state).to.equal 'rolled back'

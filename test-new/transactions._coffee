@@ -5,6 +5,7 @@
 
 {expect} = require 'chai'
 fixtures = require './fixtures'
+helpers = require './util/helpers'
 neo4j = require '../'
 
 
@@ -13,70 +14,6 @@ neo4j = require '../'
 {DB, TEST_LABEL} = fixtures
 
 [TEST_NODE_A, TEST_NODE_B, TEST_REL] = []
-
-
-
-## HELPERS
-
-#
-# Asserts that the given object is an instance of the proper Neo4j Error
-# subclass, representing the given transactional Neo4j error info.
-# TODO: De-duplicate with same helper in Cypher test suite!
-#
-expectError = (err, classification, category, title, message) ->
-    code = "Neo.#{classification}.#{category}.#{title}"
-
-    expect(err).to.be.an.instanceOf neo4j[classification]   # e.g. DatabaseError
-    expect(err.name).to.equal "neo4j.#{classification}"
-
-    # If the actual error message is multi-line, it includes the Neo4j stack
-    # trace; test that in a simple way by just checking the first line of the
-    # trace (subsequent lines can be different, e.g. "Caused by"), but also test
-    # that the first line of the message matches the expected message:
-    expect(err.message).to.be.a 'string'
-    [errMessageLine1, errMessageLine2, ...] = err.message.split '\n'
-    expect(errMessageLine1).to.equal "[#{code}] #{message}"
-    expect(errMessageLine2).to.match ///
-        ^ \s+ at\ [^(]+ \( [^)]+ [.](java|scala):\d+ \)
-    /// if errMessageLine2
-
-    expect(err.stack).to.be.a 'string'
-    expect(err.stack).to.contain '\n'
-    expect(err.stack).to.contain "#{err.name}: #{err.message}"
-    [errStackLine1, ...] = err.stack.split '\n'
-    expect(errStackLine1).to.equal "#{err.name}: #{errMessageLine1}"
-
-    expect(err.neo4j).to.be.an 'object'
-    expect(err.neo4j.code).to.equal code
-
-    # If the actual error message was multi-line, that means it was the Neo4j
-    # stack trace, which can include a larger message than the returned one.
-    if errMessageLine2
-        expect(err.neo4j.message).to.be.a 'string'
-        expect(message).to.contain err.neo4j.message
-    else
-        expect(err.neo4j.message).to.equal message
-
-# TEMP: Neo4j 2.2.0-RC01 incorrectly classifies `ParameterMissing` errors as
-# `DatabaseError` rather than `ClientError`.
-# https://github.com/neo4j/neo4j/issues/4144
-# Returns whether we did have to account for this bug or not.
-expectParameterMissingError = (err) ->
-    try
-        expectError err, 'ClientError', 'Statement', 'ParameterMissing',
-            'Expected a parameter named foo'
-        return false
-
-    catch assertionErr
-        # Check for the Neo4j 2.2.0-RC01 case, but if it's not,
-        # throw the original assertion error, not a new one.
-        try
-            expectError err, 'DatabaseError', 'Statement', 'ExecutionFailure',
-                'org.neo4j.graphdb.QueryExecutionException:
-                    Expected a parameter named foo'
-            return true
-
-        throw assertionErr
 
 
 ## TESTS
@@ -383,7 +320,7 @@ describe 'Transactions', ->
                     idA: TEST_NODE_A._id
             , (err, results) =>
                 expect(err).to.exist()
-                expectParameterMissingError err
+                helpers.expectParameterMissingError err
                 cont()
 
         expect(tx.state).to.equal 'open'
@@ -446,7 +383,7 @@ describe 'Transactions', ->
                 commit: true
             , (err, results) =>
                 expect(err).to.exist()
-                expectParameterMissingError err
+                helpers.expectParameterMissingError err
                 cont()
 
         expect(tx.state).to.equal 'rolled back'
@@ -496,7 +433,7 @@ describe 'Transactions', ->
                     props: {foo: null}
             , (err, results) =>
                 expect(err).to.exist()
-                expectError err,
+                helpers.expectError err,
                     'DatabaseError', 'Statement', 'ExecutionFailure',
                     'scala.MatchError: (foo,null) (of class scala.Tuple2)'
                 cont()
@@ -529,7 +466,7 @@ describe 'Transactions', ->
         do (cont=_) =>
             tx.cypher 'RETURN {foo}', (err, results) =>
                 expect(err).to.exist()
-                dbErred = expectParameterMissingError err
+                dbErred = helpers.expectParameterMissingError err
                 cont()
 
         # TEMP: Because Neo4j 2.2.0-RC01 incorrectly throws a `DatabaseError`
@@ -549,7 +486,7 @@ describe 'Transactions', ->
                 commit: true
             , (err, results) =>
                 expect(err).to.exist()
-                expectParameterMissingError err
+                helpers.expectParameterMissingError err
                 cont()
 
         expect(tx.state).to.equal 'rolled back'
@@ -569,7 +506,7 @@ describe 'Transactions', ->
                     props: {foo: null}
             , (err, results) =>
                 expect(err).to.exist()
-                expectError err,
+                helpers.expectError err,
                     'DatabaseError', 'Statement', 'ExecutionFailure',
                     'scala.MatchError: (foo,null) (of class scala.Tuple2)'
                 cont()

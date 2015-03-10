@@ -6,6 +6,7 @@
 {expect} = require 'chai'
 fixtures = require './fixtures'
 fs = require 'fs'
+helpers = require './util/helpers'
 http = require 'http'
 neo4j = require '../'
 
@@ -35,19 +36,6 @@ expectNeo4jRoot = (body) ->
     expect(body).to.be.an 'object'
     expect(body).to.have.keys 'data', 'management'
 
-#
-# Asserts that the given object is a proper instance of the given Neo4j Error
-# subclass, including with the given message.
-# Additional checks, e.g. of the `neo4j` property's contents, are up to you.
-#
-expectError = (err, ErrorClass, message) ->
-    expect(err).to.be.an.instanceOf ErrorClass
-    expect(err.name).to.equal "neo4j.#{ErrorClass.name}"
-    expect(err.neo4j).to.be.an 'object'
-    expect(err.message).to.equal message
-    expect(err.stack).to.contain '\n'
-    expect(err.stack.split('\n')[0]).to.equal "#{err.name}: #{err.message}"
-
 
 ## TESTS
 
@@ -75,9 +63,8 @@ describe 'GraphDatabase::http', ->
             expect(err).to.exist()
             expect(body).to.not.exist()
 
-            expectError err, neo4j.ClientError,
+            helpers.expectRawError err, 'ClientError',
                 '405 Method Not Allowed response for POST /'
-            expect(err.neo4j).to.be.empty()
 
             done()
 
@@ -93,34 +80,18 @@ describe 'GraphDatabase::http', ->
             # but it's currently a `DatabaseError` in 2.2.0-RC01.
             # https://github.com/neo4j/neo4j/issues/4145
             try
-                expectError err, neo4j.ClientError, '404 [NodeNotFoundException]
-                    Cannot find node with id [-1] in database.'
+                helpers.expectOldError err, 404, 'NodeNotFoundException',
+                    'org.neo4j.server.rest.web.NodeNotFoundException',
+                    'Cannot find node with id [-1] in database.'
             catch assertionErr
                 # Check for the Neo4j 2.2 case, but if this fails,
                 # throw the original assertion error, not this one.
                 try
-                    expectError err, neo4j.DatabaseError,
-                        '[Neo.DatabaseError.General.UnknownFailure]
-                            Cannot find node with id [-1] in database.'
+                    helpers.expectError err,
+                        'DatabaseError', 'General', 'UnknownFailure',
+                        'Cannot find node with id [-1] in database.'
                 catch doubleErr
                     throw assertionErr
-
-                # HACK: If the check succeeded, skip all the other assertions
-                # below for now; we'll need to consider rewriting this:
-                return done()
-
-            expect(err.neo4j).to.be.an 'object'
-            expect(err.neo4j.exception).to.equal 'NodeNotFoundException'
-            expect(err.neo4j.fullname).to.equal '
-                org.neo4j.server.rest.web.NodeNotFoundException'
-            expect(err.neo4j.message).to.equal '
-                Cannot find node with id [-1] in database.'
-
-            expect(err.neo4j.stacktrace).to.be.an 'array'
-            expect(err.neo4j.stacktrace).to.not.be.empty()
-            for line in err.neo4j.stacktrace
-                expect(line).to.be.a 'string'
-                expect(line).to.not.be.empty()
 
             done()
 
@@ -153,8 +124,8 @@ describe 'GraphDatabase::http', ->
             expect(err).to.exist()
             expect(resp).to.not.exist()
 
-            # NOTE: *Not* using `expectError` here, because we explicitly
-            # don't wrap native (non-Neo4j) errors.
+            # NOTE: *Not* using our `expectError` helpers here, because we
+            # explicitly don't wrap native (non-Neo4j) errors.
             expect(err).to.be.an.instanceOf Error
             expect(err.name).to.equal 'Error'
             expect(err.code).to.equal 'ENOTFOUND'

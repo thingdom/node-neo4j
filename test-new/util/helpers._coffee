@@ -115,3 +115,10 @@ neo4j = require '../../'
             return true
 
         throw assertionErr
+
+
+#
+# Returns a random string.
+#
+@getRandomStr = ->
+    "#{Math.random()}"[2..]

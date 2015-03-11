@@ -407,7 +407,7 @@ db.getIndexes(cbMany);              // across all labels
 db.getIndexes({label}, cbMany);     // for a particular label
 db.hasIndex({label, property}, cbBool);
 db.createIndex({label, property}, cbOne);
-db.deleteIndex({label, property}, cbDone);
+db.dropIndex({label, property}, cbDone);
 ```
 
 Returned indexes are minimal `Index` objects:
@@ -419,6 +419,11 @@ class Index {label, property}
 TODO: Neo4j's REST API actually takes and returns *arrays* of properties,
 but AFAIK, all indexes today only deal with a single property.
 Should multiple properties be supported?
+
+TODO: Today, there's no need for a `db.getIndex()` method, since the parameters
+you need to fetch an index are the same ones that are returned.
+But if Neo4j adds extra info to the response (e.g. online/offline status),
+we should add that method, along with that extra info in our `Index` class.
 
 ### Constraints
 

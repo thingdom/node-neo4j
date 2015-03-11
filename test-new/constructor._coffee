@@ -5,6 +5,7 @@
 $ = require 'underscore'
 {expect} = require 'chai'
 {GraphDatabase} = require '../'
+helpers = require './util/helpers'
 
 
 ## CONSTANTS
@@ -117,8 +118,8 @@ describe 'GraphDatabase::constructor', ->
     it 'should prefer separate auth option over auth in the URL
             (and should clear auth in URL then)', ->
         host = 'auth.test:9876'
-        wrong1 = "#{Math.random()}"[2..]
-        wrong2 = "#{Math.random()}"[2..]
+        wrong1 = helpers.getRandomStr()
+        wrong2 = helpers.getRandomStr()
 
         db = new GraphDatabase
             url: "https://#{wrong1}:#{wrong2}@#{host}"

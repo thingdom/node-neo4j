@@ -1,6 +1,7 @@
 $ = require 'underscore'
 assert = require 'assert'
 {Error} = require './errors'
+Index = require './Index'
 lib = require '../package.json'
 Node = require './Node'
 Relationship = require './Relationship'
@@ -350,7 +351,77 @@ module.exports = class GraphDatabase
             path: '/db/data/relationship/types'
         , cb
 
-    # TODO: Indexes
+
+    ## INDEXES
+
+    getIndexes: (opts={}, cb) ->
+        # Support passing no options at all, to mean "across all labels":
+        if typeof opts is 'function'
+            cb = opts
+            opts = {}
+
+        # Also support passing a label directory:
+        if typeof opts is 'string'
+            opts = {label: opts}
+
+        {label} = opts
+
+        # Support both querying for a given label, and across all labels:
+        path = '/db/data/schema/index'
+        path += "/#{encodeURIComponent label}" if label
+
+        @http
+            method: 'GET'
+            path: path
+        , (err, indexes) ->
+            cb err, indexes?.map Index._fromRaw
+
+    hasIndex: (opts={}, cb) ->
+        {label, property} = opts
+
+        if not (label and property)
+            throw new TypeError \
+                'Label and property required to query whether an index exists.'
+
+        # NOTE: This is just a convenience method; there is no REST API endpoint
+        # for this directly (surprisingly, since there is for constraints).
+        @getIndexes {label}, (err, indexes) ->
+            if err
+                cb err
+            else
+                cb null, indexes.some (index) ->
+                    index.label is label and index.property is property
+
+    createIndex: (opts={}, cb) ->
+        {label, property} = opts
+
+        if not (label and property)
+            throw new TypeError \
+                'Label and property required to create an index.'
+
+        @http
+            method: 'POST'
+            path: "/db/data/schema/index/#{encodeURIComponent label}"
+            body: {'property_keys': [property]}
+        , (err, index) ->
+            cb err, if index then Index._fromRaw index
+
+    dropIndex: (opts={}, cb) ->
+        {label, property} = opts
+
+        if not (label and property)
+            throw new TypeError 'Label and property required to drop an index.'
+
+        # This endpoint is void, i.e. returns nothing:
+        # http://neo4j.com/docs/stable/rest-api-schema-indexes.html#rest-api-drop-index
+        # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
+        @http
+            method: 'DELETE'
+            path: "/db/data/schema/index\
+                /#{encodeURIComponent label}/#{encodeURIComponent property}"
+        , cb
+
+
     # TODO: Constraints
     # TODO: Legacy indexing
 

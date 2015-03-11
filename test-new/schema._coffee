@@ -1,7 +1,6 @@
 #
-# Tests for schema management, e.g. retrieving labels, property keys, and
-# relationship types. Could also encompass constraints and (schema) indexes,
-# but that could be its own test suite too if it goes deeper.
+# Tests for basic schema management, e.g. retrieving labels, property keys, and
+# relationship types. This does *not* cover indexes and constraints.
 #
 
 {expect} = require 'chai'

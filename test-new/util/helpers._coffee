@@ -8,10 +8,19 @@ neo4j = require '../../'
 
 
 #
+# Chai doesn't have a `beginsWith` assertion, so this approximates that:
+# Asserts that the given string begins with the given prefix.
+#
+@expectPrefix = (str, prefix) ->
+    expect(str).to.be.a 'string'
+    expect(str.slice 0, prefix.length).to.equal prefix
+
+
+#
 # Helper used by all the below methods that covers all specific error cases.
 # Asserts that the given error at least adheres to our base Error contract.
 #
-@_expectBaseError = (err, classification) ->
+@_expectBaseError = (err, classification) =>
     expect(err).to.be.an.instanceOf neo4j[classification]   # e.g. DatabaseError
     expect(err.name).to.equal "neo4j.#{classification}"
 
@@ -19,9 +28,7 @@ neo4j = require '../../'
     expect(err.stack).to.be.a 'string'
     expect(err.stack).to.contain '\n'
 
-    # NOTE: Chai doesn't have `beginsWith`, so approximating:
-    stackPrefix = "#{err.name}: #{err.message}"
-    expect(err.stack.slice 0, stackPrefix.length).to.equal stackPrefix
+    @expectPrefix err.stack, "#{err.name}: #{err.message}"
 
 
 #
@@ -30,29 +37,37 @@ neo4j = require '../../'
 #
 @expectError = (err, classification, category, title, message) =>
     code = "Neo.#{classification}.#{category}.#{title}"
+    codePlusMessage = "[#{code}] #{message}"
 
     @_expectBaseError err, classification
-
-    # If the actual error message is multi-line, it includes the Neo4j stack
-    # trace; test that in a simple way by just checking the first line of the
-    # trace (subsequent lines can be different, e.g. "Caused by"), but also test
-    # that the first line of the message matches the expected message:
-    [errMessageLine1, errMessageLine2, ...] = err.message.split '\n'
-    expect(errMessageLine1).to.equal "[#{code}] #{message}"
-    expect(errMessageLine2).to.match ///
-        ^ \s+ at\ [^(]+ \( [^)]+ [.](java|scala):\d+ \)
-    /// if errMessageLine2
 
     expect(err.neo4j).to.be.an 'object'
     expect(err.neo4j.code).to.equal code
 
-    # If the actual error message was multi-line, that means it was the Neo4j
-    # stack trace, which can include a larger message than the returned one.
-    if errMessageLine2
-        expect(err.neo4j.message).to.be.a 'string'
-        expect(message).to.contain err.neo4j.message
-    else
+    # Neo4j can return its own Java stack trace, which changes our logic.
+    # So check for the simpler case first, then short-circuit:
+    if not err.neo4j.stackTrace
+        expect(err.message).to.equal codePlusMessage
         expect(err.neo4j.message).to.equal message
+        return
+
+    # Otherwise, we construct our own stack trace from the Neo4j stack trace,
+    # by setting our message to the Neo4j stack trace.
+    # Neo4j stack traces can have messages with slightly more detail than the
+    # returned `message` property, so we test that via "contains".
+    expect(err.neo4j.stackTrace).to.be.a 'string'
+    expect(err.neo4j.message).to.be.a 'string'
+    expect(message).to.contain err.neo4j.message
+
+    # Finally, we test that our returned message indeed includes the Neo4j stack
+    # trace, after the expected message part (which can be multi-line).
+    # We test just the first line of the stack trace for simplicity.
+    # (Subsequent lines can be different, e.g. "Caused by ...").
+    @expectPrefix err.message, codePlusMessage
+    [errMessageStackLine1, ...] =
+        (err.message.slice 0, codePlusMessage.length).split '\n'
+    [neo4jStackTraceLine1, ...] = err.neo4j.stackTrace.split '\n'
+    expect(errMessageStackLine1).to.contain neo4jStackTraceLine1.trim()
 
 
 #

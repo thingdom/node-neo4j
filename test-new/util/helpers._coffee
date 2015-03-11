@@ -4,6 +4,7 @@
 #
 
 {expect} = require 'chai'
+http = require 'http'
 neo4j = require '../../'
 
 
@@ -97,14 +98,35 @@ neo4j = require '../../'
 
 #
 # Asserts that the given object is an instance of the appropriate Neo4j Error
-# subclass, with the given raw message.
+# subclass, with the given raw message (which can be a fuzzy regex too).
 #
 # NOTE: This assumes no details info was returned by Neo4j.
 #
 @expectRawError = (err, classification, message) =>
     @_expectBaseError err, classification
-    expect(err.message).to.equal message
+
+    if typeof message is 'string'
+        expect(err.message).to.equal message
+    else if message instanceof RegExp
+        expect(err.message).to.match message
+    else
+        throw new Error "Unrecognized type of expected `message`:
+            #{typeof message} / #{message?.constructor.name}"
+
     expect(err.neo4j).to.be.empty()     # TODO: Should this really be the case?
+
+
+#
+# Asserts that the given object is a simple HTTP error for the given response
+# status code, e.g. 404 or 501.
+#
+@expectHttpError = (err, statusCode) =>
+    ErrorType = if statusCode >= 500 then 'Database' else 'Client'
+    statusText = http.STATUS_CODES[statusCode]  # E.g. "Not Found"
+
+    @expectRawError err, "#{ErrorType}Error", ///
+        ^ #{statusCode}\ #{statusText}\ response\ for\ [A-Z]+\ /.* $
+    ///
 
 
 #

@@ -11,6 +11,11 @@ http = require 'http'
 neo4j = require '../'
 
 
+## CONSTANTS
+
+FAKE_JSON_PATH = "#{__dirname}/fixtures/fake.json"
+
+
 ## SHARED STATE
 
 {DB} = fixtures
@@ -140,13 +145,15 @@ describe 'GraphDatabase::http', ->
 
     it 'should support streaming', (done) ->
         opts =
-            method: 'PUT'
-            path: '/db/data/node/-1/properties'
+            method: 'POST'
+            path: '/db/data/node'
             headers:
-                # Node recommends setting this property when streaming:
+                # NOTE: It seems that Neo4j needs an explicit Content-Length,
+                # at least for requests to this `POST /db/data/node` endpoint.
+                'Content-Length': (fs.statSync FAKE_JSON_PATH).size
+                # Ideally, we would instead send this header for streaming:
                 # http://nodejs.org/api/http.html#http_request_write_chunk_encoding_callback
-                'Transfer-Encoding': 'chunked'
-                'X-Foo': 'Bar'  # This one's just for testing/verifying
+                # 'Transfer-Encoding': 'chunked'
 
         req = DB.http opts
 
@@ -162,8 +169,13 @@ describe 'GraphDatabase::http', ->
         req.on 'error', done
 
         # Now stream some fake JSON to the request:
-        fs.createReadStream "#{__dirname}/fixtures/fake.json"
-            .pipe req
+        # TODO: Why doesn't this work?
+        # fs.createReadStream(FAKE_JSON_PATH).pipe req
+        # TEMP: Instead, we have to manually pipe:
+        readStream = fs.createReadStream FAKE_JSON_PATH
+        readStream.on 'error', done
+        readStream.on 'data', (chunk) -> req.write chunk
+        readStream.on 'end', -> req.end()
 
         # Verify that the request fully waits for our stream to finish
         # before returning a response:
@@ -173,7 +185,7 @@ describe 'GraphDatabase::http', ->
         # When the response is received, stream down its JSON too:
         req.on 'response', (resp) ->
             expect(finished).to.be.true()
-            expectResponse resp, 404
+            expectResponse resp, 400
 
             resp.setEncoding 'utf8'
             body = ''
@@ -182,16 +194,14 @@ describe 'GraphDatabase::http', ->
             resp.on 'error', done
             resp.on 'close', -> done new Error 'Response closed!'
             resp.on 'end', ->
-                try
-                    body = JSON.parse body
+                body = JSON.parse body
 
-                    # Simplified error parsing; just verifying stream:
-                    expect(body).to.be.an 'object'
-                    expect(body.exception).to.equal 'NodeNotFoundException'
-                    expect(body.stacktrace).to.be.an 'array'
-
-                catch err
-                    return done err
+                # Simplified error parsing; just verifying stream:
+                expect(body).to.be.an 'object'
+                expect(body.exception).to.equal 'PropertyValueException'
+                expect(body.message).to.equal 'Could not set property "object",
+                    unsupported type: {foo={bar=baz}}'
+                expect(body.stacktrace).to.be.an 'array'
 
                 done()
 

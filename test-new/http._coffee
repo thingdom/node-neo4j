@@ -94,7 +94,8 @@ describe 'GraphDatabase::http', ->
                 try
                     helpers.expectError err,
                         'DatabaseError', 'General', 'UnknownFailure',
-                        'Cannot find node with id [-1] in database.'
+                        'org.neo4j.server.rest.web.NodeNotFoundException:
+                            Cannot find node with id [-1] in database.'
                 catch doubleErr
                     throw assertionErr
 

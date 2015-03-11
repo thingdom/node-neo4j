@@ -1,4 +1,5 @@
 $ = require 'underscore'
+assert = require 'assert'
 http = require 'http'
 
 class @Error extends Error
@@ -50,6 +51,13 @@ class @Error extends Error
     # appropriate Error instance for it.
     #
     @_fromObject: (obj) ->
+        # NOTE: Neo4j seems to return both `stackTrace` and `stacktrace`.
+        # https://github.com/neo4j/neo4j/issues/4145#issuecomment-78203290
+        # Normalizing to consistent `stackTrace` before we parse below!
+        if obj.stacktrace? and not obj.stackTrace?
+            obj.stackTrace = obj.stacktrace
+            delete obj.stacktrace
+
         # http://neo4j.com/docs/stable/rest-api-transactional.html#rest-api-handling-errors
         # http://neo4j.com/docs/stable/status-codes.html
         {code, message, stackTrace} = obj

@@ -12,9 +12,9 @@
 #
 
 $ = require 'underscore'
-crypto = require 'crypto'
 {expect} = require 'chai'
 fixtures = require './fixtures'
+helpers = require './util/helpers'
 neo4j = require '../'
 
 
@@ -28,7 +28,7 @@ AUTH_ERROR_CODE = 'Neo.ClientError.Security.AuthorizationFailed'
 {DB} = fixtures
 
 ORIGINAL_PASSWORD = DB.auth?.password
-RANDOM_PASSWORD = crypto.randomBytes(16).toString('base64')
+RANDOM_PASSWORD = helpers.getRandomStr()
 
 SUITE = null
 

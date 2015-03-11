@@ -5,6 +5,7 @@
 
 $ = require 'underscore'
 {expect} = require 'chai'
+helpers = require '../util/helpers'
 neo4j = require '../../'
 
 @DB = new neo4j.GraphDatabase
@@ -41,18 +42,12 @@ neo4j = require '../../'
             and you’re running Neo4j v1. These tests will fail! ***"
 
 #
-# Returns a random string.
-#
-@getRandomStr = ->
-    "#{Math.random()}"[2..]
-
-#
 # Creates and returns a property bag (dictionary) with unique, random test data
 # for the given test suite (pass the suite's Node `module`).
 #
 @createTestProperties = (suite) =>
     suite: suite.filename
-    rand: @getRandomStr()
+    rand: helpers.getRandomStr()
 
 #
 # Creates and returns a new Node instance with unique, random test data for the

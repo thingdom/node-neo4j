@@ -428,9 +428,9 @@ we should add that method, along with that extra info in our `Index` class.
 ### Constraints
 
 The only constraint type implemented by Neo4j today is the uniqueness
-constraint, so this API defaults to that.
-The design aims to be generic in order to support future constraint types,
-but it's still possible that the API may have to break when that happens.
+constraint, so this API assumes that.
+Because of that, it's possible that this API may have to break whenever new
+constraint types are added (whatever they may be).
 
 ```js
 function cbOne(err, constraint) {}
@@ -442,18 +442,23 @@ db.getConstraints(cbMany);              // across all labels
 db.getConstraints({label}, cbMany);     // for a particular label
 db.hasConstraint({label, property}, cbBool);
 db.createConstraint({label, property}, cbOne);
-db.deleteConstraint({label, property}, cbDone);
+db.dropConstraint({label, property}, cbDone);
 ```
 
 Returned constraints are minimal `Constraint` objects:
 
 ```coffee
-class Constraint {label, type, property}
+class Constraint {label, property}
 ```
 
 TODO: Neo4j's REST API actually takes and returns *arrays* of properties,
 but uniqueness constraints today only deal with a single property.
 Should multiple properties be supported?
+
+TODO: Today, there's no need for a `db.getConstraint()` method, since the
+parameters you need to fetch a constraint are the same ones that are returned.
+But if Neo4j adds extra info to the response (e.g. online/offline status),
+we should add that method, along with that extra info in our `Constraint` class.
 
 ### Misc
 

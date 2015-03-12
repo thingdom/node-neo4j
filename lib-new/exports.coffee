@@ -6,5 +6,6 @@ $(exports).extend
     Relationship: require './Relationship'
     Transaction: require './Transaction'
     Index: require './Index'
+    Constraint: require './Constraint'
 
 $(exports).extend require './errors'

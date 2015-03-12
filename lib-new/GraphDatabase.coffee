@@ -1,5 +1,6 @@
 $ = require 'underscore'
 assert = require 'assert'
+Constraint = require './Constraint'
 {Error} = require './errors'
 Index = require './Index'
 lib = require '../package.json'
@@ -422,7 +423,107 @@ module.exports = class GraphDatabase
         , cb
 
 
-    # TODO: Constraints
+    ## CONSTRAINTS
+
+    getConstraints: (opts={}, cb) ->
+        # Support passing no options at all, to mean "across all labels":
+        if typeof opts is 'function'
+            cb = opts
+            opts = {}
+
+        # Also support passing a label directory:
+        if typeof opts is 'string'
+            opts = {label: opts}
+
+        # TODO: We may need to support querying within a particular `type` too,
+        # if any other types beyond uniqueness get added.
+        {label} = opts
+
+        # Support both querying for a given label, and across all labels.
+        #
+        # NOTE: We're explicitly *not* assuming uniqueness type here, since we
+        # couldn't achieve consistency with vs. without a label provided.
+        # (The `/uniqueness` part of the path can only come after a label.)
+        #
+        path = '/db/data/schema/constraint'
+        path += "/#{encodeURIComponent label}" if label
+
+        @http
+            method: 'GET'
+            path: path
+        , (err, constraints) ->
+            cb err, constraints?.map Constraint._fromRaw
+
+    hasConstraint: (opts={}, cb) ->
+        # TODO: We may need to support an additional `type` param too,
+        # if any other types beyond uniqueness get added.
+        {label, property} = opts
+
+        if not (label and property)
+            throw new TypeError 'Label and property required to query
+                whether a constraint exists.'
+
+        # NOTE: A REST API endpoint *does* exist to get a specific constraint:
+        # http://neo4j.com/docs/stable/rest-api-schema-constraints.html
+        # But it (a) returns an array, and (b) throws a 404 if no constraint.
+        # For those reasons, it's actually easier to just fetch all constraints;
+        # no error handling needed, and array processing either way.
+        #
+        # NOTE: We explicitly *are* assuming uniqueness type here, since we
+        # also would if we were querying for a specific constraint.
+        # (The `/uniqueness` part of the path comes before the property.)
+        #
+        @http
+            method: 'GET'
+            path: "/db/data/schema/constraint\
+                /#{encodeURIComponent label}/uniqueness"
+        , (err, constraints) ->
+            if err
+                cb err
+            else
+                cb null, constraints.some (constraint) ->
+                    constraint = Constraint._fromRaw constraint
+                    constraint.label is label and
+                        constraint.property is property
+
+    createConstraint: (opts={}, cb) ->
+        # TODO: We may need to support an additional `type` param too,
+        # if any other types beyond uniqueness get added.
+        {label, property} = opts
+
+        if not (label and property)
+            throw new TypeError \
+                'Label and property required to create a constraint.'
+
+        # NOTE: We explicitly *are* assuming uniqueness type here, since
+        # that's our only option today for creating constraints.
+        @http
+            method: 'POST'
+            path: "/db/data/schema/constraint\
+                /#{encodeURIComponent label}/uniqueness"
+            body: {'property_keys': [property]}
+        , (err, constraint) ->
+            cb err, if constraint then Constraint._fromRaw constraint
+
+    dropConstraint: (opts={}, cb) ->
+        # TODO: We may need to support an additional `type` param too,
+        # if any other types beyond uniqueness get added.
+        {label, property} = opts
+
+        if not (label and property)
+            throw new TypeError \
+                'Label and property required to drop a constraint.'
+
+        # This endpoint is void, i.e. returns nothing:
+        # http://neo4j.com/docs/stable/rest-api-schema-constraints.html#rest-api-drop-constraint
+        # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
+        @http
+            method: 'DELETE'
+            path: "/db/data/schema/constraint/#{encodeURIComponent label}\
+                /uniqueness/#{encodeURIComponent property}"
+        , cb
+
+
     # TODO: Legacy indexing
 
 

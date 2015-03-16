@@ -3,6 +3,9 @@
 node_modules/
 npm-debug.log
 
+lib/*.js
+lib/*.map
+
 /doc/
 
 /neo4j-*

@@ -1,45 +1,56 @@
 {
-    "name": "neo4j",
-    "description": "Neo4j driver (REST API client) for Node.js",
-    "version": "1.1.1",
-    "author": "The Thingdom <info@thethingdom.com>",
-    "contributors": [
-        "Daniel Gasienica <daniel@gasienica.ch>",
-        "Aseem Kishore <aseem.kishore@gmail.com>",
-        "Sergio Haro <sergio.haro.jr@gmail.com>"
-    ],
-    "main": "./lib",
-    "dependencies": {
-        "http-status": "^0.1.0",
-        "request": "^2.27.0"
-    },
-    "devDependencies": {
-        "chai": "^1.8.0",
-        "codo": "^1.5.0",
-        "coffee-script": "1.7.x",
-        "mocha": "^1.3.0",
-        "streamline": "^0.10.16"
-    },
-    "engines": {
-        "node": ">= 0.6"
-    },
-    "scripts": {
-        "build": "coffee -m -c lib/ && _coffee -m --standalone -c lib/",
-        "clean": "rm -f lib/*.{js,map}",
-        "codo": "codo && codo --server",
-        "prepublish": "npm run build",
-        "postpublish": "npm run clean",
-        "test": "mocha"
-    },
-    "keywords": [
-        "neo4j", "graph", "database", "driver", "rest", "api", "client"
-    ],
-    "licenses": [{
-        "type": "Apache License, Version 2.0",
-        "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-    }],
-    "repository" : {
-        "type" : "git",
-        "url" : "https://github.com/thingdom/node-neo4j.git"
+  "name": "neo4j",
+  "description": "Neo4j driver (REST API client) for Node.js",
+  "version": "1.1.1",
+  "author": "The Thingdom <info@thethingdom.com>",
+  "contributors": [
+    "Daniel Gasienica <daniel@gasienica.ch>",
+    "Aseem Kishore <aseem.kishore@gmail.com>",
+    "Sergio Haro <sergio.haro.jr@gmail.com>"
+  ],
+  "main": "./lib",
+  "dependencies": {
+    "http-status": "^0.1.0",
+    "keep-alive-agent": "0.0.1",
+    "request": "^2.27.0"
+  },
+  "devDependencies": {
+    "chai": "^1.8.0",
+    "codo": "^1.5.0",
+    "coffee-script": "1.7.x",
+    "mocha": "^1.3.0",
+    "streamline": "^0.10.16"
+  },
+  "engines": {
+    "node": ">= 0.6"
+  },
+  "scripts": {
+    "build": "coffee -m -c lib/ && _coffee -m --standalone -c lib/",
+    "clean": "rm -f lib/*.{js,map}",
+    "codo": "codo && codo --server",
+    "prepublish": "npm run build",
+    "postpublish": "npm run clean",
+    "postinstall": "npm run build",
+    "preinstall": "npm run clean",
+    "test": "mocha"
+  },
+  "keywords": [
+    "neo4j",
+    "graph",
+    "database",
+    "driver",
+    "rest",
+    "api",
+    "client"
+  ],
+  "licenses": [
+    {
+      "type": "Apache License, Version 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thingdom/node-neo4j.git"
+  }
 }

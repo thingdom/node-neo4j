@@ -1,5 +1,8 @@
 lib = require '../package.json'
 request = require 'request'
+KeepAliveAgent = require 'keep-alive-agent'
+keepAlive = new KeepAliveAgent()
+securedKeepAlive = new KeepAliveAgent.Secure()
 URL = require 'url'
 
 #-----------------------------------------------------------------------------
@@ -17,14 +20,15 @@ USER_AGENT = "node-neo4j/#{lib.version}"
 # - specify that Neo4j should stream its JSON responses.
 # returns a minimal wrapper (HTTP methods only) around request.
 exports.wrapRequest = ({url, proxy}) ->
+    # parse auth info:
+    auth = URL.parse(url).auth
+
     # default request opts where possible (no headers since the whole headers
     # collection will be overridden if any one header is provided):
     req = request.defaults
         json: true
         proxy: proxy
-
-    # parse auth info:
-    auth = URL.parse(url).auth
+        agent: if url.protocol is 'https:' then securedKeepAlive else keepAlive
 
     # helper function to modify args to request where defaults not possible:
     modifyArgs = (args) ->

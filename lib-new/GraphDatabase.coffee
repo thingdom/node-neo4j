@@ -19,7 +19,6 @@ module.exports = class GraphDatabase
     # Default HTTP headers:
     headers:
         'User-Agent': "node-neo4j/#{lib.version}"
-        'X-Stream': 'true'
 
     constructor: (opts={}) ->
         if typeof opts is 'string'
@@ -40,9 +39,15 @@ module.exports = class GraphDatabase
         # We also normalize any given auth to an object or null:
         @auth = _normalizeAuth @auth ? uri.auth
 
-        # TODO: Do we want to special-case User-Agent? Blacklist X-Stream?
+        # Extend the given headers with our defaults, but clone first:
+        # TODO: Do we want to special-case User-Agent? Or reject if includes
+        # reserved headers like Accept, Content-Type, X-Stream?
         @headers or= {}
-        $(@headers).defaults @constructor::headers
+        @headers = $(@headers)
+            .chain()
+            .clone()
+            .defaults @constructor::headers
+            .value()
 
 
     ## HTTP
@@ -59,6 +64,18 @@ module.exports = class GraphDatabase
         method or= 'GET'
         headers or= {}
 
+        # Extend the given headers, both with both required and optional
+        # defaults, but do so without modifying the input object:
+        headers = $(headers)
+            .chain()
+            .clone()
+            .defaults @headers      # These headers can be overridden...
+            .extend                 # ...while these can't.
+                'Accept': 'application/json'
+                'Content-Type': 'application/json'
+                'X-Stream': 'true'
+            .value()
+
         # TODO: Would be good to test custom proxy and agent, but difficult.
         # Same with Neo4j returning gzipped responses (e.g. through an LB).
         req = Request
@@ -66,7 +83,7 @@ module.exports = class GraphDatabase
             url: URL.resolve @url, path
             proxy: @proxy
             auth: @auth
-            headers: $(headers).defaults @headers
+            headers: headers
             agent: @agent
             json: body ? true
             gzip: true  # This is only for responses: decode if gzipped.

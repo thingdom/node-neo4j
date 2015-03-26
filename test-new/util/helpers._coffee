@@ -130,31 +130,6 @@ neo4j = require '../../'
 
 
 #
-# TEMP: Neo4j 2.2.0-RC01 incorrectly classifies `ParameterMissing` errors as
-# `DatabaseError` rather than `ClientError`:
-# https://github.com/neo4j/neo4j/issues/4144
-#
-# Returns whether we did have to account for this bug or not.
-#
-@expectParameterMissingError = (err) =>
-    try
-        @expectError err, 'ClientError', 'Statement', 'ParameterMissing',
-            'Expected a parameter named foo'
-        return false
-
-    catch assertionErr
-        # Check for the Neo4j 2.2.0-RC01 case, but if it's not,
-        # throw the original assertion error, not a new one.
-        try
-            @expectError err, 'DatabaseError', 'Statement', 'ExecutionFailure',
-                'org.neo4j.graphdb.QueryExecutionException:
-                    Expected a parameter named foo'
-            return true
-
-        throw assertionErr
-
-
-#
 # Returns a random string.
 #
 @getRandomStr = ->

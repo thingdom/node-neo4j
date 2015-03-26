@@ -51,7 +51,7 @@ class @Error extends Error
     # appropriate Error instance for it.
     #
     @_fromObject: (obj) ->
-        # NOTE: Neo4j seems to return both `stackTrace` and `stacktrace`.
+        # NOTE: Neo4j 2.2 seems to return both `stackTrace` and `stacktrace`.
         # https://github.com/neo4j/neo4j/issues/4145#issuecomment-78203290
         # Normalizing to consistent `stackTrace` before we parse below!
         if obj.stacktrace?

@@ -320,7 +320,8 @@ describe 'Transactions', ->
                     idA: TEST_NODE_A._id
             , (err, results) =>
                 expect(err).to.exist()
-                helpers.expectParameterMissingError err
+                helpers.expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
         expect(tx.state).to.equal 'open'
@@ -383,7 +384,8 @@ describe 'Transactions', ->
                 commit: true
             , (err, results) =>
                 expect(err).to.exist()
-                helpers.expectParameterMissingError err
+                helpers.expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
         expect(tx.state).to.equal 'rolled back'
@@ -462,17 +464,14 @@ describe 'Transactions', ->
         expect(tx.state).to.equal 'open'
 
         # For precision, implementing this step without Streamline.
-        dbErred = null
         do (cont=_) =>
             tx.cypher 'RETURN {foo}', (err, results) =>
                 expect(err).to.exist()
-                dbErred = helpers.expectParameterMissingError err
+                helpers.expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
-        # TEMP: Because Neo4j 2.2.0-RC01 incorrectly throws a `DatabaseError`
-        # for the above error (see `expectParameterMissingError` for details),
-        # the transaction does get rolled back.
-        expect(tx.state).to.equal (if dbErred then 'rolled back' else 'open')
+        expect(tx.state).to.equal 'open'
 
     it 'should properly handle fatal client errors
             on an auto-commit first query', (_) ->
@@ -486,7 +485,8 @@ describe 'Transactions', ->
                 commit: true
             , (err, results) =>
                 expect(err).to.exist()
-                helpers.expectParameterMissingError err
+                helpers.expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
         expect(tx.state).to.equal 'rolled back'

@@ -91,7 +91,8 @@ describe 'GraphDatabase::cypher', ->
     it 'should properly parse and throw Neo4j errors', (done) ->
         DB.cypher 'RETURN {foo}', (err, results) ->
             expect(err).to.exist()
-            helpers.expectParameterMissingError err
+            helpers.expectError err, 'ClientError', 'Statement',
+                'ParameterMissing', 'Expected a parameter named foo'
 
             # Whether `results` are returned or not depends on the error;
             # Neo4j will return an array if the query could be executed,
@@ -250,7 +251,8 @@ describe 'GraphDatabase::cypher', ->
             ]
         , (err, results) ->
             expect(err).to.exist()
-            helpers.expectParameterMissingError err
+            helpers.expectError err, 'ClientError', 'Statement',
+                'ParameterMissing', 'Expected a parameter named foo'
 
             # NOTE: With batching, we *do* return any results that we
             # received before the error, in case of an open transaction.

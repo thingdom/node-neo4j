@@ -18,11 +18,6 @@ helpers = require './util/helpers'
 neo4j = require '../'
 
 
-## CONSTANTS
-
-AUTH_ERROR_CODE = 'Neo.ClientError.Security.AuthorizationFailed'
-
-
 ## SHARED STATE
 
 {DB} = fixtures
@@ -46,25 +41,6 @@ disable = (reason) ->
     # TODO: It'd be nice if we could support bailing on *all* suites,
     # in case of an auth error, e.g. bad credentials.
 
-tryGetDbVersion = (_) ->
-    try
-        fixtures.queryDbVersion _
-        fixtures.DB_VERSION_NUM
-    catch err
-        NaN     # since a boolean comparison of NaN with any number is false
-
-# TODO: De-duplicate this kind of helper between our test suites:
-expectAuthError = (err, message) ->
-    expect(err).to.be.an.instanceof neo4j.ClientError
-    expect(err.name).to.equal 'neo4j.ClientError'
-    expect(err.message).to.equal "[#{AUTH_ERROR_CODE}] #{message}"
-
-    expect(err.stack).to.contain '\n'
-    expect(err.stack.split('\n')[0]).to.equal "#{err.name}: #{err.message}"
-
-    expect(err.neo4j).to.be.an 'object'
-    expect(err.neo4j).to.eql {code: AUTH_ERROR_CODE, message}
-
 
 ## TESTS
 
@@ -77,31 +53,15 @@ describe 'Auth', ->
             return disable 'Auth creds unspecified'
 
         # Querying user status (what this check method does) fails both when
-        # auth is unavailable (e.g. Neo4j 2.1) and when it's disabled.
-        # https://mix.fiftythree.com/aseemk/2471430
-        # NOTE: This might need updating if the disabled 500 is fixed.
-        # https://github.com/neo4j/neo4j/issues/4138
+        # auth is unavailable (Neo4j 2.1-) and when it's disabled (Neo4j 2.2+).
         try
             DB.checkPasswordChangeNeeded _
-
-            # If this worked, auth is available and enabled.
-            return
-
         catch err
-            # If we're right that this means auth is unavailable or disabled,
-            # we can verify that by querying the Neo4j version.
-            dbVersion = tryGetDbVersion _
-
-            if (err instanceof neo4j.ClientError) and
-                    (err.message.match /^404 /) and (dbVersion < 2.2)
-                return disable 'Neo4j <2.2 detected'
-
-            if (err instanceof neo4j.DatabaseError) and
-                    (err.message.match /^500 /) and (dbVersion >= 2.2)
-                return disable 'Neo4j auth appears disabled'
-
-            disable 'Error checking auth'
-            throw err
+            if err instanceof neo4j.ClientError and err.message.match /^404 /
+                disable 'Auth disabled or unavailable'
+            else
+                disable 'Error checking auth'
+                throw err
 
     it 'should fail when auth is required but not set', (done) ->
         db = new neo4j.GraphDatabase
@@ -112,7 +72,8 @@ describe 'Auth', ->
         # rejects calls when no auth is set.
         db.http '/db/data/', (err, data) ->
             expect(err).to.exist()
-            expectAuthError err, 'No authorization header supplied.'
+            helpers.expectError err, 'ClientError', 'Security',
+                'AuthorizationFailed', 'No authorization header supplied.'
             expect(data).to.not.exist()
             done()
 
@@ -125,7 +86,8 @@ describe 'Auth', ->
 
         db.checkPasswordChangeNeeded (err, bool) ->
             expect(err).to.exist()
-            expectAuthError err, 'Invalid username or password.'
+            helpers.expectError err, 'ClientError', 'Security',
+                'AuthorizationFailed', 'Invalid username or password.'
             expect(bool).to.not.exist()
             done()
 
@@ -138,7 +100,8 @@ describe 'Auth', ->
 
         db.checkPasswordChangeNeeded (err, bool) ->
             expect(err).to.exist()
-            expectAuthError err, 'Invalid username or password.'
+            helpers.expectError err, 'ClientError', 'Security',
+                'AuthorizationFailed', 'Invalid username or password.'
             expect(bool).to.not.exist()
             done()
 

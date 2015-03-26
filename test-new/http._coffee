@@ -82,7 +82,7 @@ describe 'GraphDatabase::http', ->
             expect(body).to.not.exist()
 
             # TEMP: Neo4j 2.2 responds here with a new-style error object,
-            # but it's currently a `DatabaseError` in 2.2.0-RC01.
+            # but it's currently a `DatabaseError` in 2.2.0.
             # https://github.com/neo4j/neo4j/issues/4145
             try
                 helpers.expectOldError err, 404, 'NodeNotFoundException',

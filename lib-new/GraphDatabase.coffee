@@ -71,14 +71,12 @@ module.exports = class GraphDatabase
             .clone()
             .defaults @headers      # These headers can be overridden...
             .extend                 # ...while these can't.
-                'Accept': 'application/json'
-                'Content-Type': 'application/json'
                 'X-Stream': 'true'
             .value()
 
         # TODO: Would be good to test custom proxy and agent, but difficult.
         # Same with Neo4j returning gzipped responses (e.g. through an LB).
-        req = Request
+        Request
             method: method
             url: URL.resolve @url, path
             proxy: @proxy
@@ -86,11 +84,12 @@ module.exports = class GraphDatabase
             headers: headers
             agent: @agent
             json: body ? true
+            encoding: 'utf8'
             gzip: true  # This is only for responses: decode if gzipped.
 
         # Important: only pass a callback to Request if a callback was passed
-        # to us. This prevents Request from doing unnecessary JSON parse work
-        # if the caller prefers to stream the response instead of buffer it.
+        # to us. This prevents Request from buffering the response in memory
+        # (to parse JSON) if the caller prefers to stream the response instead.
         , cb and (err, resp) =>
             if err
                 # TODO: Do we want to wrap or modify native errors?
@@ -104,13 +103,6 @@ module.exports = class GraphDatabase
                 return cb err
 
             cb null, _transform resp.body
-
-        # Instead of leaking our (third-party) Request instance, make sure to
-        # explicitly return only its internal native ClientRequest instance.
-        # https://github.com/request/request/blob/v2.53.1/request.js#L904
-        # This is only populated when the request is `start`ed, so `start` it!
-        req.start()
-        req.req
 
 
     ## AUTH

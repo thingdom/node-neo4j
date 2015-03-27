@@ -14,6 +14,7 @@ neo4j = require '../'
 ## CONSTANTS
 
 FAKE_JSON_PATH = "#{__dirname}/fixtures/fake.json"
+FAKE_JSON = require FAKE_JSON_PATH
 
 
 ## SHARED STATE
@@ -26,13 +27,29 @@ FAKE_JSON_PATH = "#{__dirname}/fixtures/fake.json"
 ## HELPERS
 
 #
-# Asserts that the given object is a proper HTTP client response with the given
-# status code.
+# Asserts that the given object is a proper HTTP client request,
+# set to the given method and path, and optionally including the given headers.
 #
-expectResponse = (resp, statusCode) ->
+expectRequest = (req, method, path, headers={}) ->
+    expect(req).to.be.an.instanceOf http.ClientRequest
+    expect(req.method).to.equal method
+    expect(req.path).to.equal path
+
+    # Special-case for headers since they're stored differently:
+    for name, val of headers
+        expect(req.getHeader name).to.equal val
+
+#
+# Asserts that the given object is a proper HTTP client response,
+# with the given status code, and by default, a JSON Content-Type.
+#
+expectResponse = (resp, statusCode, json=true) ->
     expect(resp).to.be.an.instanceOf http.IncomingMessage
     expect(resp.statusCode).to.equal statusCode
     expect(resp.headers).to.be.an 'object'
+
+    if json
+        expect(resp.headers['content-type']).to.match /^application\/json\b/
 
 #
 # Asserts that the given object is the root Neo4j object.
@@ -40,6 +57,30 @@ expectResponse = (resp, statusCode) ->
 expectNeo4jRoot = (body) ->
     expect(body).to.be.an 'object'
     expect(body).to.have.keys 'data', 'management'
+
+#
+# Streams the given response's JSON body, and calls either the error callback
+# (convenient for failing tests) or the success callback (with the parsed body).
+#
+streamResponse = (resp, cbErr, cbBody) ->
+    body = null
+
+    resp.setEncoding 'utf8'
+
+    resp.on 'error', cbErr
+    resp.on 'close', -> cbErr new Error 'Response closed!'
+
+    resp.on 'data', (str) ->
+        body ?= ''
+        body += str
+
+    resp.on 'end', ->
+        try
+            body = JSON.parse body
+        catch err
+            return cbErr err
+
+        cbBody body
 
 
 ## TESTS
@@ -109,7 +150,6 @@ describe 'GraphDatabase::http', ->
         , _
 
         expectResponse resp, 200
-        expect(resp.headers['content-type']).to.match /// ^application/json\b ///
         expectNeo4jRoot resp.body
 
     it 'should not throw 4xx errors for raw responses', (_) ->
@@ -119,7 +159,7 @@ describe 'GraphDatabase::http', ->
             raw: true
         , _
 
-        expectResponse resp, 405 # Method Not Allowed
+        expectResponse resp, 405, false     # Method Not Allowed, no JSON body
 
     it 'should throw native errors always', (done) ->
         db = new neo4j.GraphDatabase 'http://idontexist.foobarbaz.nodeneo4j'
@@ -144,11 +184,67 @@ describe 'GraphDatabase::http', ->
 
             done()
 
-    it 'should support streaming', (done) ->
+    it 'should support streaming responses', (done) ->
+        opts =
+            method: 'GET'
+            path: '/db/data/node/-1'
+
+        req = DB.http opts
+
+        expectRequest req, opts.method, opts.path
+
+        # Native errors are emitted on this request, so fail-fast if any:
+        req.on 'error', done
+
+        # Since this is a GET, no need for us to call `req.end()` manually.
+        # When the response is received, stream down its JSON and verify:
+        req.on 'response', (resp) ->
+            expectResponse resp, 404
+            streamResponse resp, done, (body) ->
+                # Simplified error parsing; just verifying stream:
+                expect(body).to.be.an 'object'
+                expect(body.exception).to.equal 'NodeNotFoundException'
+                expect(body.message).to.equal '
+                    Cannot find node with id [-1] in database.'
+                expect(body.stacktrace).to.be.an 'array'
+
+                done()
+
+    it 'should support streaming responses, even if not requests', (done) ->
+        opts =
+            method: 'POST'
+            path: '/db/data/node'
+            body: FAKE_JSON
+
+        req = DB.http opts
+
+        # TODO: Should we also assert that the request has automatically added
+        # Content-Type and Content-Length headers? Not technically required?
+        expectRequest req, opts.method, opts.path
+
+        # Native errors are emitted on this request, so fail-fast if any:
+        req.on 'error', done
+
+        # Since we supplied a body, no need for us to call `req.end()` manually.
+        # When the response is received, stream down its JSON and verify:
+        req.on 'response', (resp) ->
+            expectResponse resp, 400
+            streamResponse resp, done, (body) ->
+                # Simplified error parsing; just verifying stream:
+                expect(body).to.be.an 'object'
+                expect(body.exception).to.equal 'PropertyValueException'
+                expect(body.message).to.equal 'Could not set property "object",
+                    unsupported type: {foo={bar=baz}}'
+                expect(body.stacktrace).to.be.an 'array'
+
+                done()
+
+    it 'should support streaming both requests and responses', (done) ->
         opts =
             method: 'POST'
             path: '/db/data/node'
             headers:
+                'Content-Type': 'application/json'
                 # NOTE: It seems that Neo4j needs an explicit Content-Length,
                 # at least for requests to this `POST /db/data/node` endpoint.
                 'Content-Length': (fs.statSync FAKE_JSON_PATH).size
@@ -158,25 +254,13 @@ describe 'GraphDatabase::http', ->
 
         req = DB.http opts
 
-        expect(req).to.be.an.instanceOf http.ClientRequest
-        expect(req.method).to.equal opts.method
-        expect(req.path).to.equal opts.path
-
-        # Special-case for headers since they're stored differently:
-        for name, val of opts.headers
-            expect(req.getHeader name).to.equal val
+        expectRequest req, opts.method, opts.path, opts.headers
 
         # Native errors are emitted on this request, so fail-fast if any:
         req.on 'error', done
 
         # Now stream some fake JSON to the request:
-        # TODO: Why doesn't this work?
-        # fs.createReadStream(FAKE_JSON_PATH).pipe req
-        # TEMP: Instead, we have to manually pipe:
-        readStream = fs.createReadStream FAKE_JSON_PATH
-        readStream.on 'error', done
-        readStream.on 'data', (chunk) -> req.write chunk
-        readStream.on 'end', -> req.end()
+        fs.createReadStream(FAKE_JSON_PATH).pipe req
 
         # Verify that the request fully waits for our stream to finish
         # before returning a response:
@@ -187,16 +271,7 @@ describe 'GraphDatabase::http', ->
         req.on 'response', (resp) ->
             expect(finished).to.be.true()
             expectResponse resp, 400
-
-            resp.setEncoding 'utf8'
-            body = ''
-
-            resp.on 'data', (str) -> body += str
-            resp.on 'error', done
-            resp.on 'close', -> done new Error 'Response closed!'
-            resp.on 'end', ->
-                body = JSON.parse body
-
+            streamResponse resp, done, (body) ->
                 # Simplified error parsing; just verifying stream:
                 expect(body).to.be.an 'object'
                 expect(body.exception).to.equal 'PropertyValueException'

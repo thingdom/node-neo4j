@@ -113,6 +113,11 @@ response data can be streamed.
 [`ClientRequest`]: http://nodejs.org/api/http.html#http_class_http_clientrequest
 [`IncomingMessage`]: http://nodejs.org/api/http.html#http_http_incomingmessage
 
+*Important: if this is a write request (`POST`, `PUT`, `DELETE`, etc.),
+you may still pass a request `body` for convenience, but if you don't,
+it's your responsibility to pass `Content-Type` and `Content-Length` headers,
+as well as call `req.end()` to finish the request.*
+
 In addition, if a callback is given, it will be called with the final result.
 By default, this result will be the HTTP response body (parsed as JSON),
 with nodes and relationships transformed to

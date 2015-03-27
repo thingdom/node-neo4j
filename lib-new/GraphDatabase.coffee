@@ -2,8 +2,6 @@ $ = require 'underscore'
 assert = require 'assert'
 Constraint = require './Constraint'
 {Error} = require './errors'
-http = require 'http'
-https = require 'https'
 Index = require './Index'
 lib = require '../package.json'
 Node = require './Node'
@@ -33,13 +31,13 @@ module.exports = class GraphDatabase
 
         # Process auth, whether through option or URL creds or both.
         # Option takes precedence, and we clear the URL creds if option given.
-        @uri = URL.parse @url
-        if @uri.auth and @auth?
-            delete @uri.auth
-            @url = URL.format @uri
+        uri = URL.parse @url
+        if uri.auth and @auth?
+            delete uri.auth
+            @url = URL.format uri
 
         # We also normalize any given auth to an object or null:
-        @auth = _normalizeAuth @auth ? @uri.auth
+        @auth = _normalizeAuth @auth ? uri.auth
 
         # Extend the given headers with our defaults, but clone first:
         # TODO: Do we want to special-case User-Agent? Or reject if includes
@@ -74,71 +72,45 @@ module.exports = class GraphDatabase
             .defaults @headers      # These headers can be overridden...
             .extend                 # ...while these can't.
                 'Accept': 'application/json'
+                'Content-Type': 'application/json'
                 'X-Stream': 'true'
             .value()
 
-        if body
-            body = JSON.stringify body
-            $(headers).extend
-                'Content-Type': 'application/json'
-                'Content-Length': (new Buffer body).length
-        else if cb
-            $(headers).extend
-                'Content-Length': 0
-
         # TODO: Would be good to test custom proxy and agent, but difficult.
         # Same with Neo4j returning gzipped responses (e.g. through an LB).
-        net = require @uri.protocol[...-1]  # E.g. `http` or `https`
-        req = net.request
+        req = Request
             method: method
-            hostname: @uri.hostname
-            port: @uri.port
-            path: path
-            # proxy: @proxy     # TODO
-            auth: if @auth then "#{@auth.username}:#{@auth.password}"
+            url: URL.resolve @url, path
+            proxy: @proxy
+            auth: @auth
             headers: headers
             agent: @agent
-            keepAlive: true
-            # gzip: true  # This is only for responses: decode if gzipped.
-                # TODO
+            json: body ? true
+            gzip: true  # This is only for responses: decode if gzipped.
 
-        # If a request body was given, go ahead send it and end the request:
-        if body
-            req.write body
-            req.end()
+        # Important: only pass a callback to Request if a callback was passed
+        # to us. This prevents Request from doing unnecessary JSON parse work
+        # if the caller prefers to stream the response instead of buffer it.
+        , cb and (err, resp) =>
+            if err
+                # TODO: Do we want to wrap or modify native errors?
+                return cb err
 
-        # Also go ahead end the request if this is a read request:
-        if method.toUpperCase() in ['GET', 'HEAD', 'OPTIONS']
-            req.end()
+            if raw
+                # TODO: Do we want to return our own Response object?
+                return cb null, resp
 
-        # Important: only buffer the response data if a callback was given.
-        # (And go ahead end the request then too, for the no-body case.)
-        # If no callback was given, let the caller stream the response data,
-        # and also support them streaming the request body then.
-        # (Note: no harm in calling `req.end` twice.)
-        if cb
-            req.end()
-            req.on 'error', cb
-            req.on 'response', (resp) ->
-                resp.setEncoding 'utf8'
+            if err = Error._fromResponse resp
+                return cb err
 
-                resp.on 'data', (chunk) ->
-                    resp.body ?= ''
-                    resp.body += chunk
+            cb null, _transform resp.body
 
-                resp.on 'end', ->
-                    try
-                        resp.body = JSON.parse resp.body
-
-                    if raw
-                        return cb null, resp
-
-                    if err = Error._fromResponse resp
-                        return cb err
-
-                    cb null, _transform resp.body
-
-        req
+        # Instead of leaking our (third-party) Request instance, make sure to
+        # explicitly return only its internal native ClientRequest instance.
+        # https://github.com/request/request/blob/v2.53.1/request.js#L904
+        # This is only populated when the request is `start`ed, so `start` it!
+        req.start()
+        req.req
 
 
     ## AUTH

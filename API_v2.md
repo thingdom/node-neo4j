@@ -105,18 +105,16 @@ function cb(err, body) {}
 var req = db.http({method, path, headers, body, raw}, cb);
 ```
 
-This method will immediately return a native HTTP [`ClientRequest`][],
-to which request data can be streamed, and which emits a `'response'` event
-yielding a native HTTP [`IncomingMessage`][], from which (raw chunks of)
-response data can be streamed.
+This method returns a [`Request.js`][] instance, which is a duplex stream
+to and from which both request and response data can be streamed.
 
+(`Request.js` provides a number of benefits over the native HTTP
+[`ClientRequest`][] and [`IncomingMessage`][] classes, such as proxy support,
+gzip decompression, simpler writes, and a single, unified `'error'` event.)
+
+[`Request.js`]: https://github.com/request/request
 [`ClientRequest`]: http://nodejs.org/api/http.html#http_class_http_clientrequest
 [`IncomingMessage`]: http://nodejs.org/api/http.html#http_http_incomingmessage
-
-*Important: if this is a write request (`POST`, `PUT`, `DELETE`, etc.),
-you may still pass a request `body` for convenience, but if you don't,
-it's your responsibility to pass `Content-Type` and `Content-Length` headers,
-as well as call `req.end()` to finish the request.*
 
 In addition, if a callback is given, it will be called with the final result.
 By default, this result will be the HTTP response body (parsed as JSON),

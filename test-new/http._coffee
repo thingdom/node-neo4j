@@ -9,6 +9,7 @@ fs = require 'fs'
 helpers = require './util/helpers'
 http = require 'http'
 neo4j = require '../'
+Request = require 'request'
 
 
 ## CONSTANTS
@@ -31,7 +32,7 @@ FAKE_JSON = require FAKE_JSON_PATH
 # set to the given method and path, and optionally including the given headers.
 #
 expectRequest = (req, method, path, headers={}) ->
-    expect(req).to.be.an.instanceOf http.ClientRequest
+    expect(req).to.be.an.instanceOf Request.Request
     expect(req.method).to.equal method
     expect(req.path).to.equal path
 
@@ -59,22 +60,24 @@ expectNeo4jRoot = (body) ->
     expect(body).to.have.keys 'data', 'management'
 
 #
-# Streams the given response's JSON body, and calls either the error callback
-# (convenient for failing tests) or the success callback (with the parsed body).
+# Streams the given Request response, and calls either the error callback
+# (for failing tests) or the success callback (with the parsed JSON body).
+# Also asserts that the response has the given status code.
 #
-streamResponse = (resp, cbErr, cbBody) ->
+streamRequestResponse = (req, statusCode, cbErr, cbBody) ->
     body = null
 
-    resp.setEncoding 'utf8'
+    req.on 'error', cbErr
+    req.on 'close', -> cbErr new Error 'Response closed!'
 
-    resp.on 'error', cbErr
-    resp.on 'close', -> cbErr new Error 'Response closed!'
+    req.on 'response', (resp) ->
+        expectResponse resp, statusCode
 
-    resp.on 'data', (str) ->
+    req.on 'data', (str) ->
         body ?= ''
         body += str
 
-    resp.on 'end', ->
+    req.on 'end', ->
         try
             body = JSON.parse body
         catch err
@@ -193,22 +196,15 @@ describe 'GraphDatabase::http', ->
 
         expectRequest req, opts.method, opts.path
 
-        # Native errors are emitted on this request, so fail-fast if any:
-        req.on 'error', done
+        streamRequestResponse req, 404, done, (body) ->
+            # Simplified error parsing; just verifying stream:
+            expect(body).to.be.an 'object'
+            expect(body.exception).to.equal 'NodeNotFoundException'
+            expect(body.message).to.equal '
+                Cannot find node with id [-1] in database.'
+            expect(body.stacktrace).to.be.an 'array'
 
-        # Since this is a GET, no need for us to call `req.end()` manually.
-        # When the response is received, stream down its JSON and verify:
-        req.on 'response', (resp) ->
-            expectResponse resp, 404
-            streamResponse resp, done, (body) ->
-                # Simplified error parsing; just verifying stream:
-                expect(body).to.be.an 'object'
-                expect(body.exception).to.equal 'NodeNotFoundException'
-                expect(body.message).to.equal '
-                    Cannot find node with id [-1] in database.'
-                expect(body.stacktrace).to.be.an 'array'
-
-                done()
+            done()
 
     it 'should support streaming responses, even if not requests', (done) ->
         opts =
@@ -222,22 +218,15 @@ describe 'GraphDatabase::http', ->
         # Content-Type and Content-Length headers? Not technically required?
         expectRequest req, opts.method, opts.path
 
-        # Native errors are emitted on this request, so fail-fast if any:
-        req.on 'error', done
+        streamRequestResponse req, 400, done, (body) ->
+            # Simplified error parsing; just verifying stream:
+            expect(body).to.be.an 'object'
+            expect(body.exception).to.equal 'PropertyValueException'
+            expect(body.message).to.equal 'Could not set property "object",
+                unsupported type: {foo={bar=baz}}'
+            expect(body.stacktrace).to.be.an 'array'
 
-        # Since we supplied a body, no need for us to call `req.end()` manually.
-        # When the response is received, stream down its JSON and verify:
-        req.on 'response', (resp) ->
-            expectResponse resp, 400
-            streamResponse resp, done, (body) ->
-                # Simplified error parsing; just verifying stream:
-                expect(body).to.be.an 'object'
-                expect(body.exception).to.equal 'PropertyValueException'
-                expect(body.message).to.equal 'Could not set property "object",
-                    unsupported type: {foo={bar=baz}}'
-                expect(body.stacktrace).to.be.an 'array'
-
-                done()
+            done()
 
     it 'should support streaming both requests and responses', (done) ->
         opts =
@@ -256,30 +245,18 @@ describe 'GraphDatabase::http', ->
 
         expectRequest req, opts.method, opts.path, opts.headers
 
-        # Native errors are emitted on this request, so fail-fast if any:
-        req.on 'error', done
-
         # Now stream some fake JSON to the request:
         fs.createReadStream(FAKE_JSON_PATH).pipe req
 
-        # Verify that the request fully waits for our stream to finish
-        # before returning a response:
-        finished = false
-        req.on 'finish', -> finished = true
+        streamRequestResponse req, 400, done, (body) ->
+            # Simplified error parsing; just verifying stream:
+            expect(body).to.be.an 'object'
+            expect(body.exception).to.equal 'PropertyValueException'
+            expect(body.message).to.equal 'Could not set property "object",
+                unsupported type: {foo={bar=baz}}'
+            expect(body.stacktrace).to.be.an 'array'
 
-        # When the response is received, stream down its JSON too:
-        req.on 'response', (resp) ->
-            expect(finished).to.be.true()
-            expectResponse resp, 400
-            streamResponse resp, done, (body) ->
-                # Simplified error parsing; just verifying stream:
-                expect(body).to.be.an 'object'
-                expect(body.exception).to.equal 'PropertyValueException'
-                expect(body.message).to.equal 'Could not set property "object",
-                    unsupported type: {foo={bar=baz}}'
-                expect(body.stacktrace).to.be.an 'array'
-
-                done()
+            done()
 
 
     ## Object parsing:

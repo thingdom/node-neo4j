@@ -38,7 +38,7 @@ npm install neo4j --save
 
 ```js
 var neo4j = require('neo4j');
-var db = new neo4j.GraphDatabase('http://localhost:7474');
+var db = new neo4j.GraphDatabase('http://username:passwordlocalhost:7474');
 
 db.cypher({
     query: 'MATCH (u:User {email: {email}}) RETURN u',
@@ -74,6 +74,26 @@ Yields e.g.:
     }
 }
 ```
+
+## Neo4j version support
+
+| **Version** | **Tested**  |
+|-------------|-------------|
+| 1.9         |   No        |
+| 2.0         |   Yes       |
+| 2.1         |   Yes       |
+| 2.2         |   Yes       |
+
+## Neo4j feature support
+
+| **Feature**          | **Supported?** |
+|----------------------|----------------|
+| Auth                 |  Yes           |
+| Remote Cypher        |  Yes           |
+| Transactions         |  No            |
+| High Availability    |  No            |
+| Embedded JVM support |  No            |
+
 
 <!-- TODO: Update the below. -->
 

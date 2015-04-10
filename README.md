@@ -94,22 +94,22 @@ You can also [ask a question on StackOverflow][stackoverflow-ask]
 
 ## Neo4j version support
 
-| **Version** | **Tested**  |
-|-------------|-------------|
-| 1.9         |   No        |
-| 2.0         |   Yes       |
-| 2.1         |   Yes       |
-| 2.2         |   Yes       |
+| **Version** | **Ver 1.x**  | **Ver 2.x** |
+|-------------|--------------|-------------|
+| 1.5-1.9     |   Yes        |  No         |
+| 2.0         |   Yes        |  Yes        |
+| 2.1         |   Yes        |  Yes        |
+| 2.2         |   No         |  Yes        |
 
 ## Neo4j feature support
 
-| **Feature**          | **Supported?** |
-|----------------------|----------------|
-| Auth                 |  Yes           |
-| Remote Cypher        |  Yes           |
-| Transactions         |  No            |
-| High Availability    |  No            |
-| Embedded JVM support |  No            |
+| **Feature**          | **Ver 1.x** | **Ver 2.x** |
+|----------------------|-------------|-------------|
+| Auth                 |  No         |  Yes        |
+| Remote Cypher        |  Yes        |  Yes        |
+| Transactions         |  No         |  No         |
+| High Availability    |  No         |  No         |
+| Embedded JVM support |  No         |  No         |
 
 
 <!-- TODO: Update the below. -->

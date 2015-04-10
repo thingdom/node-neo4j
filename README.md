@@ -20,6 +20,11 @@ It now *only* supports Neo4j 2.x — but it supports it really well.
 (If you're still on Neo4j 1.x, you can still use
 [node-neo4j v1](https://github.com/thingdom/node-neo4j/tree/v1).)
 
+## What is Neo4j?
+
+Neo4j is a transactional, open-source graph database.  A graph database manages data in a connected data structure, capable of  representing any kind of data in a very accessible way.  Information is stored in nodes and relationships connecting them, both of which can have arbitrary properties.  To learn more visit [What is a Graph Database?](http://neo4j.com/developer/graph-database/)
+
+
 <!-- TODO: E.g. "Take a look at the instructions below,
 then read the full [API docs](./docs) for details?" -->
 

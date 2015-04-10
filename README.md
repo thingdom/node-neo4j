@@ -13,7 +13,7 @@ and `float: right` them in the Node-Neo4j header. (Admittedly, yucky markup.)
 
 # Node-Neo4j <a href="https://travis-ci.org/thingdom/node-neo4j" style="float: right; margin-left: 0.25em;"><img src="https://travis-ci.org/thingdom/node-neo4j.png?branch=master"/></a> <a href="http://badge.fury.io/js/neo4j" style="float: right;"><img src="https://badge.fury.io/js/neo4j.svg" alt="npm version" height="18"></a>
 
-This is a Node.js driver for [Neo4j](http://neo4j.com/), a graph database.
+This is a [Node.js][node.js] driver for [Neo4j][neo4j] via it's [REST API][neo4j-rest-api].
 
 **This driver has undergone a complete rewrite for Neo4j v2.**
 It now *only* supports Neo4j 2.x — but it supports it really well.
@@ -22,7 +22,7 @@ It now *only* supports Neo4j 2.x — but it supports it really well.
 
 ## What is Neo4j?
 
-Neo4j is a transactional, open-source graph database.  A graph database manages data in a connected data structure, capable of  representing any kind of data in a very accessible way.  Information is stored in nodes and relationships connecting them, both of which can have arbitrary properties.  To learn more visit [What is a Graph Database?](http://neo4j.com/developer/graph-database/)
+Neo4j is a transactional, open-source graph database.  A graph database manages data in a connected data structure, capable of  representing any kind of data in a very accessible way.  Information is stored in nodes and relationships connecting them, both of which can have arbitrary properties.  To learn more visit [What is a Graph Database?][what-is-a-graph-database]
 
 
 <!-- TODO: E.g. "Take a look at the instructions below,
@@ -37,7 +37,6 @@ Similarly, mention used in production by FiftyThree? -->
 ```sh
 npm install neo4j --save
 ```
-
 
 ## Usage
 
@@ -79,6 +78,19 @@ Yields e.g.:
     }
 }
 ```
+
+## Getting Help
+
+If you're having any issues you can first refer to the [API documentation][api-docs].
+
+If you encounter any bugs or other issues, please file them in the
+[issue tracker][issue-tracker].
+
+We also now have a [Google Group][google-group]!
+Post questions and participate in general discussions there.
+
+You can also [ask a question on StackOverflow][stackoverflow-ask]
+
 
 ## Neo4j version support
 
@@ -179,16 +191,9 @@ See the [Changelog][changelog] for the full history of changes and releases.
 This library is licensed under the [Apache License, Version 2.0][license].
 
 
-## Feedback
-
-If you encounter any bugs or other issues, please file them in the
-[issue tracker][issue-tracker].
-
-We also now have a [Google Group][google-group]!
-Post questions and participate in general discussions there.
-
 
 [neo4j]: http://neo4j.org/
+[what-is-a-graph-database]: http://neo4j.com/developer/graph-database/
 [node.js]: http://nodejs.org/
 [neo4j-rest-api]: http://docs.neo4j.org/chunked/stable/rest-api.html
 
@@ -197,7 +202,6 @@ Post questions and participate in general discussions there.
 [node-neo4j-template]: https://github.com/aseemk/node-neo4j-template
 [semver]: http://semver.org/
 
-[neo4j-getting-started]: http://wiki.neo4j.org/content/Getting_Started_With_Neo4j_Server
 [coffeescript]: http://coffeescript.org/
 [streamline.js]: https://github.com/Sage/streamlinejs
 
@@ -205,3 +209,5 @@ Post questions and participate in general discussions there.
 [issue-tracker]: https://github.com/thingdom/node-neo4j/issues
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html
 [google-group]: https://groups.google.com/group/node-neo4j
+
+[stackoverflow-ask]: http://stackoverflow.com/questions/ask?tags=node.js,neo4j,thingdom

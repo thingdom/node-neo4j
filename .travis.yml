@@ -31,3 +31,7 @@ before_install:
 branches:
   only:
     - master
+
+script:
+  - npm run lint
+  - npm test

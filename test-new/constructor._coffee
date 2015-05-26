@@ -130,7 +130,7 @@ describe 'GraphDatabase::constructor', ->
         expectAuth db, USERNAME, PASSWORD
 
     it 'should support clearing auth via empty string option', ->
-        host = "auth.test:9876"
+        host = 'auth.test:9876'
         url = "https://#{USERNAME}:#{PASSWORD}@#{host}"
 
         db = new GraphDatabase
@@ -142,7 +142,7 @@ describe 'GraphDatabase::constructor', ->
         expectNoAuth db
 
     it 'should support clearing auth via empty object option', ->
-        host = "auth.test:9876"
+        host = 'auth.test:9876'
         url = "https://#{USERNAME}:#{PASSWORD}@#{host}"
 
         db = new GraphDatabase

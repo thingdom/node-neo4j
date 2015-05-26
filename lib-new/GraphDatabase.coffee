@@ -149,7 +149,11 @@ module.exports = class GraphDatabase
 
     ## CYPHER
 
+    # NOTE: This method is fairly complex, in part out of necessity.
+    # We're okay with it since we test it throughly and emphasize its coverage.
+    # coffeelint: disable=cyclomatic_complexity
     cypher: (opts={}, cb, _tx) ->
+    # coffeelint: enable=cyclomatic_complexity
         if typeof opts is 'string'
             opts = {query: opts}
 
@@ -200,7 +204,7 @@ module.exports = class GraphDatabase
 
         path = '/db/data/transaction'
         path += "/#{_tx._id}" if _tx?._id
-        path += "/commit" if commit or not _tx
+        path += '/commit' if commit or not _tx
 
         # Normalize input query or queries to an array of queries always,
         # but remember whether a single query was given (not a batch).
@@ -233,9 +237,13 @@ module.exports = class GraphDatabase
                     # NOTE: Lowercase 'rest' matters here for parsing.
                     formats.push format = if lean then 'row' else 'rest'
 
-                    statement: query
-                    parameters: params or {}
-                    resultDataContents: [format]
+                    # NOTE: Braces needed by CoffeeLint for now.
+                    # https://github.com/clutchski/coffeelint/issues/459
+                    {
+                        statement: query
+                        parameters: params or {}
+                        resultDataContents: [format]
+                    }
 
         # TODO: Support streaming!
         #

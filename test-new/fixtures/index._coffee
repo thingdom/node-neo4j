@@ -38,8 +38,8 @@ neo4j = require '../../'
     @DB_VERSION_NUM = parseFloat @DB_VERSION_STR, 10
 
     if @DB_VERSION_NUM < 2
-        throw new Error "*** node-neo4j v2 supports Neo4j v2+ only,
-            and you’re running Neo4j v1. These tests will fail! ***"
+        throw new Error '*** node-neo4j v2 supports Neo4j v2+ only,
+            and you’re running Neo4j v1. These tests will fail! ***'
 
 #
 # Creates and returns a property bag (dictionary) with unique, random test data

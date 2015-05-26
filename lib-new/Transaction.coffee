@@ -66,7 +66,12 @@ module.exports = class Transaction
             when @expiresIn <= 0 then 'expired'
             else 'open'
 
+    # NOTE: CoffeeLint currently false positives on this next line.
+    # https://github.com/clutchski/coffeelint/issues/458
+    # coffeelint: disable=no_implicit_braces
     cypher: (opts={}, cb) ->
+    # coffeelint: enable=no_implicit_braces
+
         # Check predictable error cases to provide better messaging sooner.
         # All of these are `ClientErrors` within the `Transaction` category.
         # http://neo4j.com/docs/stable/status-codes.html#_status_codes

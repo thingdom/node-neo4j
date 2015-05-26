@@ -223,36 +223,38 @@ describe 'Indexes', ->
 
     describe '(misc)', ->
 
+        fail = -> throw new Error 'Callback should not have been called'
+
         it 'should require both label and property to query specific index', ->
             for fn in [
-                -> DB.hasIndex null, ->
-                -> DB.hasIndex '', ->
-                -> DB.hasIndex {}, ->
-                -> DB.hasIndex TEST_LABEL, ->
-                -> DB.hasIndex {label: TEST_LABEL}, ->
-                -> DB.hasIndex {property: TEST_PROP}, ->
+                -> DB.hasIndex null, fail
+                -> DB.hasIndex '', fail
+                -> DB.hasIndex {}, fail
+                -> DB.hasIndex TEST_LABEL, fail
+                -> DB.hasIndex {label: TEST_LABEL}, fail
+                -> DB.hasIndex {property: TEST_PROP}, fail
             ]
                 expect(fn).to.throw TypeError, /label and property required/i
 
         it 'should require both label and property to create index', ->
             for fn in [
-                -> DB.createIndex null, ->
-                -> DB.createIndex '', ->
-                -> DB.createIndex {}, ->
-                -> DB.createIndex TEST_LABEL, ->
-                -> DB.createIndex {label: TEST_LABEL}, ->
-                -> DB.createIndex {property: TEST_PROP}, ->
+                -> DB.createIndex null, fail
+                -> DB.createIndex '', fail
+                -> DB.createIndex {}, fail
+                -> DB.createIndex TEST_LABEL, fail
+                -> DB.createIndex {label: TEST_LABEL}, fail
+                -> DB.createIndex {property: TEST_PROP}, fail
             ]
                 expect(fn).to.throw TypeError, /label and property required/i
 
         it 'should require both label and property to drop index', ->
             for fn in [
-                -> DB.dropIndex null, ->
-                -> DB.dropIndex '', ->
-                -> DB.dropIndex {}, ->
-                -> DB.dropIndex TEST_LABEL, ->
-                -> DB.dropIndex {label: TEST_LABEL}, ->
-                -> DB.dropIndex {property: TEST_PROP}, ->
+                -> DB.dropIndex null, fail
+                -> DB.dropIndex '', fail
+                -> DB.dropIndex {}, fail
+                -> DB.dropIndex TEST_LABEL, fail
+                -> DB.dropIndex {label: TEST_LABEL}, fail
+                -> DB.dropIndex {property: TEST_PROP}, fail
             ]
                 expect(fn).to.throw TypeError, /label and property required/i
 

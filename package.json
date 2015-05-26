@@ -34,7 +34,7 @@
     "keywords": [
         "neo4j", "graph", "database", "driver", "rest", "api", "client"
     ],
-    "licenses": "Apache-2.0",
+    "license": "Apache-2.0",
     "repository" : {
         "type" : "git",
         "url" : "https://github.com/thingdom/node-neo4j.git"

@@ -83,8 +83,9 @@ describe 'GraphDatabase::cypher', ->
         expect(results).to.be.empty()
 
     it 'should reject empty/missing queries', ->
-        fn1 = -> DB.cypher '', ->
-        fn2 = -> DB.cypher {}, ->
+        fail = -> throw new Error 'Callback should not have been called'
+        fn1 = -> DB.cypher '', fail
+        fn2 = -> DB.cypher {}, fail
         expect(fn1).to.throw TypeError, /query/i
         expect(fn2).to.throw TypeError, /query/i
 
@@ -130,7 +131,7 @@ describe 'GraphDatabase::cypher', ->
         # results, no longer the deterministic order of [a, b, r].
         # We overcome this by explicitly indexing and ordering.
         results = DB.cypher
-            query: """
+            query: '''
                 START a = node({idA})
                 MATCH (a) -[r]-> (b)
                 WITH [
@@ -143,7 +144,7 @@ describe 'GraphDatabase::cypher', ->
                     inner: obj.elmt
                 }] AS outer
                 ORDER BY i
-            """
+            '''
             params:
                 idA: TEST_NODE_A._id
         , _
@@ -172,11 +173,11 @@ describe 'GraphDatabase::cypher', ->
 
     it 'should not parse nodes & relationships if lean', (_) ->
         results = DB.cypher
-            query: """
+            query: '''
                 START a = node({idA})
                 MATCH (a) -[r]-> (b)
                 RETURN a, b, r
-            """
+            '''
             params:
                 idA: TEST_NODE_A._id
             lean: true

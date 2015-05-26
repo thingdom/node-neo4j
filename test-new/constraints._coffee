@@ -220,36 +220,39 @@ describe 'Constraints', ->
 
     describe '(misc)', ->
 
-        it 'should require both label and property to query specific constraint', ->
+        fail = -> throw new Error 'Callback should not have been called'
+
+        it 'should require both label and property
+                to query specific constraint', ->
             for fn in [
-                -> DB.hasConstraint null, ->
-                -> DB.hasConstraint '', ->
-                -> DB.hasConstraint {}, ->
-                -> DB.hasConstraint TEST_LABEL, ->
-                -> DB.hasConstraint {label: TEST_LABEL}, ->
-                -> DB.hasConstraint {property: TEST_PROP}, ->
+                -> DB.hasConstraint null, fail
+                -> DB.hasConstraint '', fail
+                -> DB.hasConstraint {}, fail
+                -> DB.hasConstraint TEST_LABEL, fail
+                -> DB.hasConstraint {label: TEST_LABEL}, fail
+                -> DB.hasConstraint {property: TEST_PROP}, fail
             ]
                 expect(fn).to.throw TypeError, /label and property required/i
 
         it 'should require both label and property to create constraint', ->
             for fn in [
-                -> DB.createConstraint null, ->
-                -> DB.createConstraint '', ->
-                -> DB.createConstraint {}, ->
-                -> DB.createConstraint TEST_LABEL, ->
-                -> DB.createConstraint {label: TEST_LABEL}, ->
-                -> DB.createConstraint {property: TEST_PROP}, ->
+                -> DB.createConstraint null, fail
+                -> DB.createConstraint '', fail
+                -> DB.createConstraint {}, fail
+                -> DB.createConstraint TEST_LABEL, fail
+                -> DB.createConstraint {label: TEST_LABEL}, fail
+                -> DB.createConstraint {property: TEST_PROP}, fail
             ]
                 expect(fn).to.throw TypeError, /label and property required/i
 
         it 'should require both label and property to drop constraint', ->
             for fn in [
-                -> DB.dropConstraint null, ->
-                -> DB.dropConstraint '', ->
-                -> DB.dropConstraint {}, ->
-                -> DB.dropConstraint TEST_LABEL, ->
-                -> DB.dropConstraint {label: TEST_LABEL}, ->
-                -> DB.dropConstraint {property: TEST_PROP}, ->
+                -> DB.dropConstraint null, fail
+                -> DB.dropConstraint '', fail
+                -> DB.dropConstraint {}, fail
+                -> DB.dropConstraint TEST_LABEL, fail
+                -> DB.dropConstraint {label: TEST_LABEL}, fail
+                -> DB.dropConstraint {property: TEST_PROP}, fail
             ]
                 expect(fn).to.throw TypeError, /label and property required/i
 

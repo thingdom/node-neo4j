@@ -288,11 +288,11 @@ describe 'GraphDatabase::http', ->
             method: 'POST'
             path: '/db/data/cypher'
             body:
-                query: """
+                query: '''
                     START a = node({idA})
                     MATCH (a) -[r]-> (b)
                     RETURN a, r, b
-                """
+                '''
                 params:
                     idA: TEST_NODE_A._id
         , _

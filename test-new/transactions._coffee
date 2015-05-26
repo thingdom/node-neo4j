@@ -79,11 +79,19 @@ describe 'Transactions', ->
                 WHERE #{(
                     # NOTE: Cypher doesn’t support directly comparing nodes and
                     # property bags, so we have to compare each property.
+                    # HACK: CoffeeLint thinks the below is bad indentation.
+                    # https://github.com/clutchski/coffeelint/issues/456
+                    # coffeelint: disable=indentation
                     for prop of properties
                         "node.#{prop} = {properties}.#{prop}"
+                    # coffeelint: enable=indentation
+                    # HACK: CoffeeLint also thinks the below is double quotes!
+                    # https://github.com/clutchski/coffeelint/issues/368
+                    # coffeelint: disable=no_unnecessary_double_quotes
                 ).join ' AND '}
                 RETURN node
             """
+            # coffeelint: enable=no_unnecessary_double_quotes
             params: {properties}
         , _
 

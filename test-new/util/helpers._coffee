@@ -77,7 +77,7 @@ neo4j = require '../../'
 #
 # NOTE: This assumes this error is returned from an HTTP response.
 #
-@expectOldError = (err, statusCode, shortName, longName, message) ->
+@expectOldError = (err, statusCode, shortName, longName, message) =>
     ErrorType = if statusCode >= 500 then 'Database' else 'Client'
     @_expectBaseError err, "#{ErrorType}Error"
 

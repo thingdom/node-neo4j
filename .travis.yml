@@ -10,7 +10,8 @@ jdk:
 
 env:
   # test across multiple versions of Neo4j:
-  - NEO4J_VERSION="2.2.0"
+  - NEO4J_VERSION="2.3.0-M01"
+  - NEO4J_VERSION="2.2.2"
   - NEO4J_VERSION="2.1.7"
   - NEO4J_VERSION="2.0.4"
 

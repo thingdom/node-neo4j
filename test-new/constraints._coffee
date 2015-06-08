@@ -169,7 +169,7 @@ describe 'Constraints', ->
                 # case, but previous versions return an old-style error.
                 try
                     helpers.expectError err, 'ClientError', 'Schema',
-                        'ConstraintAlreadyExists', expMessage
+                        'ConstraintViolation', expMessage
                 catch assertionErr
                     # Check for the older case, but in case it fails,
                     # throw the original assertion error, not a new one.

@@ -125,21 +125,19 @@ describe 'GraphDatabase::http', ->
             expect(err).to.exist()
             expect(body).to.not.exist()
 
-            # TEMP: Neo4j 2.2 responds here with a new-style error object,
-            # but it's currently a `DatabaseError` in 2.2.0.
-            # https://github.com/neo4j/neo4j/issues/4145
+            # Neo4j 2.2 returns a proper new-style error object for this case,
+            # but previous versions return an old-style error.
             try
-                helpers.expectOldError err, 404, 'NodeNotFoundException',
-                    'org.neo4j.server.rest.web.NodeNotFoundException',
+                helpers.expectError err,
+                    'ClientError', 'Statement', 'EntityNotFound',
                     'Cannot find node with id [-1] in database.'
             catch assertionErr
-                # Check for the Neo4j 2.2 case, but if this fails,
+                # Check for the older case, but if this fails,
                 # throw the original assertion error, not this one.
                 try
-                    helpers.expectError err,
-                        'DatabaseError', 'General', 'UnknownFailure',
-                        'org.neo4j.server.rest.web.NodeNotFoundException:
-                            Cannot find node with id [-1] in database.'
+                    helpers.expectOldError err, 404, 'NodeNotFoundException',
+                        'org.neo4j.server.rest.web.NodeNotFoundException',
+                        'Cannot find node with id [-1] in database.'
                 catch doubleErr
                     throw assertionErr
 
@@ -202,7 +200,8 @@ describe 'GraphDatabase::http', ->
             expect(body.exception).to.equal 'NodeNotFoundException'
             expect(body.message).to.equal '
                 Cannot find node with id [-1] in database.'
-            expect(body.stacktrace).to.be.an 'array'
+            # Neo4j 2.2 changed `stacktrace` to `stackTrace`:
+            expect(body.stackTrace or body.stacktrace).to.be.an 'array'
 
             done()
 
@@ -224,7 +223,8 @@ describe 'GraphDatabase::http', ->
             expect(body.exception).to.equal 'PropertyValueException'
             expect(body.message).to.equal 'Could not set property "object",
                 unsupported type: {foo={bar=baz}}'
-            expect(body.stacktrace).to.be.an 'array'
+            # Neo4j 2.2 changed `stacktrace` to `stackTrace`:
+            expect(body.stackTrace or body.stacktrace).to.be.an 'array'
 
             done()
 
@@ -254,7 +254,8 @@ describe 'GraphDatabase::http', ->
             expect(body.exception).to.equal 'PropertyValueException'
             expect(body.message).to.equal 'Could not set property "object",
                 unsupported type: {foo={bar=baz}}'
-            expect(body.stacktrace).to.be.an 'array'
+            # Neo4j 2.2 changed `stacktrace` to `stackTrace`:
+            expect(body.stackTrace or body.stacktrace).to.be.an 'array'
 
             done()
 

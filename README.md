@@ -42,7 +42,7 @@ npm install neo4j --save
 
 ```js
 var neo4j = require('neo4j');
-var db = new neo4j.GraphDatabase('http://username:passwordlocalhost:7474');
+var db = new neo4j.GraphDatabase('http://username:password@localhost:7474');
 
 db.cypher({
     query: 'MATCH (u:User {email: {email}}) RETURN u',

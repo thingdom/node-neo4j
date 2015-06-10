@@ -343,7 +343,6 @@ module.exports = class GraphDatabase
         # This endpoint returns the array of labels directly:
         # http://neo4j.com/docs/stable/rest-api-node-labels.html#rest-api-list-all-labels
         # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
-        # TODO: Would it be better for us to handle other non-200 responses too?
         @http
             method: 'GET'
             path: '/db/data/labels'
@@ -353,7 +352,6 @@ module.exports = class GraphDatabase
         # This endpoint returns the array of property keys directly:
         # http://neo4j.com/docs/stable/rest-api-property-values.html#rest-api-list-all-property-keys
         # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
-        # TODO: Would it be better for us to handle other non-200 responses too?
         @http
             method: 'GET'
             path: '/db/data/propertykeys'
@@ -363,7 +361,6 @@ module.exports = class GraphDatabase
         # This endpoint returns the array of relationship types directly:
         # http://neo4j.com/docs/stable/rest-api-relationship-types.html#rest-api-get-relationship-types
         # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
-        # TODO: Would it be better for us to handle other non-200 responses too?
         @http
             method: 'GET'
             path: '/db/data/relationship/types'
@@ -403,12 +400,10 @@ module.exports = class GraphDatabase
 
         # NOTE: This is just a convenience method; there is no REST API endpoint
         # for this directly (surprisingly, since there is for constraints).
+        # https://github.com/neo4j/neo4j/issues/4214
         @getIndexes {label}, (err, indexes) ->
-            if err
-                cb err
-            else
-                cb null, indexes.some (index) ->
-                    index.label is label and index.property is property
+            cb err, indexes?.some (index) ->
+                index.label is label and index.property is property
 
     createIndex: (opts={}, cb) ->
         {label, property} = opts
@@ -417,12 +412,26 @@ module.exports = class GraphDatabase
             throw new TypeError \
                 'Label and property required to create an index.'
 
+        # Passing `raw: true` so we can handle the 409 case below.
         @http
             method: 'POST'
             path: "/db/data/schema/index/#{encodeURIComponent label}"
             body: {'property_keys': [property]}
-        , (err, index) ->
-            cb err, if index then Index._fromRaw index
+            raw: true
+        , (err, resp) ->
+            if err
+                return cb err
+
+            # Neo4j returns a 409 error (w/ varying code across versions)
+            # if this index already exists (including for a constraint).
+            if resp.statusCode is 409
+                return cb null, null
+
+            # Translate all other error responses as legitimate errors:
+            if err = Error._fromResponse resp
+                return cb err
+
+            cb err, if resp.body then Index._fromRaw resp.body
 
     dropIndex: (opts={}, cb) ->
         {label, property} = opts
@@ -432,12 +441,26 @@ module.exports = class GraphDatabase
 
         # This endpoint is void, i.e. returns nothing:
         # http://neo4j.com/docs/stable/rest-api-schema-indexes.html#rest-api-drop-index
-        # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
+        # Passing `raw: true` so we can handle the 409 case below.
         @http
             method: 'DELETE'
             path: "/db/data/schema/index\
                 /#{encodeURIComponent label}/#{encodeURIComponent property}"
-        , cb
+            raw: true
+        , (err, resp) ->
+            if err
+                return cb err
+
+            # Neo4j returns a 404 response (with an empty body)
+            # if this index doesn't exist (has already been dropped).
+            if resp.statusCode is 404
+                return cb null, false
+
+            # Translate all other error responses as legitimate errors:
+            if err = Error._fromResponse resp
+                return cb err
+
+            cb err, true    # Index existed and was dropped
 
 
     ## CONSTRAINTS
@@ -483,6 +506,7 @@ module.exports = class GraphDatabase
         # NOTE: A REST API endpoint *does* exist to get a specific constraint:
         # http://neo4j.com/docs/stable/rest-api-schema-constraints.html
         # But it (a) returns an array, and (b) throws a 404 if no constraint.
+        # https://github.com/neo4j/neo4j/issues/4214
         # For those reasons, it's actually easier to just fetch all constraints;
         # no error handling needed, and array processing either way.
         #
@@ -514,13 +538,27 @@ module.exports = class GraphDatabase
 
         # NOTE: We explicitly *are* assuming uniqueness type here, since
         # that's our only option today for creating constraints.
+        # NOTE: Passing `raw: true` so we can handle the 409 case below.
         @http
             method: 'POST'
             path: "/db/data/schema/constraint\
                 /#{encodeURIComponent label}/uniqueness"
             body: {'property_keys': [property]}
-        , (err, constraint) ->
-            cb err, if constraint then Constraint._fromRaw constraint
+            raw: true
+        , (err, resp) ->
+            if err
+                return cb err
+
+            # Neo4j returns a 409 error (w/ varying code across versions)
+            # if this constraint already exists.
+            if resp.statusCode is 409
+                return cb null, null
+
+            # Translate all other error responses as legitimate errors:
+            if err = Error._fromResponse resp
+                return cb err
+
+            cb err, if resp.body then Constraint._fromRaw resp.body
 
     dropConstraint: (opts={}, cb) ->
         # TODO: We may need to support an additional `type` param too,
@@ -533,12 +571,26 @@ module.exports = class GraphDatabase
 
         # This endpoint is void, i.e. returns nothing:
         # http://neo4j.com/docs/stable/rest-api-schema-constraints.html#rest-api-drop-constraint
-        # Hence passing the callback directly. `http` handles 4xx, 5xx errors.
+        # Passing `raw: true` so we can handle the 409 case below.
         @http
             method: 'DELETE'
             path: "/db/data/schema/constraint/#{encodeURIComponent label}\
                 /uniqueness/#{encodeURIComponent property}"
-        , cb
+            raw: true
+        , (err, resp) ->
+            if err
+                return cb err
+
+            # Neo4j returns a 404 response (with an empty body)
+            # if this constraint doesn't exist (has already been dropped).
+            if resp.statusCode is 404
+                return cb null, false
+
+            # Translate all other error responses as legitimate errors:
+            if err = Error._fromResponse resp
+                return cb err
+
+            cb err, true    # Constraint existed and was dropped
 
 
     # TODO: Legacy indexing

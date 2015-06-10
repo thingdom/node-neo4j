@@ -96,12 +96,12 @@ describe 'Indexes', ->
             ORIG_INDEXES_LABEL = indexes
 
         it 'should support querying for specific index', (_) ->
-            bool = DB.hasIndex
+            exists = DB.hasIndex
                 label: TEST_LABEL
                 property: TEST_PROP
             , _
 
-            expect(bool).to.equal false
+            expect(exists).to.equal false
 
         it '(verify index doesn’t exist yet)', (done) ->
             DB.cypher TEST_CYPHER, (err, results) ->
@@ -141,12 +141,12 @@ describe 'Indexes', ->
             expect(indexes).to.contain TEST_INDEX
 
         it '(verify by re-querying specific test index)', (_) ->
-            bool = DB.hasIndex
+            exists = DB.hasIndex
                 label: TEST_LABEL
                 property: TEST_PROP
             , _
 
-            expect(bool).to.equal true
+            expect(exists).to.equal true
 
         # TODO: This sometimes fails because the index hasn't come online yet,
         # but Neo4j's REST API doesn't return index online/offline status.
@@ -160,38 +160,21 @@ describe 'Indexes', ->
                 n: TEST_NODE_B
             ]
 
-        it 'should throw on create of already-created index', (done) ->
-            DB.createIndex
-                label: TEST_LABEL
-                property: TEST_PROP
-            , (err, index) ->
-                expMessage = "There already exists an index
-                    for label '#{TEST_LABEL}' on property '#{TEST_PROP}'."
-
-                # Neo4j 2.2 returns a proper new-style error object for this
-                # case, but previous versions return an old-style error.
-                try
-                    helpers.expectError err, 'ClientError', 'Schema',
-                        'ConstraintViolation', expMessage
-                catch assertionErr
-                    # Check for the older case, but in case it fails,
-                    # throw the original assertion error, not a new one.
-                    try
-                        helpers.expectOldError err, 409,
-                            'ConstraintViolationException',
-                            'org.neo4j.graphdb.ConstraintViolationException',
-                            expMessage
-                    catch doubleErr
-                        throw assertionErr
-
-                expect(index).to.not.exist()
-                done()
-
-        it 'should support dropping index', (_) ->
-            DB.dropIndex
+        it 'should be idempotent on repeat creates of index', (_) ->
+            index = DB.createIndex
                 label: TEST_LABEL
                 property: TEST_PROP
             , _
+
+            expect(index).to.not.exist()
+
+        it 'should support dropping index', (_) ->
+            dropped = DB.dropIndex
+                label: TEST_LABEL
+                property: TEST_PROP
+            , _
+
+            expect(dropped).to.equal true
 
 
     describe '(after index dropped)', ->
@@ -205,20 +188,20 @@ describe 'Indexes', ->
             expect(indexes).to.eql ORIG_INDEXES_LABEL
 
         it '(verify by re-querying specific test index)', (_) ->
-            bool = DB.hasIndex
+            exists = DB.hasIndex
                 label: TEST_LABEL
                 property: TEST_PROP
             , _
 
-            expect(bool).to.equal false
+            expect(exists).to.equal false
 
-        it 'should throw on drop of already-dropped index', (done) ->
-            DB.dropIndex
+        it 'should be idempotent on repeat drops of constraint', (_) ->
+            dropped = DB.dropIndex
                 label: TEST_LABEL
                 property: TEST_PROP
-            , (err) ->
-                helpers.expectHttpError err, 404
-                done()
+            , _
+
+            expect(dropped).to.equal false
 
 
     describe '(misc)', ->

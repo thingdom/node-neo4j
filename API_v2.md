@@ -254,7 +254,8 @@ which may be signs of code bugs, and provide more helpful error messaging.
 ```coffee
 class Transaction {_id, expiresAt, expiresIn, state}
 # `expiresAt` is a Date, while `expiresIn` is a millisecond count.
-# `state` is one of 'open', 'pending', 'committed, 'rolled back', or 'expired'.
+# `state` is one of 'open', 'pending', 'committed, 'rolled back', or 'expired',
+# all of which are constant properties on instances, e.g. `STATE_ROLLED_BACK`.
 ```
 
 ```js

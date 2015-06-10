@@ -411,7 +411,10 @@ db.getIndexes(cbMany);              // across all labels
 db.getIndexes({label}, cbMany);     // for a particular label
 db.hasIndex({label, property}, cbBool);
 db.createIndex({label, property}, cbOne);
-db.dropIndex({label, property}, cbDone);
+    // callback receives null if this index already exists
+db.dropIndex({label, property}, cbBool);
+    // callback receives true if this index existed and was dropped,
+    // false if it didn't exist in the first place
 ```
 
 Returned indexes are minimal `Index` objects:
@@ -446,7 +449,10 @@ db.getConstraints(cbMany);              // across all labels
 db.getConstraints({label}, cbMany);     // for a particular label
 db.hasConstraint({label, property}, cbBool);
 db.createConstraint({label, property}, cbOne);
+    // callback receives null if this constraint already exists
 db.dropConstraint({label, property}, cbDone);
+    // callback receives true if this constraint existed and was dropped,
+    // false if it didn't exist in the first place
 ```
 
 Returned constraints are minimal `Constraint` objects:

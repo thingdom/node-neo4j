@@ -103,12 +103,12 @@ describe 'Constraints', ->
             ORIG_CONSTRAINTS_LABEL = constraints
 
         it 'should support querying for specific constraint', (_) ->
-            bool = DB.hasConstraint
+            exists = DB.hasConstraint
                 label: TEST_LABEL
                 property: TEST_PROP
             , _
 
-            expect(bool).to.equal false
+            expect(exists).to.equal false
 
         it '(verify constraint doesn’t exist yet)', (_) ->
             # This shouldn't throw an error:
@@ -138,12 +138,12 @@ describe 'Constraints', ->
             expect(constraints).to.contain TEST_CONSTRAINT
 
         it '(verify by re-querying specific test constraint)', (_) ->
-            bool = DB.hasConstraint
+            exists = DB.hasConstraint
                 label: TEST_LABEL
                 property: TEST_PROP
             , _
 
-            expect(bool).to.equal true
+            expect(exists).to.equal true
 
         it '(verify with test query)', (done) ->
             violateConstraint (err) ->
@@ -157,38 +157,21 @@ describe 'Constraints', ->
 
                 done()
 
-        it 'should throw on create of already-created constraint', (done) ->
-            DB.createConstraint
-                label: TEST_LABEL
-                property: TEST_PROP
-            , (err, constraint) ->
-                expMessage = "Label '#{TEST_LABEL}' and property '#{TEST_PROP}'
-                    already have a unique constraint defined on them."
-
-                # Neo4j 2.2 returns a proper new-style error object for this
-                # case, but previous versions return an old-style error.
-                try
-                    helpers.expectError err, 'ClientError', 'Schema',
-                        'ConstraintViolation', expMessage
-                catch assertionErr
-                    # Check for the older case, but in case it fails,
-                    # throw the original assertion error, not a new one.
-                    try
-                        helpers.expectOldError err, 409,
-                            'ConstraintViolationException',
-                            'org.neo4j.graphdb.ConstraintViolationException',
-                            expMessage
-                    catch doubleErr
-                        throw assertionErr
-
-                expect(constraint).to.not.exist()
-                done()
-
-        it 'should support dropping constraint', (_) ->
-            DB.dropConstraint
+        it 'should be idempotent on repeat creates of constraint', (_) ->
+            constraint = DB.createConstraint
                 label: TEST_LABEL
                 property: TEST_PROP
             , _
+
+            expect(constraint).to.not.exist()
+
+        it 'should support dropping constraint', (_) ->
+            dropped = DB.dropConstraint
+                label: TEST_LABEL
+                property: TEST_PROP
+            , _
+
+            expect(dropped).to.equal true
 
 
     describe '(after constraint dropped)', ->
@@ -202,20 +185,20 @@ describe 'Constraints', ->
             expect(constraints).to.eql ORIG_CONSTRAINTS_LABEL
 
         it '(verify by re-querying specific test constraint)', (_) ->
-            bool = DB.hasConstraint
+            exists = DB.hasConstraint
                 label: TEST_LABEL
                 property: TEST_PROP
             , _
 
-            expect(bool).to.equal false
+            expect(exists).to.equal false
 
-        it 'should throw on drop of already-dropped constraint', (done) ->
-            DB.dropConstraint
+        it 'should be idempotent on repeat drops of constraint', (_) ->
+            dropped = DB.dropConstraint
                 label: TEST_LABEL
                 property: TEST_PROP
-            , (err) ->
-                helpers.expectHttpError err, 404
-                done()
+            , _
+
+            expect(dropped).to.equal false
 
 
     describe '(misc)', ->

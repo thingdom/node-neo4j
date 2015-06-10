@@ -29,15 +29,15 @@ describe 'Transactions', ->
 
     it 'should convey pending state, and reject concurrent requests', (done) ->
         tx = DB.beginTransaction()
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         fn = ->
             tx.cypher 'RETURN "bar" AS foo', cb
-            expect(tx.state).to.equal 'pending'
+            expect(tx.state).to.equal tx.STATE_PENDING
 
         cb = (err, results) ->
             expect(err).to.not.exist()
-            expect(tx.state).to.equal 'open'
+            expect(tx.state).to.equal tx.STATE_OPEN
             done()
 
         fn()
@@ -112,9 +112,9 @@ describe 'Transactions', ->
 
         expect(nodeA.properties.test).to.equal 'committing'
 
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
         tx.commit _
-        expect(tx.state).to.equal 'committed'
+        expect(tx.state).to.equal tx.STATE_COMMITTED
 
         expect(-> tx.cypher 'RETURN "bar" AS foo')
             .to.throw neo4j.ClientError, /been committed/i
@@ -133,10 +133,10 @@ describe 'Transactions', ->
 
     it 'should support committing before any queries', (_) ->
         tx = DB.beginTransaction()
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         tx.commit _
-        expect(tx.state).to.equal 'committed'
+        expect(tx.state).to.equal tx.STATE_COMMITTED
 
     it 'should support auto-committing', (_) ->
         tx = DB.beginTransaction()
@@ -158,7 +158,7 @@ describe 'Transactions', ->
         expect(nodeA.properties.test).to.equal 'auto-committing'
         expect(nodeA.properties.i).to.equal 1
 
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         [{nodeA}] = tx.cypher
             query: '''
@@ -174,7 +174,7 @@ describe 'Transactions', ->
         expect(nodeA.properties.test).to.equal 'auto-committing'
         expect(nodeA.properties.i).to.equal 2
 
-        expect(tx.state).to.equal 'committed'
+        expect(tx.state).to.equal tx.STATE_COMMITTED
 
         expect(-> tx.cypher 'RETURN "bar" AS foo')
             .to.throw neo4j.ClientError, /been committed/i
@@ -207,9 +207,9 @@ describe 'Transactions', ->
 
         expect(nodeA.properties.test).to.equal 'rolling back'
 
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
         tx.rollback _
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
         expect(-> tx.cypher 'RETURN "bar" AS foo')
             .to.throw neo4j.ClientError, /been rolled back/i
@@ -228,10 +228,10 @@ describe 'Transactions', ->
 
     it 'should support rolling back before any queries', (_) ->
         tx = DB.beginTransaction()
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         tx.rollback _
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
     # NOTE: Skipping this test by default, because it's slow (we have to pause
     # one second; see note within) and not really a mission-critical feature.
@@ -268,9 +268,9 @@ describe 'Transactions', ->
         oldExpiresAt = tx.expiresAt
         setTimeout _, 1000      # TODO: Provide visual feedback?
 
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
         tx.renew _
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         expect(tx.expiresAt).to.be.an.instanceOf Date
         expect(tx.expiresAt).to.be.greaterThan new Date
@@ -283,7 +283,7 @@ describe 'Transactions', ->
         # to commit or expire (since it touches the existing graph, and our last
         # step is to delete the existing graph), roll this transaction back.
         tx.rollback _
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
         # We also ensure that renewing didn't cause the transaction to commit.
         [{nodeA}] = DB.cypher
@@ -332,7 +332,7 @@ describe 'Transactions', ->
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         # Because of that, the first query's effects should still be visible
         # within the transaction:
@@ -352,9 +352,9 @@ describe 'Transactions', ->
         # NOTE: But the transaction won't commit successfully apparently, both
         # manually or automatically. So we manually rollback instead.
         # TODO: Is this a bug in Neo4j? Or my understanding?
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
         tx.rollback _
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
     # TODO: Similar to the note above this, is this right? Or is this either a
     # bug in Neo4j or my understanding? Should client errors never be fatal?
@@ -396,7 +396,7 @@ describe 'Transactions', ->
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
         expect(-> tx.cypher 'RETURN "bar" AS foo')
             .to.throw neo4j.ClientError, /been rolled back/i
@@ -448,7 +448,7 @@ describe 'Transactions', ->
                     'scala.MatchError: (foo,null) (of class scala.Tuple2)'
                 cont()
 
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
         expect(-> tx.cypher 'RETURN "bar" AS foo')
             .to.throw neo4j.ClientError, /been rolled back/i
@@ -469,7 +469,7 @@ describe 'Transactions', ->
 
     it 'should properly handle non-fatal errors on the first query', (_) ->
         tx = DB.beginTransaction()
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         # For precision, implementing this step without Streamline.
         do (cont=_) =>
@@ -479,12 +479,12 @@ describe 'Transactions', ->
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
     it 'should properly handle fatal client errors
             on an auto-commit first query', (_) ->
         tx = DB.beginTransaction()
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         # For precision, implementing this step without Streamline.
         do (cont=_) =>
@@ -497,11 +497,11 @@ describe 'Transactions', ->
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
     it 'should properly handle fatal database errors on the first query', (_) ->
         tx = DB.beginTransaction()
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         # HACK: Depending on a known bug to trigger a DatabaseError;
         # that makes this test brittle, since the bug could get fixed!
@@ -519,7 +519,7 @@ describe 'Transactions', ->
                     'scala.MatchError: (foo,null) (of class scala.Tuple2)'
                 cont()
 
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
     it 'should properly handle errors with batching', (_) ->
         tx = DB.beginTransaction()
@@ -555,7 +555,7 @@ describe 'Transactions', ->
         expect(nodeA.properties.test).to.equal 'errors with batching'
         expect(nodeA.properties.i).to.equal 1
 
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         # Now trigger a client error within another batch; this should *not*
         # rollback (and thus destroy) the transaction.
@@ -607,7 +607,7 @@ describe 'Transactions', ->
 
                 cont()
 
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
 
         # Because of that, the effects of the first query in the batch (before
         # the error) should still be visible within the transaction:
@@ -631,9 +631,9 @@ describe 'Transactions', ->
         # NOTE: But the transaction won't commit successfully apparently, both
         # manually or automatically. So we manually rollback instead.
         # TODO: Is this a bug in Neo4j? Or my understanding?
-        expect(tx.state).to.equal 'open'
+        expect(tx.state).to.equal tx.STATE_OPEN
         tx.rollback _
-        expect(tx.state).to.equal 'rolled back'
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
     it 'should support streaming (TODO)'
 

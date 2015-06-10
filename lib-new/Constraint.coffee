@@ -28,8 +28,12 @@ module.exports = class Constraint
                 node-neo4j v#{lib.version} doesn’t know how to handle these.
                 Continuing as if it’s a UNIQUENESS constraint..."
 
-        # TODO: Neo4j always returns an array of property keys, but only one
-        # property key is supported today. Do we need to support multiple?
+        if property_keys.length > 1
+            console.warn "Constraint (on :#{label}) with #{property_keys.length}
+                property keys encountered: #{property_keys.join ', '}.
+                node-neo4j v#{lib.version} doesn’t know how to handle these.
+                Continuing with only the first one."
+
         [property] = property_keys
 
         return new Constraint {label, property}

@@ -7,21 +7,27 @@ In a nutshell, instead of calling async functions with a callback (that takes an
 E.g. instead of writing tests like this:
 
 ```coffee
-describe 'foo', ->
-    it 'should bar', (done) ->
-        db.foo (err, result) ->
+it 'should get foo then set bar', (done) ->
+    db.getFoo (err, foo) ->
+        expect(err).to.not.exist()
+        expect(foo).to.be.a 'number'
+
+        db.setBar foo, (err, bar) ->
             expect(err).to.not.exist()
-            expect(result).to.equal 'bar'
+            expect(bar).to.equal foo
+
             done()
 ```
 
 We get to write tests like this:
 
 ```coffee
-describe 'foo', ->
-    it 'should bar', (_) ->
-        result = db.foo _
-        expect(result).to.equal 'bar'
+it 'should get foo then set bar', (_) ->
+    foo = db.getFoo _
+    expect(foo).to.be.a 'number'
+
+    bar = db.setBar foo, _
+    expect(bar).to.equal foo
 ```
 
 This lets us write more concise tests that simultaneously test for errors more thoroughly. (If an async function "throws" an error, the test will fail.)

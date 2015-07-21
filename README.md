@@ -35,7 +35,7 @@ Similarly, mention used in production by FiftyThree? -->
 ## Installation
 
 ```sh
-npm install neo4j --save
+npm install --save git+https://github.com/thingdom/node-neo4j.git#v2
 ```
 
 ## Usage

@@ -1,35 +1,21 @@
-<!--
-Possible badges:
+# Node-Neo4j
 
-[![Build Status](https://travis-ci.org/thingdom/node-neo4j.svg?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
+[![npm version](https://badge.fury.io/js/neo4j.svg)](http://badge.fury.io/js/neo4j) [![Build Status](https://travis-ci.org/thingdom/node-neo4j.svg?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
 
-[![npm version](https://badge.fury.io/js/neo4j.svg)](http://badge.fury.io/js/neo4j)
+[Node.js](http://nodejs.org/) driver for [Neo4j](http://neo4j.com/), a graph database.
 
-[![NPM](https://nodei.co/npm/neo4j.png?compact=true)](https://nodei.co/npm/neo4j/)
-
-We choose to use the first two, but we write them as HTML so that we can inline
-and `float: right` them in the Node-Neo4j header. (Admittedly, yucky markup.)
--->
-
-# Node-Neo4j <a href="https://travis-ci.org/thingdom/node-neo4j" style="float: right; margin-left: 0.25em;"><img src="https://travis-ci.org/thingdom/node-neo4j.png?branch=master"/></a> <a href="http://badge.fury.io/js/neo4j" style="float: right;"><img src="https://badge.fury.io/js/neo4j.svg" alt="npm version" height="18"></a>
-
-This is a [Node.js][node.js] driver for [Neo4j][neo4j] via it's [REST API][neo4j-rest-api].
-
-**This driver has undergone a complete rewrite for Neo4j v2.**
-It now *only* supports Neo4j 2.x — but it supports it really well.
-(If you're still on Neo4j 1.x, you can still use
-[node-neo4j v1](https://github.com/thingdom/node-neo4j/tree/v1).)
-
-## What is Neo4j?
-
-Neo4j is a transactional, open-source graph database.  A graph database manages data in a connected data structure, capable of  representing any kind of data in a very accessible way.  Information is stored in nodes and relationships connecting them, both of which can have arbitrary properties.  To learn more visit [What is a Graph Database?][what-is-a-graph-database]
+This driver aims to be the most **robust**, **comprehensive**, and **battle-tested** driver available. It's run in production by [FiftyThree](https://www.fiftythree.com/) to power [Paper](https://www.fiftythree.com/paper) and [Mix](https://mix.fiftythree.com/).
 
 
-<!-- TODO: E.g. "Take a look at the instructions below,
-then read the full [API docs](./docs) for details?" -->
+## Features
 
-<!-- TODO: Mention goals of driver? E.g. comprehensive, robust.
-Similarly, mention used in production by FiftyThree? -->
+- **Cypher queries**, parameters, and **transactions**
+- Arbitrary **HTTP requests**, for custom **Neo4j plugins**
+- **Custom headers**, for **high availability**, application tracing, query logging, and more
+- **Precise errors**, for robust error handling from the start
+- Configurable **connection pooling**, for performance tuning & monitoring
+- Thorough test coverage with **>100 tests**
+- **Continuously integrated** against **multiple versions** of Node.js and Neo4j
 
 
 ## Installation
@@ -38,27 +24,30 @@ Similarly, mention used in production by FiftyThree? -->
 npm install neo4j --save
 ```
 
-## Usage
+
+## Example
 
 ```js
 var neo4j = require('neo4j');
 var db = new neo4j.GraphDatabase('http://username:password@localhost:7474');
 
 db.cypher({
-    query: 'MATCH (u:User {email: {email}}) RETURN u',
+    query: 'MATCH (user:User {email: {email}}) RETURN user',
     params: {
         email: 'alice@example.com',
     },
-}, function (err, results) {
+}, callback);
+
+function callback(err, results) {
     if (err) throw err;
     var result = results[0];
     if (!result) {
         console.log('No user found.');
     } else {
-        var user = result['u'];
+        var user = result['user'];
         console.log(JSON.stringify(user, null, 4));
     }
-});
+};
 ```
 
 Yields e.g.:
@@ -79,6 +68,185 @@ Yields e.g.:
 }
 ```
 
+See [node-neo4j-template](https://github.com/aseemk/node-neo4j-template) for a more thorough example.
+
+TODO: Also link to movies example.
+
+
+## Basics
+
+Connect to a running Neo4j instance by instantiating the **`GraphDatabase`** class:
+
+```js
+var neo4j = require('neo4j');
+
+// Shorthand:
+var db = new neo4j.GraphDatabase('http://username:password@localhost:7474');
+
+// Full options:
+var db = new neo4j.GraphDatabase({...});
+```
+
+Options:
+
+- **`url` (required)**: the base URL to the Neo4j instance, e.g. `'http://localhost:7474'`. This can include auth credentials (e.g. `'http://username:password@localhost:7474'`), but doesn't have to.
+
+- **`auth`**: optional auth credentials; either a `'username:password'` string, or a `{username, password}` object. If present, this takes precedence over any credentials in the `url`.
+
+- **`headers`**: optional custom HTTP headers to send with every request. These can be overridden per request. Node-Neo4j defaults to sending a `User-Agent` identifying itself, but this can be overridden too.
+
+- **`proxy`**: optional URL to a proxy. If present, all requests will be routed through the proxy.
+
+- **`agent`**: optional [`http.Agent`](http://nodejs.org/api/http.html#http_http_agent) instance, for custom socket pooling.
+
+Once you have a `GraphDatabase` instance, you can make queries and more.
+
+Most operations are **asynchronous**, which means they take a **callback**. Node-Neo4j callbacks are of the standard `(error[, results])` form.
+
+Async control flow can get tricky quickly, so it's *highly* recommended to use a flow control library or tool, like [async](https://github.com/caolan/async) or [Streamline](https://github.com/Sage/streamlinejs).
+
+
+## Cypher
+
+To make a Cypher query, simply pass the string query, any query parameters, and a callback to receive the error or results.
+
+```js
+db.cypher({
+    query: 'MATCH (user:User {email: {email}}) RETURN user',
+    params: {
+        email: 'alice@example.com',
+    },
+}, callback);
+```
+
+It's extremely important to pass `params` separately. If you concatenate them into the `query`, you'll be vulnerable to injection attacks, and Neo4j performance will suffer as well.
+
+Cypher queries *always* return a list of results (like SQL rows), with each result having common properties (like SQL columns). Thus, query **results** passed to the callback are *always* an **array** (even if it's empty), and each **result** in the array is *always* an **object** (even if it's empty).
+
+```js
+function callback(err, results) {
+    if (err) throw err;
+    var result = results[0];
+    if (!result) {
+        console.log('No user found.');
+    } else {
+        var user = result['user'];
+        console.log(JSON.stringify(user, null, 4));
+    }
+};
+```
+
+If the query results include nodes or relationships, **`Node`** and **`Relationship`** instances are returned for them. These instances encapsulate `{_id, labels, properties}` for nodes, and `{_id, type, properties, _fromId, _toId}` for relationships, but they can be used just like normal objects.
+
+```json
+{
+    "_id": 12345678,
+    "labels": [
+        "User",
+        "Admin"
+    ],
+    "properties": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "emailVerified": true,
+        "passwordHash": "..."
+    }
+}
+```
+
+(The `_id` properties refer to Neo4j's internal IDs. These can be convenient for debugging, but their use otherwise — especially externally — is discouraged.)
+
+If you don't need to know Neo4j IDs, node labels, or relationship types, you can pass `lean: true` to get back *just* properties, for a potential performance gain.
+
+```js
+db.cypher({
+    query: 'MATCH (user:User {email: {email}}) RETURN user',
+    params: {
+        email: 'alice@example.com',
+    },
+    lean: true,
+}, callback);
+```
+
+```json
+{
+    "name": "Alice Smith",
+    "email": "alice@example.com",
+    "emailVerified": true,
+    "passwordHash": "..."
+}
+```
+
+Other options:
+
+- **`headers`**: optional custom HTTP headers to send with this query. These will add onto the default `GraphDatabase` `headers`, but also override any that overlap.
+
+
+## Batching
+
+Although this need is rare, you can make multiple Cypher queries in a single network request, by passing a `queries` *array* rather than a single `query` string.
+
+Query `params` (and optionally `lean`) are then specified *per query*, so the elements in the array are `{query, params[, lean]}` objects. (Other options like `headers` remain "global" for the entire request.)
+
+```js
+db.cypher({
+    queries: [{
+        query: 'MATCH (user:User {email: {email}}) RETURN user',
+        params: {
+            email: 'alice@example.com',
+        },
+    }, {
+        query: 'MATCH (task:WorkerTask) RETURN task',
+        lean: true,
+    }, {
+        query: 'MATCH (task:WorkerTask) DELETE task',
+    }],
+    headers: {
+        'X-Request-ID': '1234567890',
+    },
+}, callback);
+```
+
+The callback then receives an *array* of query results, one per query.
+
+```js
+function callback(err, batchResults) {
+    if (err) throw err;
+
+    var userResults = batchResults[0];
+    var taskResults = batchResults[1];
+    var deleteResults = batchResults[2];
+
+    // User results:
+    var userResult = userResults[0];
+    if (!userResult) {
+        console.log('No user found.');
+    } else {
+        var user = userResult['user'];
+        console.log('User %s (%s) found.', user._id, user.properties.name);
+    }
+
+    // Worker task results:
+    if (!taskResults.length) {
+        console.log('No worker tasks to process.');
+    } else {
+        taskResults.forEach(function (taskResult) {
+            var task = taskResult['task'];
+            console.log('Processing worker task %s...', task.operation);
+        });
+    }
+
+    // Delete results (shouldn’t have returned any):
+    assert.equal(deleteResults.length, 0);
+};
+```
+
+Importantly, batch queries execute (a) sequentially and (b) transactionally: either they all succeed, or they all fail. If you don't need them to be transactional, it can often be better to parallelize separate `db.cypher` calls instead.
+
+
+
+<!--
+
 ## Getting Help
 
 If you're having any issues you can first refer to the [API documentation][api-docs].
@@ -91,53 +259,7 @@ Post questions and participate in general discussions there.
 
 You can also [ask a question on StackOverflow][stackoverflow-ask]
 
-
-## Neo4j version support
-
-| **Version** | **Ver 1.x**  | **Ver 2.x** |
-|-------------|--------------|-------------|
-| 1.5-1.9     |   Yes        |  No         |
-| 2.0         |   Yes        |  Yes        |
-| 2.1         |   Yes        |  Yes        |
-| 2.2         |   No         |  Yes        |
-
-## Neo4j feature support
-
-| **Feature**          | **Ver 1.x** | **Ver 2.x** |
-|----------------------|-------------|-------------|
-| Auth                 |  No         |  Yes        |
-| Remote Cypher        |  Yes        |  Yes        |
-| Transactions         |  No         |  No         |
-| High Availability    |  No         |  No         |
-| Embedded JVM support |  No         |  No         |
-
-
-<!-- TODO: Update the below. -->
-
-Node.js is asynchronous, which means this library is too: most functions take
-callbacks and return immediately, with the callbacks being invoked when the
-corresponding HTTP requests and responses finish.
-
-Because async flow in Node.js can be quite tricky to handle, we
-strongly recommend using a flow control tool or library to help.
-Our personal favorite is [Streamline.js][], but other popular choices are
-[async](https://github.com/caolan/async),
-[Step](https://github.com/creationix/step),
-[Seq](https://github.com/substack/node-seq), [TameJS](http://tamejs.org/) and
-[IcedCoffeeScript](http://maxtaco.github.com/coffee-script/).
-
-Once you've gotten the basics down, skim through the full
-**[API documentation][api-docs]** to see what this library can do, and take a
-look at [@aseemk][aseemk]'s [node-neo4j-template][] app for a complete usage
-example. (The `models/User.js` file in particular is the one that interacts
-with this library.)
-
-This library is officially stable at "v1", but "v2" will almost certainly have
-breaking changes to support only Neo4j 2.0 and generally improve the API
-([roadmap][]). You can be sheltered from these changes if you simply specify
-your package.json dependency as e.g. `1.x` or `^1.0` instead of `*`.
-
-[Roadmap]: https://github.com/thingdom/node-neo4j/wiki/Roadmap
+-->
 
 
 ## Changes
@@ -151,8 +273,6 @@ This library is licensed under the [Apache License, Version 2.0][license].
 
 
 
-[neo4j]: http://neo4j.org/
-[what-is-a-graph-database]: http://neo4j.com/developer/graph-database/
 [node.js]: http://nodejs.org/
 [neo4j-rest-api]: http://docs.neo4j.org/chunked/stable/rest-api.html
 

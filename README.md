@@ -244,6 +244,110 @@ function callback(err, batchResults) {
 Importantly, batch queries execute (a) sequentially and (b) transactionally: either they all succeed, or they all fail. If you don't need them to be transactional, it can often be better to parallelize separate `db.cypher` calls instead.
 
 
+## Transactions
+
+You can also batch multiple Cypher queries into a single transaction across *multiple* network requests. This can be useful when application logic needs to run in between related queries. The queries will all succeed or fail together.
+
+To do this, begin a new transaction, make Cypher queries within that transaction, and then ultimately commit the transaction or roll it back.
+
+```js
+var tx = db.beginTransaction();
+
+function makeFirstQuery() {
+    tx.cypher({
+        query: '...',
+        params {...},
+    }, makeSecondQuery);
+}
+
+function makeSecondQuery(err, results) {
+    if (err) throw err;
+    // ...some application logic...
+    tx.cypher({
+        query: '...',
+        params: {...},
+    }, finish);
+}
+
+function finish(err, results) {
+    if (err) throw err;
+    // ...some application logic...
+    tx.commit(done);  // or tx.rollback(done);
+}
+
+function done(err, results) {
+    if (err) throw err;
+    // At this point, the transaction has been committed.
+}
+
+makeFirstQuery();
+```
+
+The transactional `cypher` method supports everything the normal `cypher` method does (e.g. `lean`, `headers`, and batch `queries`). In addition, you can pass `commit: true` to auto-commit the transaction (and save a network request) if the query succeeds.
+
+```js
+function makeSecondQuery(err, results) {
+    if (err) throw err;
+    // ...some application logic...
+    tx.cypher({
+        query: '...',
+        params: {...},
+        commit: true,
+    }, done);
+}
+
+function done(err, results) {
+    if (err) throw err;
+    // At this point, the transaction has been committed.
+}
+```
+
+Importantly, transactions allow only one query at a time. To help preempt errors, you can inspect the state of the transaction, e.g. whether it's open for queries or not.
+
+```js
+// Initially, transactions are open:
+assert.equal(tx.state, tx.STATE_OPEN);
+
+// Making a query...
+tx.cypher({
+    query: '...',
+    params: {...},
+}, callback)
+
+// ...will result in the transaction being pending:
+assert.equal(tx.state, tx.STATE_PENDING);
+
+// All other operations (making another query, committing, etc.)
+// are rejected while the transaction is pending:
+assert.throws(tx.renew.bind(tx))
+
+function callback(err, results) {
+    // When the query returns, the transaction is likely open again,
+    // but it could be committed if `commit: true` was specified,
+    // or it could have been rolled back automatically (by Neo4j)
+    // if there was an error:
+    assert.notEqual([
+        tx.STATE_OPEN, tx.STATE_COMMITTED, tx.STATE_ROLLED_BACK
+    ].indexOf(tx.state), -1);   // i.e. tx.state is in this array
+}
+```
+
+Finally, open transactions expire after some period of inactivity. (TODO: Link to manual.) This period is configurable in Neo4j, but it defaults to 60 seconds today. Transactions renew automatically on every query, but if you need to, you can inspect transactions' expiration times and renew them manually.
+
+```js
+// Only open transactions (not already expired) can be renewed:
+assert.equal(tx.state, tx.STATE_OPEN);
+assert.notEqual(tx.state, tx.STATE_EXPIRED);
+
+console.log('Before:', tx.expiresAt, '(in', tx.expiresIn, 'ms)');
+tx.renew(function (err) {
+    if (err) throw err;
+    console.log('After:', tx.expiresAt, '(in', tx.expiresIn, 'ms)');
+});
+```
+
+TODO: State diagram!
+
 
 <!--
 

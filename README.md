@@ -9,13 +9,13 @@ This driver aims to be the most **robust**, **comprehensive**, and **battle-test
 
 ## Features
 
-- **Cypher queries**, parameters, and **transactions**
-- Arbitrary **HTTP requests**, for custom **Neo4j plugins**
-- **Custom headers**, for **high availability**, application tracing, query logging, and more
-- **Precise errors**, for robust error handling from the start
-- Configurable **connection pooling**, for performance tuning & monitoring
-- Thorough test coverage with **>100 tests**
-- **Continuously integrated** against **multiple versions** of Node.js and Neo4j
+- [**Cypher queries**](#cypher), parameters, [batching](#batching), and [**transactions**](#transactions)
+- Arbitrary [**HTTP requests**](#http-plugins), for custom [Neo4j plugins](#http-plugins)
+- [**Custom headers**](#headers), for [**high availability**](#high-availability), application tracing, query logging, and more
+- [**Precise errors**](#errors), for robust error handling from the start
+- Configurable [**connection pooling**](#tuning), for performance tuning & monitoring
+- Thorough test coverage with [**>100 tests**](./test-new)
+- [**Continuously integrated**](https://travis-ci.org/thingdom/node-neo4j) against [multiple versions](./.travis.yml) of Node.js and Neo4j
 
 
 ## Installation
@@ -84,7 +84,11 @@ var neo4j = require('neo4j');
 var db = new neo4j.GraphDatabase('http://username:password@localhost:7474');
 
 // Full options:
-var db = new neo4j.GraphDatabase({...});
+var db = new neo4j.GraphDatabase({
+    url: 'http://localhost:7474',
+    auth: {username: 'username', password: 'password'},
+    // ...
+});
 ```
 
 Options:
@@ -93,7 +97,7 @@ Options:
 
 - **`auth`**: optional auth credentials; either a `'username:password'` string, or a `{username, password}` object. If present, this takes precedence over any credentials in the `url`.
 
-- **`headers`**: optional custom HTTP headers to send with every request. These can be overridden per request. Node-Neo4j defaults to sending a `User-Agent` identifying itself, but this can be overridden too.
+- **`headers`**: optional custom [HTTP headers](#headers) to send with every request. These can be overridden per request. Node-Neo4j defaults to sending a `User-Agent` identifying itself, but this can be overridden too.
 
 - **`proxy`**: optional URL to a proxy. If present, all requests will be routed through the proxy.
 
@@ -103,7 +107,7 @@ Once you have a `GraphDatabase` instance, you can make queries and more.
 
 Most operations are **asynchronous**, which means they take a **callback**. Node-Neo4j callbacks are of the standard `(error[, results])` form.
 
-Async control flow can get tricky quickly, so it's *highly* recommended to use a flow control library or tool, like [async](https://github.com/caolan/async) or [Streamline](https://github.com/Sage/streamlinejs).
+Async control flow can get pretty tricky, so it's *highly* recommended to use a flow control library or tool, like [async](https://github.com/caolan/async) or [Streamline](https://github.com/Sage/streamlinejs).
 
 
 ## Cypher
@@ -179,7 +183,7 @@ db.cypher({
 
 Other options:
 
-- **`headers`**: optional custom HTTP headers to send with this query. These will add onto the default `GraphDatabase` `headers`, but also override any that overlap.
+- **`headers`**: optional custom [HTTP headers](#headers) to send with this query. These will add onto the default `GraphDatabase` `headers`, but also override any that overlap.
 
 
 ## Batching
@@ -347,6 +351,66 @@ tx.renew(function (err) {
 ```
 
 TODO: State diagram!
+
+
+## Headers
+
+Most node-neo4j operations support passing in custom headers for the underlying HTTP requests. The `GraphDatabase` constructor also supports passing in default headers for every operation.
+
+This can be useful to achieve a variety of features, such as:
+
+- Logging individual queries
+- Tracing application requests
+- Read/write splitting (see [High Availability](#high-availability) below)
+
+None of these things are supported out-of-the-box by Neo4j today, but all can be handled by a server (e.g. Apache or Nginx) or load balancer (e.g. HAProxy or Amazon ELB) in front.
+
+For example, at FiftyThree, our Cypher requests look effectively like this (though we abstract and encapsulate these things with higher-level helpers):
+
+```js
+db.cypher({
+    query: '...',
+    params: {...},
+    headers: {
+        // Identify the query via a short, human-readable name.
+        // This is what we log in HAProxy for every request,
+        // since all Cypher calls have the same HTTP path,
+        // and this is friendlier than the entire query.
+        'X-Query-Name': 'User_getUnreadNotifications',
+
+        // This tells HAProxy to send this query to the master (even
+        // though it's a read), as we require strong consistency here.
+        // See the High Availability section below.
+        'X-Consistency': 'strong'
+
+        // This is a concatenation of upstream services' request IDs
+        // along with a randomly generated one of our own.
+        // We log this header on all our servers, so we can trace
+        // application requests through the entire stack.
+        // TODO: Link to Heroku article on this!
+        'X-Request-Ids': '123,456,789'
+    },
+}, callback);
+```
+
+You might also find custom headers helpful for custom [Neo4j plugins](#http-plugins).
+
+
+## High Availability
+
+## HTTP / Plugins
+
+## Errors
+
+## Connection Pooling
+
+## Help
+
+
+## Contributing
+
+[See CONTRIBUTING.md »](./CONTRIBUTING.md)
+
 
 
 <!--

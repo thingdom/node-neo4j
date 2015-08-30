@@ -398,6 +398,27 @@ You might also find custom headers helpful for custom [Neo4j plugins](#http-plug
 
 ## High Availability
 
+Neo4j Enterprise supports running multiple instances of Neo4j in a single "high availability" (HA) cluster. Neo4j's HA uses a master-slave setup, so slaves typically lag behind the master by a small delay (tunable in Neo4j).
+
+There are multiple options for how to interface with an HA cluster from node-neo4j, but the recommended route is to place a load balancer in front (e.g. HAProxy or Amazon ELB). You can then point node-neo4j to the load balancer's endpoint.
+
+```js
+var db = new neo4j.GraphDatabase({
+    url: 'https://username:password@lb-neo4j.example.com:1234',
+});
+```
+
+You'll still want to split traffic between the master and the slaves (e.g. reads to slaves, writes to master), in order to distribute load and improve performance. You can achieve this through multiple ways:
+
+- Create separate `GraphDatabase` instances with different `url`s to the load balancer (e.g. different host, port, or path). The load balancer can inspect the URL to route queries appropriately.
+
+- Use the same, single `GraphDatabase` instance, but send a [custom header](#headers) to let the load balancer know where the query should go. This is what we do at FiftyThree, and what's shown in the custom header example above.
+
+- Have the load balancer derive this automatically, e.g. by inspecting the Cypher query. This isn't recommended. =)
+
+TODO: Link to docs, and blog post.
+
+
 ## HTTP / Plugins
 
 ## Errors

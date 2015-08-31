@@ -547,9 +547,25 @@ req.on('end', function () {
 
 ## Errors
 
-## Connection Pooling
+(TODO)
+
+
+## Tuning
+
+(TODO)
+
+
+## Management
+
+(TODO)
+
+- change password
+- get labels, etc.
+
 
 ## Help
+
+(TODO)
 
 
 ## Contributing

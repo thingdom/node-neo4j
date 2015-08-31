@@ -6,6 +6,8 @@
 
 This driver aims to be the most **robust**, **comprehensive**, and **battle-tested** driver available. It's run in production by [FiftyThree](https://www.fiftythree.com/) to power [Paper](https://www.fiftythree.com/paper) and [Mix](https://mix.fiftythree.com/).
 
+*(Note: if you're still on Neo4j 1.x, you'll need to use [node-neo4j 1.x](https://github.com/thingdom/node-neo4j/tree/v1) as well.)*
+
 
 ## Features
 
@@ -101,7 +103,7 @@ Options:
 
 - **`proxy`**: optional URL to a proxy. If present, all requests will be routed through the proxy.
 
-- **`agent`**: optional [`http.Agent`](http://nodejs.org/api/http.html#http_http_agent) instance, for custom socket pooling.
+- **`agent`**: optional [`http.Agent`](http://nodejs.org/api/http.html#http_http_agent) instance, for custom [socket pooling](#tuning).
 
 Once you have a `GraphDatabase` instance, you can make queries and more.
 
@@ -112,7 +114,7 @@ Async control flow can get pretty tricky, so it's *highly* recommended to use a 
 
 ## Cypher
 
-To make a Cypher query, simply pass the string query, any query parameters, and a callback to receive the error or results.
+To make a [Cypher query](http://neo4j.com/docs/stable/cypher-query-lang.html), simply pass the string query, any query parameters, and a callback to receive the error or results.
 
 ```js
 db.cypher({
@@ -123,7 +125,7 @@ db.cypher({
 }, callback);
 ```
 
-It's extremely important to pass `params` separately. If you concatenate them into the `query`, you'll be vulnerable to injection attacks, and Neo4j performance will suffer as well.
+It's extremely important to **pass `params` separately**. If you concatenate them into the `query`, you'll be vulnerable to injection attacks, and Neo4j performance will suffer as well.
 
 Cypher queries *always* return a list of results (like SQL rows), with each result having common properties (like SQL columns). Thus, query **results** passed to the callback are *always* an **array** (even if it's empty), and each **result** in the array is *always* an **object** (even if it's empty).
 
@@ -140,7 +142,7 @@ function callback(err, results) {
 };
 ```
 
-If the query results include nodes or relationships, **`Node`** and **`Relationship`** instances are returned for them. These instances encapsulate `{_id, labels, properties}` for nodes, and `{_id, type, properties, _fromId, _toId}` for relationships, but they can be used just like normal objects.
+If the query results include nodes or relationships, **`Node`** and **`Relationship` instances** are returned for them. These instances encapsulate `{_id, labels, properties}` for nodes, and `{_id, type, properties, _fromId, _toId}` for relationships, but they can be used just like normal objects.
 
 ```json
 {
@@ -158,9 +160,9 @@ If the query results include nodes or relationships, **`Node`** and **`Relations
 }
 ```
 
-(The `_id` properties refer to Neo4j's internal IDs. These can be convenient for debugging, but their use otherwise — especially externally — is discouraged.)
+(The `_id` properties refer to Neo4j's internal IDs. These can be convenient for debugging, but their usage otherwise — especially externally — is discouraged.)
 
-If you don't need to know Neo4j IDs, node labels, or relationship types, you can pass `lean: true` to get back *just* properties, for a potential performance gain.
+If you don't need to know Neo4j IDs, node labels, or relationship types, you can pass **`lean: true`** to get back *just* properties, for a potential performance gain.
 
 ```js
 db.cypher({
@@ -245,7 +247,7 @@ function callback(err, batchResults) {
 };
 ```
 
-Importantly, batch queries execute (a) sequentially and (b) transactionally: either they all succeed, or they all fail. If you don't need them to be transactional, it can often be better to parallelize separate `db.cypher` calls instead.
+Importantly, batch queries execute (a) **sequentially** and (b) **transactionally**: they all succeed, or they all fail. If you don't need them to be transactional, it can often be better to parallelize separate `db.cypher` calls instead.
 
 
 ## Transactions
@@ -279,7 +281,7 @@ function finish(err, results) {
     tx.commit(done);  // or tx.rollback(done);
 }
 
-function done(err, results) {
+function done(err) {
     if (err) throw err;
     // At this point, the transaction has been committed.
 }
@@ -287,7 +289,7 @@ function done(err, results) {
 makeFirstQuery();
 ```
 
-The transactional `cypher` method supports everything the normal [`cypher`](#cypher) method does (e.g. `lean`, `headers`, and batch `queries`). In addition, you can pass `commit: true` to auto-commit the transaction (and save a network request) if the query succeeds.
+The transactional `cypher` method supports everything the normal [`cypher`](#cypher) method does (e.g. `lean`, `headers`, and batch `queries`). In addition, you can pass **`commit: true`** to auto-commit the transaction (and save a network request) if the query succeeds.
 
 ```js
 function makeSecondQuery(err, results) {
@@ -300,13 +302,13 @@ function makeSecondQuery(err, results) {
     }, done);
 }
 
-function done(err, results) {
+function done(err) {
     if (err) throw err;
     // At this point, the transaction has been committed.
 }
 ```
 
-Importantly, transactions allow only one query at a time. To help preempt errors, you can inspect the state of the transaction, e.g. whether it's open for queries or not.
+Importantly, transactions allow only one query at a time. To help preempt errors, you can inspect the **`state`** of the transaction, e.g. whether it's open for queries or not.
 
 ```js
 // Initially, transactions are open:
@@ -336,7 +338,7 @@ function callback(err, results) {
 }
 ```
 
-Finally, open transactions expire after some period of inactivity. (TODO: Link to manual.) This period is configurable in Neo4j, but it defaults to 60 seconds today. Transactions renew automatically on every query, but if you need to, you can inspect transactions' expiration times and renew them manually.
+Finally, open transactions **expire** after some period of inactivity. This period is [configurable in Neo4j](http://neo4j.com/docs/stable/server-configuration.html), but it defaults to 60 seconds today. Transactions **renew automatically** on every query, but if you need to, you can inspect transactions' expiration times and renew them manually.
 
 ```js
 // Only open transactions (not already expired) can be renewed:
@@ -350,7 +352,9 @@ tx.renew(function (err) {
 });
 ```
 
-TODO: State diagram!
+The full [state diagram](https://mix.fiftythree.com/aseemk/2462211) putting this all together:
+
+[![Neo4j transaction state diagram](https://d3ayzibdlq49a1.cloudfront.net/f2a67a92-8b73-44ba-bb29-0ce12069c57e/image/f2a67a92-8b73-44ba-bb29-0ce12069c57e_image_2048x1536.png)](https://mix.fiftythree.com/aseemk/2462211)
 
 
 ## Headers
@@ -361,7 +365,7 @@ This can be useful to achieve a variety of features, such as:
 
 - Logging individual queries
 - Tracing application requests
-- Read/write splitting (see [High Availability](#high-availability) below)
+- Splitting master/slave traffic (see [High Availability](#high-availability) below)
 
 None of these things are supported out-of-the-box by Neo4j today, but all can be handled by a server (e.g. Apache or Nginx) or load balancer (e.g. HAProxy or Amazon ELB) in front.
 
@@ -386,7 +390,7 @@ db.cypher({
         // This is a concatenation of upstream services' request IDs
         // along with a randomly generated one of our own.
         // We log this header on all our servers, so we can trace
-        // application requests through the entire stack.
+        // application requests through our entire stack.
         // TODO: Link to Heroku article on this!
         'X-Request-Ids': '123,456,789'
     },
@@ -398,9 +402,9 @@ You might also find custom headers helpful for custom [Neo4j plugins](#http-plug
 
 ## High Availability
 
-Neo4j Enterprise supports running multiple instances of Neo4j in a single "high availability" (HA) cluster. Neo4j's HA uses a master-slave setup, so slaves typically lag behind the master by a small delay (tunable in Neo4j).
+Neo4j Enterprise supports running multiple instances of Neo4j in a single ["High Availability"](http://neo4j.com/docs/stable/ha.html) (HA) cluster. Neo4j's HA uses a master-slave setup, so slaves typically lag behind the master by a small delay ([tunable in Neo4j](http://neo4j.com/docs/stable/ha-configuration.html)).
 
-There are multiple options for how to interface with an HA cluster from node-neo4j, but the recommended route is to place a load balancer in front (e.g. HAProxy or Amazon ELB). You can then point node-neo4j to the load balancer's endpoint.
+There are multiple ways to interface with an HA cluster from node-neo4j, but the [recommended route](http://neo4j.com/docs/stable/ha-haproxy.html) is to place a **load balancer** in front (e.g. HAProxy or Amazon ELB). You can then point node-neo4j to the load balancer's endpoint.
 
 ```js
 var db = new neo4j.GraphDatabase({
@@ -408,15 +412,15 @@ var db = new neo4j.GraphDatabase({
 });
 ```
 
-You'll still want to split traffic between the master and the slaves (e.g. reads to slaves, writes to master), in order to distribute load and improve performance. You can achieve this through multiple ways:
+You'll still want to **split traffic** between the master and the slaves (e.g. reads to slaves, writes to master), in order to distribute load and improve performance. You can achieve this through [multiple ways](http://blog.armbruster-it.de/2015/08/neo4j-and-haproxy-some-best-practices-and-tricks/):
 
 - Create separate `GraphDatabase` instances with different `url`s to the load balancer (e.g. different host, port, or path). The load balancer can inspect the URL to route queries appropriately.
 
 - Use the same, single `GraphDatabase` instance, but send a [custom header](#headers) to let the load balancer know where the query should go. This is what we do at FiftyThree, and what's shown in the custom header example above.
 
-- Have the load balancer derive this automatically, e.g. by inspecting the Cypher query. This isn't recommended. =)
+- Have the load balancer derive the target automatically, e.g. by inspecting the Cypher query. This isn't recommended. =)
 
-TODO: Link to docs, and blog post.
+With this setup, you should find node-neo4j usage with an HA cluster to be seamless.
 
 
 ## HTTP / Plugins
@@ -454,15 +458,15 @@ function callback(err, body) {
 
 By default:
 
-- The callback receives just the response body (not the status code or headers);
-- Any nodes and relationships in the body are transformed to `Node` and `Relationship` instances (like [`cypher`](#cypher)); and
-- 4xx and 5xx responses are treated as [errors](#errors).
+- The callback receives just the **response body** (not the status code or headers);
+- Any nodes and relationships in the body are **transformed** to `Node` and `Relationship` instances (like [`cypher`](#cypher)); and
+- 4xx and 5xx responses are treated as **[errors](#errors)**.
 
-You can alternately pass `raw: true` for more control; in that case:
+You can alternately pass **`raw: true`** for more control, in which case:
 
-- The callback receives the entire HTTP response (with an additional `body` property);
-- Nodes and relationships are *not* transformed into `Node` and `Relationship` instances (but the body is still parsed as JSON); and
-- 4xx and 5xx responses are *not* treated as errors.
+- The callback receives the ***entire* response** (with an additional `body` property);
+- Nodes and relationships are ***not* transformed** into `Node` and `Relationship` instances (but the body is still parsed as JSON); and
+- 4xx and 5xx responses are ***not*** treated as **errors**.
 
 ```js
 db.http({
@@ -481,6 +485,9 @@ function callback(err, resp) {
 
 ```js
 {
+    "self": "http://localhost:7474/db/data/node/12345678",
+    "labels": "http://localhost:7474/db/data/node/12345678/labels",
+    "properties": "http://localhost:7474/db/data/node/12345678/properties",
     // ...
     "metadata": {
         "id": 12345678,
@@ -489,7 +496,6 @@ function callback(err, resp) {
             "Admin"
         ]
     },
-    // ...
     "data": {
         "name": "Alice Smith",
         "email": "alice@example.com",
@@ -505,13 +511,13 @@ Other options:
 
 - **`body`**: an optional request body, e.g. for `POST` and `PUT` requests. This gets serialized to JSON.
 
-Requests and responses can also be streamed for maximum performance. The `http` method returns a [Request.js](https://github.com/request/request)\* instance, which is a [`DuplexStream`](https://nodejs.org/api/stream.html#stream_class_stream_duplex) combining both the request (write) stream and the response (read) stream.
+Requests and responses can also be **streamed** for maximum performance. The `http` method returns a [Request.js](https://github.com/request/request) instance, which is a [`DuplexStream`](https://nodejs.org/api/stream.html#stream_class_stream_duplex) combining both the writeable request stream and the readable response stream.
 
-(\*Request.js provides a number of benefits over the native HTTP
+*(Request.js provides a number of benefits over the native HTTP
 [`ClientRequest`](http://nodejs.org/api/http.html#http_class_http_clientrequest) and [`IncomingMessage`](http://nodejs.org/api/http.html#http_http_incomingmessage) classes, e.g. proxy support,
-gzip decompression, simpler writes, and a single unified `'error'` event.)
+gzip decompression, simpler writes, and a single unified `'error'` event.)*
 
-If you want to stream the request, be sure not to pass a `body` option. And if you want to stream the response (without having it buffer in memory), be sure not to pass a callback. You can stream a request without streaming the response, and vice versa.
+If you want to stream the request, be sure not to pass a `body` option. And if you want to stream the response (without having it buffer in memory), be sure not to pass a callback. You can stream the request without streaming the response, and vice versa.
 
 Streaming the response implies the `raw` option above: nodes and relationships are *not* transformed (as even JSON isn't parsed), and 4xx and 5xx responses are *not* treated as errors.
 

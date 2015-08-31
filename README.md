@@ -45,7 +45,7 @@ function callback(err, results) {
         console.log('No user found.');
     } else {
         var user = result['user'];
-        console.log(JSON.stringify(user, null, 4));
+        console.log(user);
     }
 };
 ```
@@ -135,7 +135,7 @@ function callback(err, results) {
         console.log('No user found.');
     } else {
         var user = result['user'];
-        console.log(JSON.stringify(user, null, 4));
+        console.log(user);
     }
 };
 ```
@@ -287,7 +287,7 @@ function done(err, results) {
 makeFirstQuery();
 ```
 
-The transactional `cypher` method supports everything the normal `cypher` method does (e.g. `lean`, `headers`, and batch `queries`). In addition, you can pass `commit: true` to auto-commit the transaction (and save a network request) if the query succeeds.
+The transactional `cypher` method supports everything the normal [`cypher`](#cypher) method does (e.g. `lean`, `headers`, and batch `queries`). In addition, you can pass `commit: true` to auto-commit the transaction (and save a network request) if the query succeeds.
 
 ```js
 function makeSecondQuery(err, results) {
@@ -420,6 +420,130 @@ TODO: Link to docs, and blog post.
 
 
 ## HTTP / Plugins
+
+If you need functionality beyond Cypher, you can make direct HTTP requests to Neo4j. This can be useful for legacy APIs (e.g. [traversals](http://neo4j.com/docs/stable/rest-api-traverse.html)), custom plugins (e.g. [neo4j-spatial](http://neo4j-contrib.github.io/spatial/#spatial-server-plugin)), or even future APIs before node-neo4j implements them.
+
+```js
+db.http({
+    method: 'GET',
+    path: '/db/data/node/12345678',
+    // ...
+}, callback);
+
+function callback(err, body) {
+    if (err) throw err;
+    console.log(body);
+}
+```
+
+```json
+{
+    "_id": 12345678,
+    "labels": [
+        "User",
+        "Admin"
+    ],
+    "properties": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "emailVerified": true,
+        "passwordHash": "..."
+    }
+}
+```
+
+By default:
+
+- The callback receives just the response body (not the status code or headers);
+- Any nodes and relationships in the body are transformed to `Node` and `Relationship` instances (like [`cypher`](#cypher)); and
+- 4xx and 5xx responses are treated as [errors](#errors).
+
+You can alternately pass `raw: true` for more control; in that case:
+
+- The callback receives the entire HTTP response (with an additional `body` property);
+- Nodes and relationships are *not* transformed into `Node` and `Relationship` instances (but the body is still parsed as JSON); and
+- 4xx and 5xx responses are *not* treated as errors.
+
+```js
+db.http({
+    method: 'GET',
+    path: '/db/data/node/12345678',
+    raw: true,
+}, callback);
+
+function callback(err, resp) {
+    if (err) throw err;
+    assert.equal(resp.statusCode, 200);
+    assert.equal(typeof resp.headers, 'object');
+    console.log(resp.body);
+}
+```
+
+```js
+{
+    // ...
+    "metadata": {
+        "id": 12345678,
+        "labels": [
+            "User",
+            "Admin"
+        ]
+    },
+    // ...
+    "data": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "emailVerified": true,
+        "passwordHash": "..."
+    }
+}
+```
+
+Other options:
+
+- **`headers`**: optional custom [HTTP headers](#headers) to send with this request. These will add onto the default `GraphDatabase` `headers`, but also override any that overlap.
+
+- **`body`**: an optional request body, e.g. for `POST` and `PUT` requests. This gets serialized to JSON.
+
+Requests and responses can also be streamed for maximum performance. The `http` method returns a [Request.js](https://github.com/request/request)\* instance, which is a [`DuplexStream`](https://nodejs.org/api/stream.html#stream_class_stream_duplex) combining both the request (write) stream and the response (read) stream.
+
+(\*Request.js provides a number of benefits over the native HTTP
+[`ClientRequest`](http://nodejs.org/api/http.html#http_class_http_clientrequest) and [`IncomingMessage`](http://nodejs.org/api/http.html#http_http_incomingmessage) classes, e.g. proxy support,
+gzip decompression, simpler writes, and a single unified `'error'` event.)
+
+If you want to stream the request, be sure not to pass a `body` option. And if you want to stream the response (without having it buffer in memory), be sure not to pass a callback. You can stream a request without streaming the response, and vice versa.
+
+Streaming the response implies the `raw` option above: nodes and relationships are *not* transformed (as even JSON isn't parsed), and 4xx and 5xx responses are *not* treated as errors.
+
+```js
+var req = db.http({
+    method: 'GET',
+    path: '/db/data/node/12345678',
+});
+
+req.on('error', function (err) {
+    // Handle the error somehow. The default behavior is:
+    throw err;
+});
+
+req.on('response', function (resp) {
+    assert.equal(resp.statusCode, 200);
+    assert.equal(typeof resp.headers, 'object');
+    assert.equal(typeof resp.body, 'undefined');
+});
+
+var body = '';
+
+req.on('data', function (chunk) {
+    body += chunk;
+});
+
+req.on('end', function () {
+    body = JSON.parse(body);
+    console.log(body);
+});
+```
+
 
 ## Errors
 

@@ -34,8 +34,8 @@
         "neo4j", "graph", "database", "driver", "client", "cypher"
     ],
     "license": "Apache-2.0",
-    "repository" : {
-        "type" : "git",
-        "url" : "https://github.com/thingdom/node-neo4j.git"
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/thingdom/node-neo4j.git"
     }
 }

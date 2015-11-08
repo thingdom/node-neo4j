@@ -12,7 +12,7 @@ neo4j = require '../../'
 # Chai doesn't have a `beginsWith` assertion, so this approximates that:
 # Asserts that the given string begins with the given prefix.
 #
-@expectPrefix = (str, prefix) ->
+exports.expectPrefix = (str, prefix) ->
     expect(str).to.be.a 'string'
     expect(str.slice 0, prefix.length).to.equal prefix
 
@@ -21,7 +21,7 @@ neo4j = require '../../'
 # Helper used by all the below methods that covers all specific error cases.
 # Asserts that the given error at least adheres to our base Error contract.
 #
-@_expectBaseError = (err, classification) =>
+exports._expectBaseError = (err, classification) ->
     expect(err).to.be.an.instanceOf neo4j[classification]   # e.g. DatabaseError
     expect(err.name).to.equal "neo4j.#{classification}"
 
@@ -29,18 +29,18 @@ neo4j = require '../../'
     expect(err.stack).to.be.a 'string'
     expect(err.stack).to.contain '\n'
 
-    @expectPrefix err.stack, "#{err.name}: #{err.message}"
+    exports.expectPrefix err.stack, "#{err.name}: #{err.message}"
 
 
 #
 # Asserts that the given object is an instance of the appropriate Neo4j Error
 # subclass, representing the given *new-style* Neo4j v2 error info.
 #
-@expectError = (err, classification, category, title, message) =>
+exports.expectError = (err, classification, category, title, message) ->
     code = "Neo.#{classification}.#{category}.#{title}"
     codePlusMessage = "[#{code}] #{message}"
 
-    @_expectBaseError err, classification
+    exports._expectBaseError err, classification
 
     expect(err.neo4j).to.be.an 'object'
     expect(err.neo4j.code).to.equal code
@@ -64,7 +64,7 @@ neo4j = require '../../'
     # trace, after the expected message part (which can be multi-line).
     # We test just the first line of the stack trace for simplicity.
     # (Subsequent lines can be different, e.g. "Caused by ...").
-    @expectPrefix err.message, codePlusMessage
+    exports.expectPrefix err.message, codePlusMessage
     [errMessageStackLine1, ...] =
         (err.message.slice 0, codePlusMessage.length).split '\n'
     [neo4jStackTraceLine1, ...] = err.neo4j.stackTrace.split '\n'
@@ -77,9 +77,9 @@ neo4j = require '../../'
 #
 # NOTE: This assumes this error is returned from an HTTP response.
 #
-@expectOldError = (err, statusCode, shortName, longName, message) =>
+exports.expectOldError = (err, statusCode, shortName, longName, message) ->
     ErrorType = if statusCode >= 500 then 'Database' else 'Client'
-    @_expectBaseError err, "#{ErrorType}Error"
+    exports._expectBaseError err, "#{ErrorType}Error"
 
     expect(err.message).to.equal "#{statusCode} [#{shortName}] #{message}"
 
@@ -102,8 +102,8 @@ neo4j = require '../../'
 #
 # NOTE: This assumes no details info was returned by Neo4j.
 #
-@expectRawError = (err, classification, message) =>
-    @_expectBaseError err, classification
+exports.expectRawError = (err, classification, message) ->
+    exports._expectBaseError err, classification
 
     if typeof message is 'string'
         expect(err.message).to.equal message
@@ -120,11 +120,11 @@ neo4j = require '../../'
 # Asserts that the given object is a simple HTTP error for the given response
 # status code, e.g. 404 or 501.
 #
-@expectHttpError = (err, statusCode) =>
+exports.expectHttpError = (err, statusCode) ->
     ErrorType = if statusCode >= 500 then 'Database' else 'Client'
     statusText = http.STATUS_CODES[statusCode]  # E.g. "Not Found"
 
-    @expectRawError err, "#{ErrorType}Error", ///
+    exports.expectRawError err, "#{ErrorType}Error", ///
         ^ #{statusCode}\ #{statusText}\ response\ for\ [A-Z]+\ /.* $
     ///
 
@@ -132,5 +132,5 @@ neo4j = require '../../'
 #
 # Returns a random string.
 #
-@getRandomStr = ->
+exports.getRandomStr = ->
     "#{Math.random()}"[2..]

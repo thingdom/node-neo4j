@@ -8,36 +8,36 @@ $ = require 'underscore'
 helpers = require '../util/helpers'
 neo4j = require '../../'
 
-@DB = new neo4j.GraphDatabase
+exports.DB = new neo4j.GraphDatabase
     # Support specifying database info via environment variables,
     # but assume Neo4j installation defaults.
     url: process.env.NEO4J_URL or 'http://neo4j:neo4j@localhost:7474'
     auth: process.env.NEO4J_AUTH
 
 # We fill these in, and cache them, the first time tests request them:
-@DB_VERSION_NUM = null
-@DB_VERSION_STR = null
+exports.DB_VERSION_NUM = null
+exports.DB_VERSION_STR = null
 
-@TEST_LABEL = 'Test'
-@TEST_REL_TYPE = 'TEST'
+exports.TEST_LABEL = 'Test'
+exports.TEST_REL_TYPE = 'TEST'
 
 #
 # Queries the Neo4j version of the database we're currently testing against,
 # if it's not already known.
-# Doesn't return anything; instead, @DB_VERSION_* will be set after this.
+# Doesn't return anything; instead, `DB_VERSION_*` will be set after this.
 #
-@queryDbVersion = (_) =>
-    return if @DB_VERSION_NUM
+exports.queryDbVersion = (_) ->
+    return if exports.DB_VERSION_NUM
 
-    info = @DB.http
+    info = exports.DB.http
         method: 'GET'
         path: '/db/data/'
     , _
 
-    @DB_VERSION_STR = info.neo4j_version or '(version unknown)'
-    @DB_VERSION_NUM = parseFloat @DB_VERSION_STR, 10
+    exports.DB_VERSION_STR = info.neo4j_version or '(version unknown)'
+    exports.DB_VERSION_NUM = parseFloat exports.DB_VERSION_STR, 10
 
-    if @DB_VERSION_NUM < 2
+    if exports.DB_VERSION_NUM < 2
         throw new Error '*** node-neo4j v2 supports Neo4j v2+ only,
             and you’re running Neo4j v1. These tests will fail! ***'
 
@@ -45,7 +45,7 @@ neo4j = require '../../'
 # Creates and returns a property bag (dictionary) with unique, random test data
 # for the given test suite (pass the suite's Node `module`).
 #
-@createTestProperties = (suite) =>
+exports.createTestProperties = (suite) ->
     suite: suite.filename
     rand: helpers.getRandomStr()
 
@@ -60,14 +60,14 @@ neo4j = require '../../'
 # and strips label metadata if we're running against Neo4j <2.1.5, which didn't
 # return label metadata to drivers.
 #
-@createTestNode = (suite, _) =>
+exports.createTestNode = (suite, _) ->
     node = new neo4j.Node
-        labels: [@TEST_LABEL]
-        properties: @createTestProperties suite
+        labels: [exports.TEST_LABEL]
+        properties: exports.createTestProperties suite
 
-    @queryDbVersion _
+    exports.queryDbVersion _
 
-    if @DB_VERSION_STR < '2.1.5'
+    if exports.DB_VERSION_STR < '2.1.5'
         node.labels = null
 
     node
@@ -80,10 +80,10 @@ neo4j = require '../../'
 # returned instance *won't* have its `_id`, `_fromId` or `_toId` properties set;
 # you should set those if you persist this relationship.
 #
-@createTestRelationship = (suite) =>
+exports.createTestRelationship = (suite) ->
     new neo4j.Relationship
-        type: @TEST_REL_TYPE
-        properties: @createTestProperties suite
+        type: exports.TEST_REL_TYPE
+        properties: exports.createTestProperties suite
 
 #
 # Executes a Cypher query to create and persist a test graph with the given
@@ -97,12 +97,12 @@ neo4j = require '../../'
 # Returns an array of Node and Relationship instances for the created graph,
 # in chain order, e.g. [node, rel, node].
 #
-@createTestGraph = (suite, numNodes, _) =>
+exports.createTestGraph = (suite, numNodes, _) ->
     expect(numNodes).to.be.at.least 1
     numRels = numNodes - 1
 
-    nodes = (@createTestNode suite, _ for i in [0...numNodes])
-    rels = (@createTestRelationship suite for i in [0...numRels])
+    nodes = (exports.createTestNode suite, _ for i in [0...numNodes])
+    rels = (exports.createTestRelationship suite for i in [0...numRels])
 
     nodeProps = $(nodes).pluck 'properties'
     relProps = $(rels).pluck 'properties'
@@ -115,10 +115,10 @@ neo4j = require '../../'
 
     query = ''
     for node, i in nodes
-        query += "CREATE (node#{i}:#{@TEST_LABEL} {nodeProps#{i}}) \n"
+        query += "CREATE (node#{i}:#{exports.TEST_LABEL} {nodeProps#{i}}) \n"
     for rel, i in rels
-        query += "CREATE (node#{i})
-            -[rel#{i}:#{@TEST_REL_TYPE} {relProps#{i}}]-> (node#{i + 1}) \n"
+        relStr = "-[rel#{i}:#{exports.TEST_REL_TYPE} {relProps#{i}}]->"
+        query += "CREATE (node#{i}) #{relStr} (node#{i + 1}) \n"
     query += 'RETURN '
     query += ("ID(node#{i})" for node, i in nodes).join ', '
     if rels.length
@@ -130,7 +130,7 @@ neo4j = require '../../'
     # endpoint here. This does, however, rely on this driver's HTTP support in
     # general, but not on its ability to parse nodes and relationships.
     # http://neo4j.com/docs/stable/rest-api-cypher.html#rest-api-use-parameters
-    {data} = @DB.http
+    {data} = exports.DB.http
         method: 'POST'
         path: '/db/data/cypher'
         body: {query, params}
@@ -155,19 +155,19 @@ neo4j = require '../../'
     results
 
 #
-# Executes a Cypher query to delete the test graph created by `@createTestGraph`
+# Executes a Cypher query to delete the test graph created by `createTestGraph`
 # for the given test suite (pass the suite's Node `module`).
 #
-@deleteTestGraph = (suite, _) =>
-    @DB.http
+exports.deleteTestGraph = (suite, _) ->
+    exports.DB.http
         method: 'POST'
         path: '/db/data/cypher'
         body:
             query: """
-                MATCH (node:#{@TEST_LABEL} {suite: {suite}})
+                MATCH (node:#{exports.TEST_LABEL} {suite: {suite}})
                 OPTIONAL MATCH (node) \
-                    -[rel:#{@TEST_REL_TYPE} {suite: {suite}}]-> ()
+                    -[rel:#{exports.TEST_REL_TYPE} {suite: {suite}}]-> ()
                 DELETE node, rel
             """
-            params: @createTestProperties suite
+            params: exports.createTestProperties suite
     , _

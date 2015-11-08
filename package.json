@@ -17,8 +17,7 @@
         "coffee-script": "1.8.x",
         "coffeelint": "^1.9.7",
         "mocha": "^2.0.1",
-        "streamline": "^1.0.9",
-        "streamline-runtime": "^1.0.14"
+        "streamline": "^0.10.16"
     },
     "engines": {
         "node": ">= 0.10"

@@ -118,6 +118,13 @@ describe 'Constraints', ->
             violateConstraint _
 
         it 'should support creating constraint', (_) ->
+            # TODO: This can randomly take a *very* long time.
+            # (Why? We're using a new and unique property. Maybe we should be
+            # using a new and unique label too?)
+            # So for now, we 10x the Mocha timeout.
+            @timeout 10 * @timeout()
+            console.log 'Creating constraint. This could take a while...'
+
             constraint = DB.createConstraint
                 label: TEST_LABEL
                 property: TEST_PROP

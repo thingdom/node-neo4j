@@ -108,12 +108,33 @@ describe 'Indexes', ->
                 expect(err).to.exist()
                 expect(results).to.not.exist()
 
-                helpers.expectError err,
-                    'ClientError', 'Schema', 'NoSuchIndex', """
-                        No such index found.
-                        Label: `#{TEST_LABEL}`
-                        Property name: `#{TEST_PROP}`
-                    """
+                # NOTE: At some point, Neo4j regressed and improperly returned
+                # DatabaseError for this case, rather than ClientError.
+                # https://github.com/neo4j/neo4j/issues/5902
+                expMessage = """
+                    No such index found.
+                    Label: `#{TEST_LABEL}`
+                    Property name: `#{TEST_PROP}`
+                """
+                try
+                    helpers.expectError err,
+                        'ClientError', 'Schema', 'NoSuchIndex', expMessage
+                catch assertionErr
+                    # Check for the regression case, but if this fails,
+                    # throw the original assertion error, not this one.
+                    #
+                    # HACK: The newlines in the error message are atypical,
+                    # and too hard to work with (since our friendly error code
+                    # indents multi-line messages and stack traces),
+                    # so we hard-code simplified assertions here.
+                    #
+                    try
+                        expect(err).to.be.an.instanceOf neo4j.DatabaseError
+                        expect(err.neo4j?.code).to.equal \
+                            'Neo.DatabaseError.Statement.ExecutionFailure'
+                        expect(err.neo4j?.message).to.equal expMessage
+                    catch doubleErr
+                        throw assertionErr
 
                 done()
 

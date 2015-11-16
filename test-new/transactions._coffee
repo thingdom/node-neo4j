@@ -16,6 +16,24 @@ neo4j = require '../'
 [TEST_NODE_A, TEST_NODE_B, TEST_REL] = []
 
 
+## HELPERS
+
+# Neo4j <2.2.6 used to keep transactions open on client and transient errors --
+# even though transactions would always fail to commit later in those cases.
+# Neo4j 2.2.6 fixed this, so transactions automatically roll back then.
+# This helper accounts for this change by deriving the expected state after
+# client and transient errors, based on the current Neo4j version.
+# It also manually rolls the transaction back then, if Neo4j <2.2.6.
+expectTxErrorRolledBack = (tx, _) ->
+    fixtures.queryDbVersion _
+
+    if fixtures.DB_VERSION_STR < '2.2.6'
+        expect(tx.state).to.equal tx.STATE_OPEN
+        tx.rollback _
+
+    expect(tx.state).to.equal tx.STATE_ROLLED_BACK
+
+
 ## TESTS
 
 describe 'Transactions', ->
@@ -297,13 +315,13 @@ describe 'Transactions', ->
 
         expect(nodeA.properties.test).to.not.equal 'renewing'
 
-    it 'should properly handle non-fatal errors', (_) ->
+    it 'should properly handle (fatal) client errors', (_) ->
         tx = DB.beginTransaction()
 
         [{nodeA}] = tx.cypher
             query: '''
                 START nodeA = node({idA})
-                SET nodeA.test = 'non-fatal errors'
+                SET nodeA.test = 'client errors'
                 SET nodeA.i = 1
                 RETURN nodeA
             '''
@@ -311,11 +329,10 @@ describe 'Transactions', ->
                 idA: TEST_NODE_A._id
         , _
 
-        expect(nodeA.properties.test).to.equal 'non-fatal errors'
+        expect(nodeA.properties.test).to.equal 'client errors'
         expect(nodeA.properties.i).to.equal 1
 
-        # Now trigger a client error, which should *not* rollback (and thus
-        # destroy) the transaction.
+        # Now trigger a client error by omitting a referenced parameter.
         # For precision, implementing this step without Streamline.
         do (cont=_) =>
             tx.cypher
@@ -332,33 +349,27 @@ describe 'Transactions', ->
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
-        expect(tx.state).to.equal tx.STATE_OPEN
+        # All transaction errors, including client ones, are fatal, so the
+        # transaction should be rolled back -- except in Neo4j <2.2.6.
+        # See the documentation of `expectTxErrorRolledBack` for details:
+        expectTxErrorRolledBack tx, _
 
-        # Because of that, the first query's effects should still be visible
-        # within the transaction:
-        [{nodeA}] = tx.cypher
+        expect(-> tx.cypher 'RETURN "bar" AS foo')
+            .to.throw neo4j.ClientError, /been rolled back/i
+
+        # Back outside this transaction now, the change should *not* be visible:
+        [{nodeA}] = DB.cypher
             query: '''
-                START nodeA = node({idA})
-                SET nodeA.i = 3
-                RETURN nodeA
+                START a = node({idA})
+                RETURN a AS nodeA
             '''
             params:
                 idA: TEST_NODE_A._id
         , _
 
-        expect(nodeA.properties.test).to.equal 'non-fatal errors'
-        expect(nodeA.properties.i).to.equal 3
+        expect(nodeA.properties.test).to.not.equal 'client errors'
 
-        # NOTE: But the transaction won't commit successfully apparently, both
-        # manually or automatically. So we manually rollback instead.
-        # TODO: Is this a bug in Neo4j? Or my understanding?
-        expect(tx.state).to.equal tx.STATE_OPEN
-        tx.rollback _
-        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
-
-    # TODO: Similar to the note above this, is this right? Or is this either a
-    # bug in Neo4j or my understanding? Should client errors never be fatal?
-    it 'should properly handle fatal client errors during commit', (_) ->
+    it 'should properly handle (fatal) errors during commit', (_) ->
         tx = DB.beginTransaction()
 
         # Important: don't auto-commit in the first query, because that doesn't
@@ -366,7 +377,7 @@ describe 'Transactions', ->
         [{nodeA}] = tx.cypher
             query: '''
                 START nodeA = node({idA})
-                SET nodeA.test = 'fatal client errors'
+                SET nodeA.test = 'errors during commit'
                 SET nodeA.i = 1
                 RETURN nodeA
             '''
@@ -374,11 +385,10 @@ describe 'Transactions', ->
                 idA: TEST_NODE_A._id
         , _
 
-        expect(nodeA.properties.test).to.equal 'fatal client errors'
+        expect(nodeA.properties.test).to.equal 'errors during commit'
         expect(nodeA.properties.i).to.equal 1
 
-        # Now trigger a client error in an auto-commit query, which *should*
-        # (apparently; see comment preceding test) destroy the transaction.
+        # Now trigger a client error by omitting a referenced parameter.
         # For precision, implementing this step without Streamline.
         do (cont=_) =>
             tx.cypher
@@ -396,24 +406,10 @@ describe 'Transactions', ->
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
+        # All transaction errors are fatal during commit, even in Neo4j <2.2.6:
         expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
-        expect(-> tx.cypher 'RETURN "bar" AS foo')
-            .to.throw neo4j.ClientError, /been rolled back/i
-
-        # Back outside this transaction now, the change should *not* be visible:
-        [{nodeA}] = DB.cypher
-            query: '''
-                START a = node({idA})
-                RETURN a AS nodeA
-            '''
-            params:
-                idA: TEST_NODE_A._id
-        , _
-
-        expect(nodeA.properties.test).to.not.equal 'fatal client errors'
-
-    it 'should properly handle fatal database errors', (_) ->
+    it 'should properly handle (fatal) database errors', (_) ->
         tx = DB.beginTransaction()
 
         # Important: don't auto-commit in the first query, because that doesn't
@@ -421,7 +417,7 @@ describe 'Transactions', ->
         [{nodeA}] = tx.cypher
             query: '''
                 START nodeA = node({idA})
-                SET nodeA.test = 'fatal database errors'
+                SET nodeA.test = 'database errors'
                 SET nodeA.i = 1
                 RETURN nodeA
             '''
@@ -429,7 +425,7 @@ describe 'Transactions', ->
                 idA: TEST_NODE_A._id
         , _
 
-        expect(nodeA.properties.test).to.equal 'fatal database errors'
+        expect(nodeA.properties.test).to.equal 'database errors'
         expect(nodeA.properties.i).to.equal 1
 
         # HACK: Depending on a known bug to trigger a DatabaseError;
@@ -463,11 +459,9 @@ describe 'Transactions', ->
                 idA: TEST_NODE_A._id
         , _
 
-        expect(nodeA.properties.test).to.not.equal 'fatal database errors'
+        expect(nodeA.properties.test).to.not.equal 'database errors'
 
-    # TODO: Is there any way to trigger and test transient errors?
-
-    it 'should properly handle non-fatal errors on the first query', (_) ->
+    it 'should properly handle (fatal) errors on the first query', (_) ->
         tx = DB.beginTransaction()
         expect(tx.state).to.equal tx.STATE_OPEN
 
@@ -479,9 +473,12 @@ describe 'Transactions', ->
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
-        expect(tx.state).to.equal tx.STATE_OPEN
+        # All transaction errors, including on the first query, are fatal,
+        # so the transaction should be rolled back -- except in Neo4j <2.2.6.
+        # See the documentation of `expectTxErrorRolledBack` for details:
+        expectTxErrorRolledBack tx, _
 
-    it 'should properly handle fatal client errors
+    it 'should properly handle (fatal) errors
             on an auto-commit first query', (_) ->
         tx = DB.beginTransaction()
         expect(tx.state).to.equal tx.STATE_OPEN
@@ -497,31 +494,11 @@ describe 'Transactions', ->
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
 
+        # All transaction errors are fatal during commit, even in Neo4j <2.2.6,
+        # and even on the first query:
         expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
-    it 'should properly handle fatal database errors on the first query', (_) ->
-        tx = DB.beginTransaction()
-        expect(tx.state).to.equal tx.STATE_OPEN
-
-        # HACK: Depending on a known bug to trigger a DatabaseError;
-        # that makes this test brittle, since the bug could get fixed!
-        # https://github.com/neo4j/neo4j/issues/3870#issuecomment-76650113
-        # For precision, implementing this step without Streamline.
-        do (cont=_) =>
-            tx.cypher
-                query: 'CREATE (n {props})'
-                params:
-                    props: {foo: null}
-            , (err, results) =>
-                expect(err).to.exist()
-                helpers.expectError err,
-                    'DatabaseError', 'Statement', 'ExecutionFailure',
-                    'scala.MatchError: (foo,null) (of class scala.Tuple2)'
-                cont()
-
-        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
-
-    it 'should properly handle errors with batching', (_) ->
+    it 'should properly handle (fatal) errors with batching', (_) ->
         tx = DB.beginTransaction()
 
         results = tx.cypher [
@@ -557,8 +534,7 @@ describe 'Transactions', ->
 
         expect(tx.state).to.equal tx.STATE_OPEN
 
-        # Now trigger a client error within another batch; this should *not*
-        # rollback (and thus destroy) the transaction.
+        # Now trigger a client error by omitting a referenced parameter.
         # For precision, implementing this step without Streamline.
         do (cont=_) =>
             tx.cypher
@@ -607,33 +583,10 @@ describe 'Transactions', ->
 
                 cont()
 
-        expect(tx.state).to.equal tx.STATE_OPEN
-
-        # Because of that, the effects of the first query in the batch (before
-        # the error) should still be visible within the transaction:
-        results = tx.cypher [
-            query: '''
-                START nodeA = node({idA})
-                RETURN nodeA
-            '''
-            params:
-                idA: TEST_NODE_A._id
-        ], _
-
-        expect(results).to.be.an 'array'
-        expect(results).to.have.length 1
-
-        [{nodeA}] = results[0]
-
-        expect(nodeA.properties.test).to.equal 'errors with batching'
-        expect(nodeA.properties.i).to.equal 2
-
-        # NOTE: But the transaction won't commit successfully apparently, both
-        # manually or automatically. So we manually rollback instead.
-        # TODO: Is this a bug in Neo4j? Or my understanding?
-        expect(tx.state).to.equal tx.STATE_OPEN
-        tx.rollback _
-        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
+        # All transaction errors, including client ones in a batch, are fatal,
+        # so the transaction should be rolled back -- except in Neo4j <2.2.6.
+        # See the documentation of `expectTxErrorRolledBack` for details:
+        expectTxErrorRolledBack tx, _
 
     it 'should support streaming (TODO)'
 

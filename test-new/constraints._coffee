@@ -57,7 +57,10 @@ violateConstraint = (_) ->
     # Not technically needed, but prevent Neo4j from waiting up to a minute for
     # the transaction to expire in case of any errors:
     finally
-        tx.rollback _
+        # Neo4j 2.2.6+ automatically roll transactions back in case of client
+        # errors too, so guard against that.
+        unless tx.state is tx.STATE_ROLLED_BACK
+            tx.rollback _
 
 
 ## TESTS

@@ -488,46 +488,6 @@ describe 'Transactions', ->
         tx1.rollback _
         expect(tx1.state).to.equal tx1.STATE_ROLLED_BACK
 
-    it 'should properly handle (fatal) errors during commit', (_) ->
-        tx = DB.beginTransaction()
-
-        # Important: don't auto-commit in the first query, because that doesn't
-        # let us test that a transaction gets *returned* and *then* rolled back.
-        [{nodeA}] = tx.cypher
-            query: '''
-                START nodeA = node({idA})
-                SET nodeA.test = 'errors during commit'
-                SET nodeA.i = 1
-                RETURN nodeA
-            '''
-            params:
-                idA: TEST_NODE_A._id
-        , _
-
-        expect(nodeA.properties.test).to.equal 'errors during commit'
-        expect(nodeA.properties.i).to.equal 1
-
-        # Now trigger a client error by omitting a referenced parameter.
-        # For precision, implementing this step without Streamline.
-        do (cont=_) =>
-            tx.cypher
-                query: '''
-                    START nodeA = node({idA})
-                    SET nodeA.i = 2
-                    RETURN {foo}
-                '''
-                params:
-                    idA: TEST_NODE_A._id
-                commit: true
-            , (err, results) =>
-                expect(err).to.exist()
-                helpers.expectError err, 'ClientError', 'Statement',
-                    'ParameterMissing', 'Expected a parameter named foo'
-                cont()
-
-        # All transaction errors are fatal during commit, even in Neo4j <2.2.6:
-        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
-
     it 'should properly handle (fatal) database errors', (_) ->
         tx = DB.beginTransaction()
 
@@ -579,6 +539,46 @@ describe 'Transactions', ->
         , _
 
         expect(nodeA.properties.test).to.not.equal 'database errors'
+
+    it 'should properly handle (fatal) errors during commit', (_) ->
+        tx = DB.beginTransaction()
+
+        # Important: don't auto-commit in the first query, because that doesn't
+        # let us test that a transaction gets *returned* and *then* rolled back.
+        [{nodeA}] = tx.cypher
+            query: '''
+                START nodeA = node({idA})
+                SET nodeA.test = 'errors during commit'
+                SET nodeA.i = 1
+                RETURN nodeA
+            '''
+            params:
+                idA: TEST_NODE_A._id
+        , _
+
+        expect(nodeA.properties.test).to.equal 'errors during commit'
+        expect(nodeA.properties.i).to.equal 1
+
+        # Now trigger a client error by omitting a referenced parameter.
+        # For precision, implementing this step without Streamline.
+        do (cont=_) =>
+            tx.cypher
+                query: '''
+                    START nodeA = node({idA})
+                    SET nodeA.i = 2
+                    RETURN {foo}
+                '''
+                params:
+                    idA: TEST_NODE_A._id
+                commit: true
+            , (err, results) =>
+                expect(err).to.exist()
+                helpers.expectError err, 'ClientError', 'Statement',
+                    'ParameterMissing', 'Expected a parameter named foo'
+                cont()
+
+        # All transaction errors are fatal during commit, even in Neo4j <2.2.6:
+        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
     it 'should properly handle (fatal) errors on the first query', (_) ->
         tx = DB.beginTransaction()

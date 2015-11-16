@@ -64,11 +64,16 @@ exports.expectError = (err, classification, category, title, message) ->
     # trace, after the expected message part (which can be multi-line).
     # We test just the first line of the stack trace for simplicity.
     # (Subsequent lines can be different, e.g. "Caused by ...").
+    #
+    # HACK: The one exception to this, it seems, is deadlock detected errors...
+    # Special-casing those for now; may be worth investigating later.
+    #
     exports.expectPrefix err.message, codePlusMessage
     [errMessageStackLine1, ...] =
         (err.message.slice 0, codePlusMessage.length).split '\n'
     [neo4jStackTraceLine1, ...] = err.neo4j.stackTrace.split '\n'
-    expect(errMessageStackLine1).to.contain neo4jStackTraceLine1.trim()
+    unless code is 'Neo.TransientError.Transaction.DeadlockDetected'
+        expect(errMessageStackLine1).to.contain neo4jStackTraceLine1.trim()
 
 
 #

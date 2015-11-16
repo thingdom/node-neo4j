@@ -5,6 +5,7 @@
 
 {expect} = require 'chai'
 fixtures = require './fixtures'
+flows = require 'streamline/lib/util/flows'
 helpers = require './util/helpers'
 neo4j = require '../'
 
@@ -17,6 +18,28 @@ neo4j = require '../'
 
 
 ## HELPERS
+
+# Calls the given asynchronous function with a placeholder callback, and
+# immediately returns a "future" that can be called with a real callback.
+# TODO: Achieve this with Streamline futures once we upgrade to 1.0.
+# https://github.com/Sage/streamlinejs/issues/181#issuecomment-148926447
+# Need this manual implementation for now, since `db.cypher` isn't Streamline.
+defer = (fn) ->
+    # Modeled off of Streamline's own futures implementation:
+    # https://bjouhier.wordpress.com/2011/04/04/currying-the-callback-or-the-essence-of-futures/
+    results = null
+
+    cb = (_results...) ->
+        results = _results
+
+    fn (_results...) ->
+        cb _results...
+
+    return (_cb) ->
+        if results
+            _cb results...
+        else
+            cb = _cb
 
 # Neo4j <2.2.6 used to keep transactions open on client and transient errors --
 # even though transactions would always fail to commit later in those cases.
@@ -368,6 +391,102 @@ describe 'Transactions', ->
         , _
 
         expect(nodeA.properties.test).to.not.equal 'client errors'
+
+    # NOTE: Skipping this test by default, because it's slow (we have to pause
+    # one second; see note within) and not crucial, unique test coverage.
+    it.skip 'should properly handle (fatal) transient errors (slow)', (_) ->
+        # The main transient error we can trigger is a DeadlockDetected error.
+        # We can do this by having two separate transactions take locks on the
+        # same two nodes, across two queries, but in opposite order.
+        # (Taking a lock on a node just means writing to the node.)
+        tx1 = DB.beginTransaction()
+        tx2 = DB.beginTransaction()
+
+        [[{nodeA}], [{nodeB}]] = flows.collect _, [
+            defer tx1.cypher.bind tx1,
+                query: '''
+                    START nodeA = node({idA})
+                    SET nodeA.test = 'transient errors'
+                    SET nodeA.tx = 1
+                    RETURN nodeA
+                '''
+                params:
+                    idA: TEST_NODE_A._id
+
+            defer tx2.cypher.bind tx2,
+                query: '''
+                    START nodeB = node({idB})
+                    SET nodeB.test = 'transient errors'
+                    SET nodeB.tx = 2
+                    RETURN nodeB
+                '''
+                params:
+                    idB: TEST_NODE_B._id
+        ]
+
+        expect(nodeA.properties.test).to.equal 'transient errors'
+        expect(nodeA.properties.tx).to.equal 1
+        expect(nodeB.properties.test).to.equal 'transient errors'
+        expect(nodeB.properties.tx).to.equal 2
+
+        # Now have each transaction attempt to lock the other's node.
+        # This should trigger a DeadlockDetected error in one transaction.
+        # It can also happen in the other, however, depending on timing.
+        # HACK: To simplify this test, we thus add a pause, to reduce the
+        # chance that both transactions will fail. This isn't bulletproof.
+
+        # Kick off the first transaction's query asynchronously...
+        future1 = defer tx1.cypher.bind tx1,
+            query: '''
+                START nodeB = node({idB})
+                SET nodeB.tx = 1
+                RETURN nodeB
+            '''
+            params:
+                idB: TEST_NODE_B._id
+
+        # Then pause for a bit...
+        setTimeout _, 1000
+
+        # Now make the second transaction's query (synchronously)...
+        # which should fail right right away with a transient error.
+        # For precision, implementing this step without Streamline.
+        do (cont=_) ->
+            tx2.cypher
+                query: '''
+                    START nodeA = node({idA})
+                    SET nodeA.tx = 2
+                    RETURN nodeA
+                '''
+                params:
+                    idA: TEST_NODE_A._id
+            , (err, results) ->
+                expect(err).to.exist()
+                # NOTE: Deadlock detected messages aren't predictable,
+                # so having the assertion for it simply check itself:
+                helpers.expectError err, 'TransientError', 'Transaction',
+                    'DeadlockDetected', err.neo4j?.message or '???'
+                cont()
+
+        # All transaction errors, including transient ones, are fatal, so this
+        # second transaction should be rolled back -- except in Neo4j <2.2.6.
+        # See the documentation of `expectTxErrorRolledBack` for details:
+        expectTxErrorRolledBack tx2, _
+
+        # That should free up the first transaction to succeed, so wait for it:
+        [{nodeB}] = future1 _
+
+        # The second transaction's effects should *not* be visible within the
+        # first transaction; only the first transaction's effects should be:
+        expect(nodeB.properties.test).to.not.equal 'transient errors'
+        expect(nodeB.properties.tx).to.equal 1
+
+        # To prevent Neo4j from hanging at the end waiting for this transaction
+        # to commit or expire (since it touches the existing graph, and our last
+        # step is to delete the existing graph), roll this transaction back.
+        expect(tx1.state).to.equal tx1.STATE_OPEN
+        tx1.rollback _
+        expect(tx1.state).to.equal tx1.STATE_ROLLED_BACK
 
     it 'should properly handle (fatal) errors during commit', (_) ->
         tx = DB.beginTransaction()

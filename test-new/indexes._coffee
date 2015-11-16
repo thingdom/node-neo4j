@@ -80,6 +80,10 @@ describe 'Indexes', ->
             TEST_NODE_A.properties[TEST_PROP] = TEST_VALUE
             TEST_NODE_B.properties[TEST_PROP] = TEST_VALUE
 
+        # HACK: Only needed because a test that uses it below isn't Streamline.
+        it '(query db version)', (_) ->
+            fixtures.queryDbVersion _
+
 
     describe '(before index created)', ->
 
@@ -105,8 +109,22 @@ describe 'Indexes', ->
 
         it '(verify index doesn’t exist yet)', (done) ->
             DB.cypher TEST_CYPHER, (err, results) ->
-                expect(err).to.exist()
-                expect(results).to.not.exist()
+                # NOTE: Our test Cypher uses `USING INDEX` to test index usage,
+                # but Neo4j 2.3+ no longer errors by default on invalid hints:
+                # http://neo4j.com/docs/stable/configuration-settings.html#config_dbms.cypher.hints.error
+                # So we explicitly guard against that, and just continue then.
+                # TODO: Would be nice to test the index another way...
+                try
+                    expect(err).to.exist()
+                    expect(results).to.not.exist()
+                catch assertionErr
+                    # HACK: Because this test isn't a Streamline function,
+                    # relying on `fixtures.queryDbVersion` having been called
+                    # already, as part of the suite's setup.
+                    if fixtures.DB_VERSION_NUM >= 2.3
+                        return done()
+                    else
+                        throw assertionErr
 
                 # NOTE: At some point, Neo4j regressed and improperly returned
                 # DatabaseError for this case, rather than ClientError.

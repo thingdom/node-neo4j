@@ -134,6 +134,9 @@ module.exports = class Transaction
         , @
 
     commit: (cb) ->
+        if not cb
+            throw new Error 'No callback provided!'
+
         @cypher {commit: true}, cb
 
     rollback: (cb) ->

@@ -172,6 +172,10 @@ describe 'Transactions', ->
 
         expect(nodeA.properties.test).to.equal 'committing'
 
+    it 'should fail when committing without a callback', (_) ->
+        tx = DB.beginTransaction()
+        expect(tx.commit).to.throw Error
+
     it 'should support committing before any queries', (_) ->
         tx = DB.beginTransaction()
         expect(tx.state).to.equal tx.STATE_OPEN

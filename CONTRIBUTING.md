@@ -36,13 +36,13 @@ To get set up for development, after cloning this repository:
 npm install && npm run clean
 ```
 
-You'll need a [local installation of Neo4j](http://neo4j.org/download), and it should be running on the default port of 7474.
-
-To run the tests:
+To run the tests, you'll need a [local installation of Neo4j](http://neo4j.org/download), running on the default port of 7474, and using the default `neo4j` username and password.
 
 ```sh
 npm test
 ```
+
+If your Neo4j installation is running on a different port, or has different credentials, you can specify these things by defining `NEO4J_URL` and/or `NEO4J_AUTH` environment variables. `NEO4J_URL` should be an absolute HTTP URL, and can have auth info embedded (e.g. `http://user:pass@localhost:1234`), while `NEO4J_AUTH` should be just a `username:password` string.
 
 This library is written in [CoffeeScript](http://coffeescript.org/), and we lint the code with [CoffeeLint](http://coffeelint.org/). To lint:
 

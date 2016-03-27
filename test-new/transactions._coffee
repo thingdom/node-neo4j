@@ -16,8 +16,36 @@ neo4j = require '../'
 
 [TEST_NODE_A, TEST_NODE_B, TEST_REL] = []
 
+OPEN_TXS = []
+
 
 ## HELPERS
+
+# To help with cleanup (see below):
+beginTx = ->
+    tx = DB.beginTransaction()
+    OPEN_TXS.push tx
+    tx
+
+# NOTE: Open transactions can cause Neo4j queries & requests to hang,
+# e.g. because a transaction has a lock, or when creating constraints.
+# The default transaction expiry time of 60 seconds is also far too long.
+# So we track all transactions we create (see above), and this method can be
+# called to clean those transactions up whenever needed.
+# It *should* be called at the end at least (see test near end of suite below).
+cleanupTxs = (_) ->
+    while tx = OPEN_TXS.pop()
+        switch tx.state
+            when tx.STATE_COMMITTED, tx.STATE_ROLLED_BACK, tx.STATE_EXPIRED
+                continue
+            when tx.STATE_PENDING
+                throw new Error 'Unexpected: transaction state is pending!
+                    Maybe a test timed out mid-request?'
+            when tx.STATE_OPEN
+                tx.rollback _
+                expect(tx.state).to.equal tx.STATE_ROLLED_BACK
+            else
+                throw new Error "Unrecognized tx state! #{tx.state}"
 
 # Calls the given asynchronous function with a placeholder callback, and
 # immediately returns a "future" that can be called with a real callback.
@@ -62,14 +90,14 @@ expectTxErrorRolledBack = (tx, _) ->
 describe 'Transactions', ->
 
     it 'should support simple queries', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         [{foo}] = tx.cypher 'RETURN "bar" AS foo', _
 
         expect(foo).to.equal 'bar'
 
     it 'should convey pending state, and reject concurrent requests', (done) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
         expect(tx.state).to.equal tx.STATE_OPEN
 
         fn = ->
@@ -89,7 +117,7 @@ describe 'Transactions', ->
             fixtures.createTestGraph module, 2, _
 
     it 'should isolate effects', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         # NOTE: It's important for us to create something new here, rather than
         # modify something existing. Otherwise, since we don't explicitly
@@ -139,7 +167,7 @@ describe 'Transactions', ->
         expect(results).to.be.empty()
 
     it 'should support committing, and reject subsequent requests', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         [{nodeA}] = tx.cypher
             query: '''
@@ -173,14 +201,14 @@ describe 'Transactions', ->
         expect(nodeA.properties.test).to.equal 'committing'
 
     it 'should support committing before any queries', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
         expect(tx.state).to.equal tx.STATE_OPEN
 
         tx.commit _
         expect(tx.state).to.equal tx.STATE_COMMITTED
 
     it 'should support auto-committing', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         # Rather than test auto-committing on the first query, which doesn't
         # actually create a new transaction, auto-commit on the second.
@@ -234,7 +262,7 @@ describe 'Transactions', ->
         expect(nodeA.properties.i).to.equal 2
 
     it 'should support rolling back, and reject subsequent requests', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         [{nodeA}] = tx.cypher
             query: '''
@@ -268,7 +296,7 @@ describe 'Transactions', ->
         expect(nodeA.properties.test).to.not.equal 'rolling back'
 
     it 'should support rolling back before any queries', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
         expect(tx.state).to.equal tx.STATE_OPEN
 
         tx.rollback _
@@ -277,7 +305,7 @@ describe 'Transactions', ->
     # NOTE: Skipping this test by default, because it's slow (we have to pause
     # one second; see note within) and not really a mission-critical feature.
     it.skip 'should support renewing (slow)', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         [{nodeA}] = tx.cypher
             query: '''
@@ -320,12 +348,6 @@ describe 'Transactions', ->
         expect(tx.expiresIn).to.be.greaterThan 0
         expect(tx.expiresIn).to.equal tx.expiresAt - new Date
 
-        # To prevent Neo4j from hanging at the end waiting for this transaction
-        # to commit or expire (since it touches the existing graph, and our last
-        # step is to delete the existing graph), roll this transaction back.
-        tx.rollback _
-        expect(tx.state).to.equal tx.STATE_ROLLED_BACK
-
         # We also ensure that renewing didn't cause the transaction to commit.
         [{nodeA}] = DB.cypher
             query: '''
@@ -339,7 +361,7 @@ describe 'Transactions', ->
         expect(nodeA.properties.test).to.not.equal 'renewing'
 
     it 'should properly handle (fatal) client errors', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         [{nodeA}] = tx.cypher
             query: '''
@@ -399,8 +421,8 @@ describe 'Transactions', ->
         # We can do this by having two separate transactions take locks on the
         # same two nodes, across two queries, but in opposite order.
         # (Taking a lock on a node just means writing to the node.)
-        tx1 = DB.beginTransaction()
-        tx2 = DB.beginTransaction()
+        tx1 = beginTx()
+        tx2 = beginTx()
 
         [[{nodeA}], [{nodeB}]] = flows.collect _, [
             defer tx1.cypher.bind tx1,
@@ -481,15 +503,8 @@ describe 'Transactions', ->
         expect(nodeB.properties.test).to.not.equal 'transient errors'
         expect(nodeB.properties.tx).to.equal 1
 
-        # To prevent Neo4j from hanging at the end waiting for this transaction
-        # to commit or expire (since it touches the existing graph, and our last
-        # step is to delete the existing graph), roll this transaction back.
-        expect(tx1.state).to.equal tx1.STATE_OPEN
-        tx1.rollback _
-        expect(tx1.state).to.equal tx1.STATE_ROLLED_BACK
-
     it 'should properly handle (fatal) database errors', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         # Important: don't auto-commit in the first query, because that doesn't
         # let us test that a transaction gets *returned* and *then* rolled back.
@@ -541,7 +556,7 @@ describe 'Transactions', ->
         expect(nodeA.properties.test).to.not.equal 'database errors'
 
     it 'should properly handle (fatal) errors during commit', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         # Important: don't auto-commit in the first query, because that doesn't
         # let us test that a transaction gets *returned* and *then* rolled back.
@@ -581,7 +596,7 @@ describe 'Transactions', ->
         expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
     it 'should properly handle (fatal) errors on the first query', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
         expect(tx.state).to.equal tx.STATE_OPEN
 
         # For precision, implementing this step without Streamline.
@@ -599,7 +614,7 @@ describe 'Transactions', ->
 
     it 'should properly handle (fatal) errors
             on an auto-commit first query', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
         expect(tx.state).to.equal tx.STATE_OPEN
 
         # For precision, implementing this step without Streamline.
@@ -618,7 +633,7 @@ describe 'Transactions', ->
         expect(tx.state).to.equal tx.STATE_ROLLED_BACK
 
     it 'should properly handle (fatal) errors with batching', (_) ->
-        tx = DB.beginTransaction()
+        tx = beginTx()
 
         results = tx.cypher [
             query: '''
@@ -708,6 +723,9 @@ describe 'Transactions', ->
         expectTxErrorRolledBack tx, _
 
     it 'should support streaming (TODO)'
+
+    it '(clean up open txs)', (_) ->
+        cleanupTxs _
 
     it '(delete test graph)', (_) ->
         fixtures.deleteTestGraph module, _

@@ -128,6 +128,9 @@ describe 'Transactions', ->
 
         {labels, properties} = fixtures.createTestNode module, _
 
+        # Add a random property so it's easier to look for it below:
+        properties.test = "should isolate effects #{helpers.getRandomStr()}"
+
         [{node}] = tx.cypher
             query: """
                 CREATE (node:#{TEST_LABEL} {properties})
@@ -145,22 +148,12 @@ describe 'Transactions', ->
         results = DB.cypher
             query: """
                 MATCH (node:#{TEST_LABEL})
-                WHERE #{(
-                    # NOTE: Cypher doesn’t support directly comparing nodes and
-                    # property bags, so we have to compare each property.
-                    # HACK: CoffeeLint thinks the below is bad indentation.
-                    # https://github.com/clutchski/coffeelint/issues/456
-                    # coffeelint: disable=indentation
-                    for prop of properties
-                        "node.#{prop} = {properties}.#{prop}"
-                    # coffeelint: enable=indentation
-                    # HACK: CoffeeLint also thinks the below is double quotes!
-                    # https://github.com/clutchski/coffeelint/issues/368
-                    # coffeelint: disable=no_unnecessary_double_quotes
-                ).join ' AND '}
+                // NOTE: Cypher doesn't support comparing a node or relationship
+                // to an entire map of properties, so we check just the one
+                // random one we created above:
+                WHERE node.test = {properties}.test
                 RETURN node
             """
-            # coffeelint: enable=no_unnecessary_double_quotes
             params: {properties}
         , _
 

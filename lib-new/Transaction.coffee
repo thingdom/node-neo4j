@@ -21,6 +21,11 @@ module.exports = class Transaction
     # Convenience helper for nice getter syntax:
     # (NOTE: This does *not* support sibling setters, as we don't need it,
     # but it's possible to add support.)
+    #
+    # NOTE: CoffeeLint thinks this fat arrow is unnecessary here, but it's not:
+    # https://github.com/clutchski/coffeelint/issues/555
+    # coffeelint: disable=no_private_function_fat_arrows
+    #
     get = (props) =>
         for name, getter of props
             Object.defineProperty @::, name,

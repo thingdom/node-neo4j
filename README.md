@@ -4,9 +4,11 @@
 
 [Node.js](http://nodejs.org/) driver for [Neo4j](http://neo4j.com/), a graph database.
 
-This driver aims to be the most **robust**, **comprehensive**, and **battle-tested** driver available. It's run in production by [FiftyThree](https://www.fiftythree.com/) to power [Paper](https://www.fiftythree.com/paper) and [Mix](https://mix.fiftythree.com/).
+This driver aims to be the most **robust**, **comprehensive**, and **battle-tested** driver available. It's run in production by [FiftyThree](https://www.fiftythree.com/) to power the popular iOS app [Paper](https://www.fiftythree.com/paper).
 
-*(Note: if you're still on Neo4j 1.x, you'll need to use [node-neo4j 1.x](https://github.com/thingdom/node-neo4j/tree/v1) as well.)*
+_Note: if you're still on **Neo4j 1.x**, you'll need to use **[node-neo4j v1](https://github.com/thingdom/node-neo4j/tree/v1)**._
+
+_Note: **node-neo4j v2** is a ground-up rewrite with an entirely new API. If you're currently using **node-neo4j v1**, here's the **[migration guide](./CHANGELOG.md#version-200)**._
 
 
 ## Features
@@ -72,7 +74,7 @@ Yields e.g.:
 
 See [node-neo4j-template](https://github.com/aseemk/node-neo4j-template) for a more thorough example.
 
-TODO: Also link to movies example.
+<!-- TODO: Also link to movies example. -->
 
 
 ## Basics
@@ -190,7 +192,7 @@ Other options:
 
 ## Batching
 
-Although this need is rare, you can make multiple Cypher queries in a single network request, by passing a `queries` *array* rather than a single `query` string.
+You can also make multiple Cypher queries within a single network request, by passing a `queries` *array* rather than a single `query` string.
 
 Query `params` (and optionally `lean`) are then specified *per query*, so the elements in the array are `{query, params[, lean]}` objects. (Other options like `headers` remain "global" for the entire request.)
 
@@ -252,7 +254,7 @@ Importantly, batch queries execute (a) **sequentially** and (b) **transactionall
 
 ## Transactions
 
-You can also batch multiple Cypher queries into a single transaction across *multiple* network requests. This can be useful when application logic needs to run in between related queries. The queries will all succeed or fail together.
+You can also batch multiple Cypher queries into a single transaction across *multiple* network requests. This can be useful when application logic needs to run in between related queries (e.g. for domain-aware cascading deletes), or Neo4j state needs to be coordinated with side effects (e.g. writes to another data store). The queries will all succeed or fail together.
 
 To do this, begin a new transaction, make Cypher queries within that transaction, and then ultimately commit the transaction or roll it back.
 
@@ -553,7 +555,7 @@ req.on('end', function () {
 
 ## Errors
 
-(TODO)
+To achieve robustness in your app, it's vitally important to handle errors precisely.
 
 
 ## Tuning

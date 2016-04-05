@@ -356,7 +356,7 @@ tx.renew(function (err) {
 
 The full [state diagram](https://paper.fiftythree.com/aseemk/10779878) putting this all together:
 
-[![Neo4j transaction state diagram](https://blobs-public.fiftythree.com/lLjEolaK8srcsvhkvy7n5DwMcJJTFiFe5e2sBrxOTzE1TZdj)](https://paper.fiftythree.com/aseemk/10779878)
+<a href="https://paper.fiftythree.com/aseemk/10779878" target="_blank"><img alt="Neo4j transaction state diagram" src="https://blobs-public.fiftythree.com/9LdWt0fwPjeT_o0nZ6b3o1w2qCwKs6NuNGZ4d3db86UKp2r7" width="512" height="384" /></a>
 
 
 ## Headers

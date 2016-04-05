@@ -72,7 +72,7 @@ Yields e.g.:
 }
 ```
 
-See [node-neo4j-template](https://github.com/aseemk/node-neo4j-template) for a more thorough example.
+See **[node-neo4j-template](https://github.com/aseemk/node-neo4j-template)** for a more thorough example.
 
 <!-- TODO: Also link to movies example. -->
 
@@ -354,9 +354,9 @@ tx.renew(function (err) {
 });
 ```
 
-The full [state diagram](https://mix.fiftythree.com/aseemk/2462211) putting this all together:
+The full [state diagram](https://mix.fiftythree.com/aseemk/10779878) putting this all together:
 
-[![Neo4j transaction state diagram](https://d3ayzibdlq49a1.cloudfront.net/f2a67a92-8b73-44ba-bb29-0ce12069c57e/image/f2a67a92-8b73-44ba-bb29-0ce12069c57e_image_2048x1536.png)](https://mix.fiftythree.com/aseemk/2462211)
+[![Neo4j transaction state diagram](https://blobs-public.fiftythree.com/9LdWt0fwPjeT_o0nZ6b3o1w2qCwKs6NuNGZ4d3db86UKp2r7)](https://mix.fiftythree.com/aseemk/10779878)
 
 
 ## Headers
@@ -573,7 +573,11 @@ To achieve robustness in your app, it's vitally important to handle errors preci
 
 ## Help
 
-(TODO)
+Questions, comments, or other general discussion? **[Google Group »](https://groups.google.com/group/node-neo4j)**
+
+Bug reports or feature requests? **[GitHub Issues »](https://github.com/thingdom/node-neo4j/issues)**
+
+You can also try **[Gitter](https://gitter.im/thingdom/node-neo4j)**, **[Stack Overflow](http://stackoverflow.com/search?q=node-neo4j)** or **[Slack](https://neo4j-users.slack.com/messages/neo4j-javascript)** ([sign up here](http://neo4j-users-slack-invite.herokuapp.com/)).
 
 
 ## Contributing
@@ -581,49 +585,13 @@ To achieve robustness in your app, it's vitally important to handle errors preci
 [See CONTRIBUTING.md »](./CONTRIBUTING.md)
 
 
+## History
 
-<!--
-
-## Getting Help
-
-If you're having any issues you can first refer to the [API documentation][api-docs].
-
-If you encounter any bugs or other issues, please file them in the
-[issue tracker][issue-tracker].
-
-We also now have a [Google Group][google-group]!
-Post questions and participate in general discussions there.
-
-You can also [ask a question on StackOverflow][stackoverflow-ask]
-
--->
-
-
-## Changes
-
-See the [Changelog][changelog] for the full history of changes and releases.
+[See CHANGELOG.md »](./CHANGELOG.md)
 
 
 ## License
 
-This library is licensed under the [Apache License, Version 2.0][license].
+Copyright © 2016 Aseem Kishore and [contributors](https://github.com/thingdom/node-neo4j/graphs/contributors).
 
-
-
-[node.js]: http://nodejs.org/
-[neo4j-rest-api]: http://docs.neo4j.org/chunked/stable/rest-api.html
-
-[api-docs]: http://coffeedoc.info/github/thingdom/node-neo4j/master/
-[aseemk]: https://github.com/aseemk
-[node-neo4j-template]: https://github.com/aseemk/node-neo4j-template
-[semver]: http://semver.org/
-
-[coffeescript]: http://coffeescript.org/
-[streamline.js]: https://github.com/Sage/streamlinejs
-
-[changelog]: CHANGELOG.md
-[issue-tracker]: https://github.com/thingdom/node-neo4j/issues
-[license]: http://www.apache.org/licenses/LICENSE-2.0.html
-[google-group]: https://groups.google.com/group/node-neo4j
-
-[stackoverflow-ask]: http://stackoverflow.com/questions/ask?tags=node.js,neo4j,thingdom
+This library is licensed under the [Apache License, Version 2.0](./LICENSE).

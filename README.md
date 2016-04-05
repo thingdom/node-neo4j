@@ -582,16 +582,16 @@ You can also try **[Gitter](https://gitter.im/thingdom/node-neo4j)**, **[Stack O
 
 ## Contributing
 
-[See CONTRIBUTING.md »](./CONTRIBUTING.md)
+[See **CONTRIBUTING.md** »](./CONTRIBUTING.md)
 
 
 ## History
 
-[See CHANGELOG.md »](./CHANGELOG.md)
+[See **CHANGELOG.md** »](./CHANGELOG.md)
 
 
 ## License
 
-Copyright © 2016 Aseem Kishore and [contributors](https://github.com/thingdom/node-neo4j/graphs/contributors).
+Copyright © 2016 **[Aseem Kishore](https://github.com/aseemk)** and [contributors](https://github.com/thingdom/node-neo4j/graphs/contributors).
 
-This library is licensed under the [Apache License, Version 2.0](./LICENSE).
+This library is licensed under the **[Apache License, Version 2.0](./LICENSE)**.

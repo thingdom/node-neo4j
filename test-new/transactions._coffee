@@ -32,20 +32,22 @@ beginTx = ->
 # The default transaction expiry time of 60 seconds is also far too long.
 # So we track all transactions we create (see above), and this method can be
 # called to clean those transactions up whenever needed.
-# It *should* be called at the end at least (see test near end of suite below).
 cleanupTxs = (_) ->
-    while tx = OPEN_TXS.pop()
-        switch tx.state
-            when tx.STATE_COMMITTED, tx.STATE_ROLLED_BACK, tx.STATE_EXPIRED
-                continue
-            when tx.STATE_PENDING
-                throw new Error 'Unexpected: transaction state is pending!
-                    Maybe a test timed out mid-request?'
-            when tx.STATE_OPEN
-                tx.rollback _
-                expect(tx.state).to.equal tx.STATE_ROLLED_BACK
-            else
-                throw new Error "Unrecognized tx state! #{tx.state}"
+    # We parallelize these rollbacks to keep test performance fast:
+    flows.collect _,
+        while tx = OPEN_TXS.pop() then do (tx, _=!_) ->
+            switch tx.state
+                when tx.STATE_COMMITTED, tx.STATE_ROLLED_BACK, tx.STATE_EXPIRED
+                    return
+                when tx.STATE_PENDING
+                    throw new Error 'Unexpected: transaction state is pending!
+                        Maybe a test timed out mid-request?
+                        Can’t rollback since concurrent reqs not allowed...'
+                when tx.STATE_OPEN
+                    tx.rollback _
+                    expect(tx.state).to.equal tx.STATE_ROLLED_BACK
+                else
+                    throw new Error "Unrecognized tx state! #{tx.state}"
 
 # Calls the given asynchronous function with a placeholder callback, and
 # immediately returns a "future" that can be called with a real callback.
@@ -88,6 +90,9 @@ expectTxErrorRolledBack = (tx, _) ->
 ## TESTS
 
 describe 'Transactions', ->
+
+    afterEach (_) ->
+        cleanupTxs _
 
     it 'should support simple queries', (_) ->
         tx = beginTx()
@@ -716,9 +721,6 @@ describe 'Transactions', ->
         expectTxErrorRolledBack tx, _
 
     it 'should support streaming (TODO)'
-
-    it '(clean up open txs)', (_) ->
-        cleanupTxs _
 
     it '(delete test graph)', (_) ->
         fixtures.deleteTestGraph module, _

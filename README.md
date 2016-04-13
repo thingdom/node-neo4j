@@ -669,7 +669,7 @@ neo4j.DatabaseError: [Neo.DatabaseError.Statement.ExecutionFailure] scala.MatchE
     at <Java stack first, to include in Neo4j bug report>
     at <then Node.js stack...>
 
-neo4j.DatabaseError: 502 Bad Gateway response for POST /db/data/transaction/commit: \"<html><body><h1>502 Bad Gateway</h1>\\nThe server returned an invalid or incomplete response.\\n</body></html>\\n\"
+neo4j.DatabaseError: 502 Bad Gateway response for POST /db/data/transaction/commit: "<html><body><h1>502 Bad Gateway</h1>\nThe server returned an invalid or incomplete response.\n</body></html>\n"
 
 neo4j.TransientError: [Neo.TransientError.Transaction.DeadlockDetected] LockClient[1150] can't wait on resource RWLock[NODE(196), hash=2005718009] since => LockClient[1150] <-[:HELD_BY]- RWLock[NODE(197), hash=1180589294] <-[:WAITING_FOR]- LockClient[1149] <-[:HELD_BY]- RWLock[NODE(196), hash=2005718009]
 ```

@@ -35,7 +35,10 @@ beginTx = ->
 cleanupTxs = (_) ->
     # We parallelize these rollbacks to keep test performance fast:
     flows.collect _,
+        # Streamline futures use `!` rather than `not` by convention.
+        # coffeelint: disable=prefer_english_operator
         while tx = OPEN_TXS.pop() then do (tx, _=!_) ->
+        # coffeelint: enable=prefer_english_operator
             switch tx.state
                 when tx.STATE_COMMITTED, tx.STATE_ROLLED_BACK, tx.STATE_EXPIRED
                     return

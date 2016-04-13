@@ -4,16 +4,16 @@ http = require 'http'
 
 class @Error extends Error
 
-    constructor: (@message='Unknown error', @neo4j={}, _stackStart) ->
+    constructor: (@message='Unknown error', @neo4j={}) ->
         @name = 'neo4j.' + @constructor.name
-        Error.captureStackTrace @, _stackStart
+        Error.captureStackTrace @, @constructor
 
     #
     # Accepts the given HTTP client response, and if it represents an error,
     # creates and returns the appropriate Error instance from it.
     # If the response doesn't represent an error, returns null.
     #
-    @_fromResponse: (resp, _stackStart=arguments.callee) ->
+    @_fromResponse: (resp) ->
         {body, headers, statusCode} = resp
 
         return null if statusCode < 400
@@ -23,7 +23,7 @@ class @Error extends Error
             # TODO: Is it possible to get back more than one error?
             # If so, is it fine for us to just use the first one?
             [error] = body.errors
-            return @_fromObject error, _stackStart
+            return @_fromObject error
 
         # TODO: Do some status codes (or perhaps inner `exception` names)
         # signify Transient errors rather than Database ones?
@@ -44,13 +44,13 @@ class @Error extends Error
         if logBody and body?
             message += ": #{JSON.stringify body, null, 4}"
 
-        new ErrorClass message, body, _stackStart
+        new ErrorClass message, body
 
     #
     # Accepts the given (Neo4j v2) error object, and creates and returns the
     # appropriate Error instance for it.
     #
-    @_fromObject: (obj, _stackStart=arguments.callee) ->
+    @_fromObject: (obj) ->
         # NOTE: Neo4j 2.2 seems to return both `stackTrace` and `stacktrace`.
         # https://github.com/neo4j/neo4j/issues/4145#issuecomment-78203290
         # Normalizing to consistent `stackTrace` before we parse below!
@@ -93,7 +93,7 @@ class @Error extends Error
         else
             fullMessage += message
 
-        new ErrorClass fullMessage, obj, _stackStart
+        new ErrorClass fullMessage, obj
 
     # TODO: Helper to rethrow native/inner errors? Not sure if we need one.
 

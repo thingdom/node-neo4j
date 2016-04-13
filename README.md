@@ -555,7 +555,126 @@ req.on('end', function () {
 
 ## Errors
 
-To achieve robustness in your app, it's vitally important to handle errors precisely.
+To achieve robustness in your app, it's vitally important to [handle errors precisely](http://www.joyent.com/developers/node/design/errors). Neo4j supports this nicely by returning semantic and precise [error codes](http://neo4j.com/docs/stable/status-codes.html).
+
+There are multiple levels of detail, but the high-level classifications are a good granularity for decision-making:
+
+- `ClientError` (likely a bug in your code, but possibly invalid user input)
+- `DatabaseError` (a bug in Neo4j)
+- `TransientError` (occasionally expected; can/should retry)
+
+node-neo4j translates these classifications to named `Error` subclasses. That means there are two ways to detect Neo4j errors:
+
+```js
+// `instanceof` is recommended:
+err instanceof neo4j.TransientError
+
+// `name` works too, though:
+err.name === 'neo4j.TransientError'
+```
+
+These error instances also have a `neo4j` property with semantic data inside. E.g. Cypher errors have data of the form `{code, message}`:
+
+```json
+{
+    "code": "Neo.TransientError.Transaction.DeadlockDetected",
+    "message": "LockClient[83] can't wait on resource ...",
+    "stackTrace": "..."
+}
+```
+
+Other types of errors (e.g. [managing schema](#management)) may have different forms of `neo4j` data:
+
+```json
+{
+    "exception": "BadInputException",
+    "fullname": "org.neo4j.server.rest.repr.BadInputException",
+    "message": "Unable to add label, see nested exception.",
+    "stackTrace": [...],
+    "cause": {...}
+}
+```
+
+Finally, malformed (non-JSON) responses from Neo4j (rare) will have `neo4j` set to the raw response string, while native Node.js errors (e.g. DNS errors) will be propagated in their original form, to avoid masking unexpected issues.
+
+Putting all this together, you now have the tools to handle node-neo4j errors precisely! For example, we have helpers similar to these at FiftyThree:
+
+```js
+// A query or transaction failed. Should we retry it?
+// We check this in a retry loop, with proper backoff, etc.
+// http://aseemk.com/talks/advanced-neo4j#/50
+function shouldRetry(err) {
+    // All transient errors are worth retrying, of course.
+    if (err instanceof neo4j.TransientError) {
+        return true;
+    }
+
+    // If the database is unavailable, it's probably failing over.
+    // We expect it to come back up quickly, so worth retrying also.
+    if (isDbUnavailable(err)) {
+        return true;
+    }
+
+    // There are a few other non-transient Neo4j errors we special-case.
+    // Important: this assumes we don't have bugs in our code that would trigger
+    // these errors legitimately.
+    if (typeof err.neo4j === 'object' && (
+        // If a failover happened when we were in the middle of a transaction,
+        // the new instance won't know about that transaction, so we re-do it.
+        err.neo4j.code === 'Neo.ClientError.Transaction.UnknownId' ||
+        // These are current Neo4j bugs we occasionally hit with our queries.
+        err.neo4j.code === 'Neo.ClientError.Statement.EntityNotFound' ||
+        err.neo4j.code === 'Neo.DatabaseError.Statement.ExecutionFailure')) {
+            return true;
+    }
+
+    return false;
+}
+
+// Is this error due to Neo4j being down, failing over, etc.?
+// This is a separate helper because we also retry less aggressively in this case.
+function isDbUnavailable(err) {
+    // If we're unable to connect, we see these particular Node.js errors.
+    // https://nodejs.org/api/errors.html#errors_common_system_errors
+    // E.g. http://stackoverflow.com/questions/17245881/node-js-econnreset
+    if ((err.syscall === 'getaddrinfo' && err.code === 'ENOTFOUND') ||
+        (err.syscall === 'connect' && err.code === 'EHOSTUNREACH') ||
+        (err.syscall === 'read' && err.code === 'ECONNRESET')) {
+            return true;
+    }
+
+    // We load balance via HAProxy, so if Neo4j is unavailable, HAProxy responds
+    // with 5xx status codes.
+    // node-neo4j sees this and translates to a DatabaseError, but the body is
+    // HTML, not JSON, so the `neo4j` property is simply the HTML string.
+    if (err instanceof neo4j.DatabaseError && typeof err.neo4j === 'string' &&
+        err.neo4j.match(/(502 Bad Gateway|503 Service Unavailable)/)) {
+            return true;
+    }
+
+    return false;
+}
+```
+
+In addition to all of the above, node-neo4j also embeds the most useful information from `neo4j` into the `message` and `stack` properties, so you don't need to do anything special to log meaningful, actionable, and debuggable errors. (E.g. Node's native logging of errors, both via `console.log` and on uncaught exceptions, includes this info.)
+
+Here are some example snippets from real-world `stack` traces:
+
+```
+neo4j.ClientError: [Neo.ClientError.Statement.ParameterMissing] Expected a parameter named email
+
+neo4j.ClientError: [Neo.ClientError.Schema.ConstraintViolation] Node 15 already exists with label User and property "email"=[15]
+
+neo4j.DatabaseError: [Neo.DatabaseError.Statement.ExecutionFailure] scala.MatchError: (email,null) (of class scala.Tuple2)
+    at <Java stack first, to include in Neo4j bug report>
+    at <then Node.js stack...>
+
+neo4j.DatabaseError: 502 Bad Gateway response for POST /db/data/transaction/commit: \"<html><body><h1>502 Bad Gateway</h1>\\nThe server returned an invalid or incomplete response.\\n</body></html>\\n\"
+
+neo4j.TransientError: [Neo.TransientError.Transaction.DeadlockDetected] LockClient[1150] can't wait on resource RWLock[NODE(196), hash=2005718009] since => LockClient[1150] <-[:HELD_BY]- RWLock[NODE(197), hash=1180589294] <-[:WAITING_FOR]- LockClient[1149] <-[:HELD_BY]- RWLock[NODE(196), hash=2005718009]
+```
+
+Precise and helpful error reporting is one of node-neo4j's best strengths. We hope it helps your app run smoothly!
 
 
 ## Tuning

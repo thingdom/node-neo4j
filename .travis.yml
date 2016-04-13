@@ -1,9 +1,9 @@
 language: node_js
 
 node_js:
+  # test across multiple versions of Node:
   - "5"
   - "4"
-  - "io.js"
   - "0.12"
   - "0.10"
 
@@ -16,12 +16,6 @@ env:
   - NEO4J_VERSION="2.2.8"
   - NEO4J_VERSION="2.1.8"
   - NEO4J_VERSION="2.0.4"
-
-matrix:
-  # but we may want to allow our tests to fail against *some* Neo4j versions,
-  # e.g. due to unstability, bugs, or breaking changes for our test code.
-  allow_failures:
-    - env: NEO4J_VERSION="2.0.4"  # seems to have transaction bugs
 
 before_install:
   # install Neo4j locally:

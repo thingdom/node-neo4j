@@ -80,11 +80,12 @@ class @Error extends Error
                 stackTrace = "#{message}: #{stackTrace}"
 
             # Stack traces can include "Caused by" lines which aren't indented,
-            # and indented lines use tabs. Normalize to 4 spaces, and indent
-            # everything one extra level, to differentiate from Node.js lines.
-            stackTrace = stackTrace
-                .replace /\t/g, '    '
-                .replace /\n/g, '\n    '
+            # and indented lines use tabs. Normalize to 4 spaces (like Node),
+            # and add a divider to differentiate Neo4j lines from Node.js ones.
+            # Note that the Neo4j stack often ends in a newline already.
+            stackTrace = stackTrace.replace /\t/g, '    '
+            stackTrace += '\n' if stackTrace[-1..] isnt '\n'
+            stackTrace += '    <<< Neo4j stack above; Node.js stack below >>>'
 
             fullMessage += stackTrace
 

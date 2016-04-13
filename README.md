@@ -127,7 +127,7 @@ db.cypher({
 }, callback);
 ```
 
-It's extremely important to **pass `params` separately**. If you concatenate them into the `query`, you'll be vulnerable to injection attacks, and Neo4j performance will suffer as well.
+It's extremely important to **pass `params` separately**. If you concatenate them into the `query`, you'll be vulnerable to injection attacks, and Neo4j performance will suffer as well. _(Note that parameters can't be used for labels, property names, and relationship types, as those things determine the query plan. [Docs »](http://neo4j.com/docs/stable/cypher-parameters.html))_
 
 Cypher queries *always* return a list of results (like SQL rows), with each result having common properties (like SQL columns). Thus, query **results** passed to the callback are *always* an **array** (even if it's empty), and each **result** in the array is *always* an **object** (even if it's empty).
 

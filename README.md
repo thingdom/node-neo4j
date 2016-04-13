@@ -597,7 +597,7 @@ Other types of errors (e.g. [managing schema](#management)) may have different f
 
 Finally, malformed (non-JSON) responses from Neo4j (rare) will have `neo4j` set to the raw response string, while native Node.js errors (e.g. DNS errors) will be propagated in their original form, to avoid masking unexpected issues.
 
-Putting all this together, you now have the tools to handle node-neo4j errors precisely! For example, we have helpers similar to these at FiftyThree:
+Putting all this together, you now have the tools to handle Neo4j errors precisely! For example, we have helpers similar to these at FiftyThree:
 
 ```js
 // A query or transaction failed. Should we retry it?

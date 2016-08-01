@@ -1,0 +1,137 @@
+{
+    "arrow_spacing": {
+        "level": "error"
+    },
+    "braces_spacing": {
+        "level": "error",
+        "spaces": 0,
+        "empty_object_spaces": 0
+    },
+    "camel_case_classes": {
+        "level": "error"
+    },
+    "coffeescript_error": {
+        "level": "error"
+    },
+    "colon_assignment_spacing": {
+        "level": "error",
+        "spacing": {
+            "left": 0,
+            "right": 1
+        }
+    },
+    "cyclomatic_complexity": {
+        "value": 15,
+        "level": "warn",
+        "note": "Good for us to know, but we're sometimes okay with localized complexity when we have good test coverage."
+    },
+    "duplicate_key": {
+        "level": "error"
+    },
+    "empty_constructor_needs_parens": {
+        "level": "ignore",
+        "note": "We consider this idiomatic: `new NotFoundError`"
+    },
+    "ensure_comprehensions": {
+        "level": "warn",
+        "note": "TODO: What is this?"
+    },
+    "indentation": {
+        "value": 4,
+        "level": "error"
+    },
+    "line_endings": {
+        "level": "error",
+        "value": "unix"
+    },
+    "max_line_length": {
+        "value": 80,
+        "level": "error",
+        "limitComments": true
+    },
+    "missing_fat_arrows": {
+        "level": "ignore",
+        "is_strict": false,
+        "note": "There are plenty of dynamic `this` cases beyond simple class methods: event handlers, dynamic properties, even Mocha tests."
+    },
+    "newlines_after_classes": {
+        "value": 2,
+        "level": "warn",
+        "note": "We prefer this, but it won't be a show-stopper."
+    },
+    "no_backticks": {
+        "level": "error"
+    },
+    "no_debugger": {
+        "level": "error"
+    },
+    "no_empty_functions": {
+        "level": "error"
+    },
+    "no_empty_param_list": {
+        "level": "error"
+    },
+    "no_implicit_braces": {
+        "level": "warn",
+        "strict": false,
+        "note": "TODO: This fails on multi-line cases sometimes. https://github.com/clutchski/coffeelint/issues/459"
+    },
+    "no_implicit_parens": {
+        "strict": true,
+        "level": "ignore",
+        "note": "This is definitely idiomatic CoffeeScript: `foo a, b, c`"
+    },
+    "no_interpolation_in_single_quotes": {
+        "level": "error"
+    },
+    "no_plusplus": {
+        "level": "ignore",
+        "note": "We're okay with the use of ++ and --."
+    },
+    "no_stand_alone_at": {
+        "level": "ignore",
+        "note": "We're okay with standalone @."
+    },
+    "no_tabs": {
+        "level": "error"
+    },
+    "no_throwing_strings": {
+        "level": "error"
+    },
+    "no_trailing_semicolons": {
+        "level": "error"
+    },
+    "no_trailing_whitespace": {
+        "level": "error",
+        "allowed_in_comments": false,
+        "allowed_in_empty_lines": false
+    },
+    "no_unnecessary_double_quotes": {
+        "level": "warn",
+        "note": "We prefer single quotes wherever possible, but this won't be a show-stopper."
+    },
+    "no_unnecessary_fat_arrows": {
+        "level": "ignore",
+        "note": "We're okay with preemptive uses of fat arrows."
+    },
+    "non_empty_constructor_needs_parens": {
+        "level": "ignore",
+        "note": "Similar to `no_implicit_parens`, this is definitely idiomatic CoffeeScript: `new Foo a, b, c`"
+    },
+    "prefer_english_operator": {
+        "level": "error",
+        "doubleNotLevel": "ignore"
+    },
+    "space_operators": {
+        "level": "ignore",
+        "note": "TODO: We're okay with no spaces for default params (e.g. `opts={}`). Exception being worked on: https://github.com/clutchski/coffeelint/pull/438"
+    },
+    "spacing_after_comma": {
+        "level": "ignore",
+        "note": "This is definitely idiomatic CoffeeScript: `foo a, b, c`"
+    },
+    "transform_messes_up_line_numbers": {
+        "level": "warn",
+        "note": "This is just a recommended setting for CoffeeLint."
+    }
+}

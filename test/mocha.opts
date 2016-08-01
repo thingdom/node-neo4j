@@ -1,5 +1,4 @@
 --compilers coffee:coffee-script/register,_coffee:streamline/register
---ui exports
 --reporter spec
---timeout 10000
---slow 1000
+--timeout 5000
+--slow 500

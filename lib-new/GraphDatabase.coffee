@@ -235,7 +235,8 @@ module.exports = class GraphDatabase
                     {query, params, lean} = query
 
                     # NOTE: Lowercase 'rest' matters here for parsing.
-                    formats.push format = if lean then 'row' else 'rest'
+                    format = if lean is true then 'row' else (lean or 'rest')
+                    formats.push format
 
                     # NOTE: Braces needed by CoffeeLint for now.
                     # https://github.com/clutchski/coffeelint/issues/459
@@ -285,8 +286,10 @@ module.exports = class GraphDatabase
                     # parse nodes & relationships into object instances if this
                     # query didn't request a raw format. Phew!
                     $(data).pluck(format).map (row) ->
-                        result = {}
+                        if format is 'graph'
+                            return row
 
+                        result = {}
                         for column, j in columns
                             result[column] = row[j]
 

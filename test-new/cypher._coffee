@@ -189,6 +189,24 @@ describe 'GraphDatabase::cypher', ->
             r: TEST_REL.properties
         ]
 
+    it 'should support graph format results', (_) ->
+        results = DB.cypher
+            query: '''
+                START a = node({idA})
+                MATCH (a) -[r]-> (b)
+                RETURN a, b, r
+            '''
+            params:
+                idA: TEST_NODE_A._id
+            lean: 'graph'
+        , _
+
+        expect(results).to.eql [
+            a: TEST_NODE_A.properties
+            b: TEST_NODE_B.properties
+            r: TEST_REL.properties
+        ]
+
     it 'should support simple batching', (_) ->
         results = DB.cypher [
             query: '''

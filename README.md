@@ -1,154 +1,716 @@
-[![Build Status](https://travis-ci.org/thingdom/node-neo4j.svg?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
-
 # Node-Neo4j
 
-This is a client library for accessing [Neo4j][], a graph database, from
-[Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api], and supports
-Neo4j 1.5 through Neo4j 2.1.
+[![npm version](https://badge.fury.io/js/neo4j.svg)](http://badge.fury.io/js/neo4j) [![Build Status](https://travis-ci.org/thingdom/node-neo4j.svg?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
 
-(Note that new 2.0 features like labels and constraints are only accessible
-through Cypher for now -- but Cypher is the recommended interface for Neo4j
-anyway. This driver might change to wrap Cypher entirely.)
+[Node.js](http://nodejs.org/) driver for [Neo4j](http://neo4j.com/), a graph database.
 
-<em>**Update: [node-neo4j v2][] is under development and almost finished!**
-[Read the full spec here][v2 spec], and follow the progress in [pull #145][].
-If you're comfortable using pre-release code, alpha versions are available on
-npm; we at [FiftyThree][] are running them in production. =)</em>
+This driver aims to be the most **robust**, **comprehensive**, and **battle-tested** driver available. It's run in production by [FiftyThree](https://www.fiftythree.com/) to power the popular iOS app [Paper](https://www.fiftythree.com/paper).
 
-[node-neo4j v2]: https://github.com/thingdom/node-neo4j/tree/v2#readme
-[v2 spec]: https://github.com/thingdom/node-neo4j/blob/v2/API_v2.md
-[pull #145]: https://github.com/thingdom/node-neo4j/pull/145
-[FiftyThree]: http://www.fiftythree.com/
+_Note: if you're still on **Neo4j 1.x**, you'll need to use **[node-neo4j v1](https://github.com/thingdom/node-neo4j/tree/v1)**._
+
+_Note: **node-neo4j v2** is a ground-up rewrite with an entirely new API. If you're currently using **node-neo4j v1**, here's the **[migration guide](./CHANGELOG.md#version-200)**._
+
+
+## Features
+
+- [**Cypher queries**](#cypher), parameters, [batching](#batching), and [**transactions**](#transactions)
+- Arbitrary [**HTTP requests**](#http-plugins), for custom [Neo4j plugins](#http-plugins)
+- [**Custom headers**](#headers), for [**high availability**](#high-availability), application tracing, query logging, and more
+- [**Precise errors**](#errors), for robust error handling from the start
+- Configurable [**connection pooling**](#tuning), for performance tuning & monitoring
+- Thorough test coverage with [**>100 tests**](./test-new)
+- [**Continuously integrated**](https://travis-ci.org/thingdom/node-neo4j) against [multiple versions](./.travis.yml) of Node.js and Neo4j
 
 
 ## Installation
 
-    npm install neo4j@1.x --save
+```sh
+npm install neo4j --save
+```
 
 
-## Usage
-
-To start, create a new instance of the `GraphDatabase` class pointing to your
-Neo4j instance:
+## Example
 
 ```js
 var neo4j = require('neo4j');
-var db = new neo4j.GraphDatabase('http://localhost:7474');
+var db = new neo4j.GraphDatabase('http://username:password@localhost:7474');
+
+db.cypher({
+    query: 'MATCH (user:User {email: {email}}) RETURN user',
+    params: {
+        email: 'alice@example.com',
+    },
+}, callback);
+
+function callback(err, results) {
+    if (err) throw err;
+    var result = results[0];
+    if (!result) {
+        console.log('No user found.');
+    } else {
+        var user = result['user'];
+        console.log(user);
+    }
+};
 ```
 
-Node.js is asynchronous, which means this library is too: most functions take
-callbacks and return immediately, with the callbacks being invoked when the
-corresponding HTTP requests and responses finish.
+Yields e.g.:
 
-Here's a simple example:
+```json
+{
+    "_id": 12345678,
+    "labels": [
+        "User",
+        "Admin"
+    ],
+    "properties": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "emailVerified": true,
+        "passwordHash": "..."
+    }
+}
+```
+
+See **[node-neo4j-template](https://github.com/aseemk/node-neo4j-template)** for a more thorough example.
+
+<!-- TODO: Also link to movies example. -->
+
+
+## Basics
+
+Connect to a running Neo4j instance by instantiating the **`GraphDatabase`** class:
 
 ```js
-var node = db.createNode({hello: 'world'});     // instantaneous, but...
-node.save(function (err, node) {    // ...this is what actually persists.
-    if (err) {
-        console.error('Error saving new node to database:', err);
-    } else {
-        console.log('Node saved to database with id:', node.id);
-    }
+var neo4j = require('neo4j');
+
+// Shorthand:
+var db = new neo4j.GraphDatabase('http://username:password@localhost:7474');
+
+// Full options:
+var db = new neo4j.GraphDatabase({
+    url: 'http://localhost:7474',
+    auth: {username: 'username', password: 'password'},
+    // ...
 });
 ```
 
-Because async flow in Node.js can be quite tricky to handle, we
-strongly recommend using a flow control tool or library to help.
-Our personal favorite is [Streamline.js][], but other popular choices are
-[async](https://github.com/caolan/async),
-[Step](https://github.com/creationix/step),
-[Seq](https://github.com/substack/node-seq), [TameJS](http://tamejs.org/) and
-[IcedCoffeeScript](http://maxtaco.github.com/coffee-script/).
+Options:
 
-Once you've gotten the basics down, skim through the full
-**[API documentation][api-docs]** to see what this library can do, and take a
-look at [@aseemk][aseemk]'s [node-neo4j-template][] app for a complete usage
-example. (The `models/User.js` file in particular is the one that interacts
-with this library.)
+- **`url` (required)**: the base URL to the Neo4j instance, e.g. `'http://localhost:7474'`. This can include auth credentials (e.g. `'http://username:password@localhost:7474'`), but doesn't have to.
 
-This library is officially stable at "v1", but "v2" will almost certainly have
-breaking changes to support only Neo4j 2.0 and generally improve the API
-([roadmap][]). You can be sheltered from these changes if you simply specify
-your package.json dependency as e.g. `1.x` or `^1.0` instead of `*`.
+- **`auth`**: optional auth credentials; either a `'username:password'` string, or a `{username, password}` object. If present, this takes precedence over any credentials in the `url`.
 
-[Roadmap]: https://github.com/thingdom/node-neo4j/wiki/Roadmap
+- **`headers`**: optional custom [HTTP headers](#headers) to send with every request. These can be overridden per request. Node-Neo4j defaults to sending a `User-Agent` identifying itself, but this can be overridden too.
+
+- **`proxy`**: optional URL to a proxy. If present, all requests will be routed through the proxy.
+
+- **`agent`**: optional [`http.Agent`](http://nodejs.org/api/http.html#http_http_agent) instance, for custom [socket pooling](#tuning).
+
+Once you have a `GraphDatabase` instance, you can make queries and more.
+
+Most operations are **asynchronous**, which means they take a **callback**. Node-Neo4j callbacks are of the standard `(error[, results])` form.
+
+Async control flow can get pretty tricky, so it's *highly* recommended to use a flow control library or tool, like [async](https://github.com/caolan/async) or [Streamline](https://github.com/Sage/streamlinejs).
 
 
-## Development
+## Cypher
 
-    git clone git@github.com:thingdom/node-neo4j.git
-    cd node-neo4j
-    npm install && npm run clean
-
-You'll need a local installation of Neo4j ([links](http://neo4j.org/download)),
-and it should be running on the default port of 7474 (`neo4j start`).
-
-To run the tests:
-
-    npm test
-
-This library is written in [CoffeeScript][], using [Streamline.js][] syntax.
-The tests automatically compile the code on-the-fly, but you can also generate
-compiled `.js` files from the source `._coffee` files manually:
-
-    npm run build
-
-This is in fact what's run each time this library is published to npm.
-But please don't check the generated `.js` files in; to remove:
-
-    npm run clean
-
-When compiled `.js` files exist, changes to the source `._coffee` files will
-*not* be picked up automatically; you'll need to rebuild.
-
-If you `npm link` this module into another app (like [node-neo4j-template][])
-and you want the code compiled on-the-fly during development, you can create
-an `index.js` file under `lib/` with the following:
+To make a [Cypher query](http://neo4j.com/docs/stable/cypher-query-lang.html), simply pass the string query, any query parameters, and a callback to receive the error or results.
 
 ```js
-require('coffee-script/register');
-require('streamline/register');
-module.exports = require('./index._coffee');
+db.cypher({
+    query: 'MATCH (user:User {email: {email}}) RETURN user',
+    params: {
+        email: 'alice@example.com',
+    },
+}, callback);
 ```
 
-But don't check this in! That would cause all clients to compile the code
-on-the-fly every time, which isn't desirable in production.
+It's extremely important to **pass `params` separately**. If you concatenate them into the `query`, you'll be vulnerable to injection attacks, and Neo4j performance will suffer as well. _(Note that parameters can't be used for labels, property names, and relationship types, as those things determine the query plan. [Docs »](http://neo4j.com/docs/stable/cypher-parameters.html))_
+
+Cypher queries *always* return a list of results (like SQL rows), with each result having common properties (like SQL columns). Thus, query **results** passed to the callback are *always* an **array** (even if it's empty), and each **result** in the array is *always* an **object** (even if it's empty).
+
+```js
+function callback(err, results) {
+    if (err) throw err;
+    var result = results[0];
+    if (!result) {
+        console.log('No user found.');
+    } else {
+        var user = result['user'];
+        console.log(user);
+    }
+};
+```
+
+If the query results include nodes or relationships, **`Node`** and **`Relationship` instances** are returned for them. These instances encapsulate `{_id, labels, properties}` for nodes, and `{_id, type, properties, _fromId, _toId}` for relationships, but they can be used just like normal objects.
+
+```json
+{
+    "_id": 12345678,
+    "labels": [
+        "User",
+        "Admin"
+    ],
+    "properties": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "emailVerified": true,
+        "passwordHash": "..."
+    }
+}
+```
+
+(The `_id` properties refer to Neo4j's internal IDs. These can be convenient for debugging, but their usage otherwise — especially externally — is discouraged.)
+
+If you don't need to know Neo4j IDs, node labels, or relationship types, you can pass **`lean: true`** to get back *just* properties, for a potential performance gain.
+
+```js
+db.cypher({
+    query: 'MATCH (user:User {email: {email}}) RETURN user',
+    params: {
+        email: 'alice@example.com',
+    },
+    lean: true,
+}, callback);
+```
+
+```json
+{
+    "name": "Alice Smith",
+    "email": "alice@example.com",
+    "emailVerified": true,
+    "passwordHash": "..."
+}
+```
+
+Other options:
+
+- **`headers`**: optional custom [HTTP headers](#headers) to send with this query. These will add onto the default `GraphDatabase` `headers`, but also override any that overlap.
 
 
-## Changes
+## Batching
 
-See the [Changelog][changelog] for the full history of changes and releases.
+You can also make multiple Cypher queries within a single network request, by passing a `queries` *array* rather than a single `query` string.
+
+Query `params` (and optionally `lean`) are then specified *per query*, so the elements in the array are `{query, params[, lean]}` objects. (Other options like `headers` remain "global" for the entire request.)
+
+```js
+db.cypher({
+    queries: [{
+        query: 'MATCH (user:User {email: {email}}) RETURN user',
+        params: {
+            email: 'alice@example.com',
+        },
+    }, {
+        query: 'MATCH (task:WorkerTask) RETURN task',
+        lean: true,
+    }, {
+        query: 'MATCH (task:WorkerTask) DELETE task',
+    }],
+    headers: {
+        'X-Request-ID': '1234567890',
+    },
+}, callback);
+```
+
+The callback then receives an *array* of query results, one per query.
+
+```js
+function callback(err, batchResults) {
+    if (err) throw err;
+
+    var userResults = batchResults[0];
+    var taskResults = batchResults[1];
+    var deleteResults = batchResults[2];
+
+    // User results:
+    var userResult = userResults[0];
+    if (!userResult) {
+        console.log('No user found.');
+    } else {
+        var user = userResult['user'];
+        console.log('User %s (%s) found.', user._id, user.properties.name);
+    }
+
+    // Worker task results:
+    if (!taskResults.length) {
+        console.log('No worker tasks to process.');
+    } else {
+        taskResults.forEach(function (taskResult) {
+            var task = taskResult['task'];
+            console.log('Processing worker task %s...', task.operation);
+        });
+    }
+
+    // Delete results (shouldn’t have returned any):
+    assert.equal(deleteResults.length, 0);
+};
+```
+
+Importantly, batch queries execute (a) **sequentially** and (b) **transactionally**: they all succeed, or they all fail. If you don't need them to be transactional, it can often be better to parallelize separate `db.cypher` calls instead.
+
+
+## Transactions
+
+You can also batch multiple Cypher queries into a single transaction across *multiple* network requests. This can be useful when application logic needs to run in between related queries (e.g. for domain-aware cascading deletes), or Neo4j state needs to be coordinated with side effects (e.g. writes to another data store). The queries will all succeed or fail together.
+
+To do this, begin a new transaction, make Cypher queries within that transaction, and then ultimately commit the transaction or roll it back.
+
+```js
+var tx = db.beginTransaction();
+
+function makeFirstQuery() {
+    tx.cypher({
+        query: '...',
+        params {...},
+    }, makeSecondQuery);
+}
+
+function makeSecondQuery(err, results) {
+    if (err) throw err;
+    // ...some application logic...
+    tx.cypher({
+        query: '...',
+        params: {...},
+    }, finish);
+}
+
+function finish(err, results) {
+    if (err) throw err;
+    // ...some application logic...
+    tx.commit(done);  // or tx.rollback(done);
+}
+
+function done(err) {
+    if (err) throw err;
+    // At this point, the transaction has been committed.
+}
+
+makeFirstQuery();
+```
+
+The transactional `cypher` method supports everything the normal [`cypher`](#cypher) method does (e.g. `lean`, `headers`, and batch `queries`). In addition, you can pass **`commit: true`** to auto-commit the transaction (and save a network request) if the query succeeds.
+
+```js
+function makeSecondQuery(err, results) {
+    if (err) throw err;
+    // ...some application logic...
+    tx.cypher({
+        query: '...',
+        params: {...},
+        commit: true,
+    }, done);
+}
+
+function done(err) {
+    if (err) throw err;
+    // At this point, the transaction has been committed.
+}
+```
+
+Importantly, transactions allow only one query at a time. To help preempt errors, you can inspect the **`state`** of the transaction, e.g. whether it's open for queries or not.
+
+```js
+// Initially, transactions are open:
+assert.equal(tx.state, tx.STATE_OPEN);
+
+// Making a query...
+tx.cypher({
+    query: '...',
+    params: {...},
+}, callback)
+
+// ...will result in the transaction being pending:
+assert.equal(tx.state, tx.STATE_PENDING);
+
+// All other operations (making another query, committing, etc.)
+// are rejected while the transaction is pending:
+assert.throws(tx.renew.bind(tx))
+
+function callback(err, results) {
+    // When the query returns, the transaction is likely open again,
+    // but it could be committed if `commit: true` was specified,
+    // or it could have been rolled back automatically (by Neo4j)
+    // if there was an error:
+    assert.notEqual([
+        tx.STATE_OPEN, tx.STATE_COMMITTED, tx.STATE_ROLLED_BACK
+    ].indexOf(tx.state), -1);   // i.e. tx.state is in this array
+}
+```
+
+Finally, open transactions **expire** after some period of inactivity. This period is [configurable in Neo4j](http://neo4j.com/docs/stable/server-configuration.html), but it defaults to 60 seconds today. Transactions **renew automatically** on every query, but if you need to, you can inspect transactions' expiration times and renew them manually.
+
+```js
+// Only open transactions (not already expired) can be renewed:
+assert.equal(tx.state, tx.STATE_OPEN);
+assert.notEqual(tx.state, tx.STATE_EXPIRED);
+
+console.log('Before:', tx.expiresAt, '(in', tx.expiresIn, 'ms)');
+tx.renew(function (err) {
+    if (err) throw err;
+    console.log('After:', tx.expiresAt, '(in', tx.expiresIn, 'ms)');
+});
+```
+
+The full [state diagram](https://paper.fiftythree.com/aseemk/10779878) putting this all together:
+
+<a href="https://paper.fiftythree.com/aseemk/10779878"><img alt="Neo4j transaction state diagram" src="https://blobs-public.fiftythree.com/9LdWt0fwPjeT_o0nZ6b3o1w2qCwKs6NuNGZ4d3db86UKp2r7" width="512" height="384" /></a>
+
+
+## Headers
+
+Most node-neo4j operations support passing in custom headers for the underlying HTTP requests. The `GraphDatabase` constructor also supports passing in default headers for every operation.
+
+This can be useful to achieve a variety of features, such as:
+
+- Logging individual queries
+- Tracing application requests
+- Splitting master/slave traffic (see [High Availability](#high-availability) below)
+
+None of these things are supported out-of-the-box by Neo4j today, but all can be handled by a server (e.g. Apache or Nginx) or load balancer (e.g. HAProxy or Amazon ELB) in front.
+
+For example, at FiftyThree, our Cypher requests look effectively like this (though we abstract and encapsulate these things with higher-level helpers):
+
+```js
+db.cypher({
+    query: '...',
+    params: {...},
+    headers: {
+        // Identify the query via a short, human-readable name.
+        // This is what we log in HAProxy for every request,
+        // since all Cypher calls have the same HTTP path,
+        // and this is friendlier than the entire query.
+        'X-Query-Name': 'User_getUnreadNotifications',
+
+        // This tells HAProxy to send this query to the master (even
+        // though it's a read), as we require strong consistency here.
+        // See the High Availability section below.
+        'X-Consistency': 'strong'
+
+        // This is a concatenation of upstream services' request IDs
+        // along with a randomly generated one of our own.
+        // We log this header on all our servers, so we can trace
+        // application requests through our entire stack.
+        // TODO: Link to Heroku article on this!
+        'X-Request-Ids': '123,456,789'
+    },
+}, callback);
+```
+
+You might also find custom headers helpful for custom [Neo4j plugins](#http-plugins).
+
+
+## High Availability
+
+Neo4j Enterprise supports running multiple instances of Neo4j in a single ["High Availability"](http://neo4j.com/docs/stable/ha.html) (HA) cluster. Neo4j's HA uses a master-slave setup, so slaves typically lag behind the master by a small delay ([tunable in Neo4j](http://neo4j.com/docs/stable/ha-configuration.html)).
+
+There are multiple ways to interface with an HA cluster from node-neo4j, but the [recommended route](http://neo4j.com/docs/stable/ha-haproxy.html) is to place a **load balancer** in front (e.g. HAProxy or Amazon ELB). You can then point node-neo4j to the load balancer's endpoint.
+
+```js
+var db = new neo4j.GraphDatabase({
+    url: 'https://username:password@lb-neo4j.example.com:1234',
+});
+```
+
+You'll still want to **split traffic** between the master and the slaves (e.g. reads to slaves, writes to master), in order to distribute load and improve performance. You can achieve this through [multiple ways](http://blog.armbruster-it.de/2015/08/neo4j-and-haproxy-some-best-practices-and-tricks/):
+
+- Create separate `GraphDatabase` instances with different `url`s to the load balancer (e.g. different host, port, or path). The load balancer can inspect the URL to route queries appropriately.
+
+- Use the same, single `GraphDatabase` instance, but send a [custom header](#headers) to let the load balancer know where the query should go. This is what we do at FiftyThree, and what's shown in the custom header example above.
+
+- Have the load balancer derive the target automatically, e.g. by inspecting the Cypher query. This isn't recommended. =)
+
+With this setup, you should find node-neo4j usage with an HA cluster to be seamless.
+
+
+## HTTP / Plugins
+
+If you need functionality beyond Cypher, you can make direct HTTP requests to Neo4j. This can be useful for legacy APIs (e.g. [traversals](http://neo4j.com/docs/stable/rest-api-traverse.html)), custom plugins (e.g. [neo4j-spatial](http://neo4j-contrib.github.io/spatial/#spatial-server-plugin)), or even future APIs before node-neo4j implements them.
+
+```js
+db.http({
+    method: 'GET',
+    path: '/db/data/node/12345678',
+    // ...
+}, callback);
+
+function callback(err, body) {
+    if (err) throw err;
+    console.log(body);
+}
+```
+
+```json
+{
+    "_id": 12345678,
+    "labels": [
+        "User",
+        "Admin"
+    ],
+    "properties": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "emailVerified": true,
+        "passwordHash": "..."
+    }
+}
+```
+
+By default:
+
+- The callback receives just the **response body** (not the status code or headers);
+- Any nodes and relationships in the body are **transformed** to `Node` and `Relationship` instances (like [`cypher`](#cypher)); and
+- 4xx and 5xx responses are treated as **[errors](#errors)**.
+
+You can alternately pass **`raw: true`** for more control, in which case:
+
+- The callback receives the ***entire* response** (with an additional `body` property);
+- Nodes and relationships are ***not* transformed** into `Node` and `Relationship` instances (but the body is still parsed as JSON); and
+- 4xx and 5xx responses are ***not*** treated as **errors**.
+
+```js
+db.http({
+    method: 'GET',
+    path: '/db/data/node/12345678',
+    raw: true,
+}, callback);
+
+function callback(err, resp) {
+    if (err) throw err;
+    assert.equal(resp.statusCode, 200);
+    assert.equal(typeof resp.headers, 'object');
+    console.log(resp.body);
+}
+```
+
+```js
+{
+    "self": "http://localhost:7474/db/data/node/12345678",
+    "labels": "http://localhost:7474/db/data/node/12345678/labels",
+    "properties": "http://localhost:7474/db/data/node/12345678/properties",
+    // ...
+    "metadata": {
+        "id": 12345678,
+        "labels": [
+            "User",
+            "Admin"
+        ]
+    },
+    "data": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "emailVerified": true,
+        "passwordHash": "..."
+    }
+}
+```
+
+Other options:
+
+- **`headers`**: optional custom [HTTP headers](#headers) to send with this request. These will add onto the default `GraphDatabase` `headers`, but also override any that overlap.
+
+- **`body`**: an optional request body, e.g. for `POST` and `PUT` requests. This gets serialized to JSON.
+
+Requests and responses can also be **streamed** for maximum performance. The `http` method returns a [Request.js](https://github.com/request/request) instance, which is a [`DuplexStream`](https://nodejs.org/api/stream.html#stream_class_stream_duplex) combining both the writeable request stream and the readable response stream.
+
+*(Request.js provides a number of benefits over the native HTTP
+[`ClientRequest`](http://nodejs.org/api/http.html#http_class_http_clientrequest) and [`IncomingMessage`](http://nodejs.org/api/http.html#http_http_incomingmessage) classes, e.g. proxy support,
+gzip decompression, simpler writes, and a single unified `'error'` event.)*
+
+If you want to stream the request, be sure not to pass a `body` option. And if you want to stream the response (without having it buffer in memory), be sure not to pass a callback. You can stream the request without streaming the response, and vice versa.
+
+Streaming the response implies the `raw` option above: nodes and relationships are *not* transformed (as even JSON isn't parsed), and 4xx and 5xx responses are *not* treated as errors.
+
+```js
+var req = db.http({
+    method: 'GET',
+    path: '/db/data/node/12345678',
+});
+
+req.on('error', function (err) {
+    // Handle the error somehow. The default behavior is:
+    throw err;
+});
+
+req.on('response', function (resp) {
+    assert.equal(resp.statusCode, 200);
+    assert.equal(typeof resp.headers, 'object');
+    assert.equal(typeof resp.body, 'undefined');
+});
+
+var body = '';
+
+req.on('data', function (chunk) {
+    body += chunk;
+});
+
+req.on('end', function () {
+    body = JSON.parse(body);
+    console.log(body);
+});
+```
+
+
+## Errors
+
+To achieve robustness in your app, it's vitally important to [handle errors precisely](http://www.joyent.com/developers/node/design/errors). Neo4j supports this nicely by returning semantic and precise [error codes](http://neo4j.com/docs/stable/status-codes.html).
+
+There are multiple levels of detail, but the high-level classifications are a good granularity for decision-making:
+
+- `ClientError` (likely a bug in your code, but possibly invalid user input)
+- `DatabaseError` (a bug in Neo4j)
+- `TransientError` (occasionally expected; can/should retry)
+
+node-neo4j translates these classifications to named `Error` subclasses. That means there are two ways to detect Neo4j errors:
+
+```js
+// `instanceof` is recommended:
+err instanceof neo4j.TransientError
+
+// `name` works too, though:
+err.name === 'neo4j.TransientError'
+```
+
+These error instances also have a `neo4j` property with semantic data inside. E.g. Cypher errors have data of the form `{code, message}`:
+
+```json
+{
+    "code": "Neo.TransientError.Transaction.DeadlockDetected",
+    "message": "LockClient[83] can't wait on resource ...",
+    "stackTrace": "..."
+}
+```
+
+Other types of errors (e.g. [managing schema](#management)) may have different forms of `neo4j` data:
+
+```json
+{
+    "exception": "BadInputException",
+    "fullname": "org.neo4j.server.rest.repr.BadInputException",
+    "message": "Unable to add label, see nested exception.",
+    "stackTrace": [...],
+    "cause": {...}
+}
+```
+
+Finally, malformed (non-JSON) responses from Neo4j (rare) will have `neo4j` set to the raw response string, while native Node.js errors (e.g. DNS errors) will be propagated in their original form, to avoid masking unexpected issues.
+
+Putting all this together, you now have the tools to handle Neo4j errors precisely! For example, we have helpers similar to these at FiftyThree:
+
+```js
+// A query or transaction failed. Should we retry it?
+// We check this in a retry loop, with proper backoff, etc.
+// http://aseemk.com/talks/advanced-neo4j#/50
+function shouldRetry(err) {
+    // All transient errors are worth retrying, of course.
+    if (err instanceof neo4j.TransientError) {
+        return true;
+    }
+
+    // If the database is unavailable, it's probably failing over.
+    // We expect it to come back up quickly, so worth retrying also.
+    if (isDbUnavailable(err)) {
+        return true;
+    }
+
+    // There are a few other non-transient Neo4j errors we special-case.
+    // Important: this assumes we don't have bugs in our code that would trigger
+    // these errors legitimately.
+    if (typeof err.neo4j === 'object' && (
+        // If a failover happened when we were in the middle of a transaction,
+        // the new instance won't know about that transaction, so we re-do it.
+        err.neo4j.code === 'Neo.ClientError.Transaction.UnknownId' ||
+        // These are current Neo4j bugs we occasionally hit with our queries.
+        err.neo4j.code === 'Neo.ClientError.Statement.EntityNotFound' ||
+        err.neo4j.code === 'Neo.DatabaseError.Statement.ExecutionFailure')) {
+            return true;
+    }
+
+    return false;
+}
+
+// Is this error due to Neo4j being down, failing over, etc.?
+// This is a separate helper because we also retry less aggressively in this case.
+function isDbUnavailable(err) {
+    // If we're unable to connect, we see these particular Node.js errors.
+    // https://nodejs.org/api/errors.html#errors_common_system_errors
+    // E.g. http://stackoverflow.com/questions/17245881/node-js-econnreset
+    if ((err.syscall === 'getaddrinfo' && err.code === 'ENOTFOUND') ||
+        (err.syscall === 'connect' && err.code === 'EHOSTUNREACH') ||
+        (err.syscall === 'read' && err.code === 'ECONNRESET')) {
+            return true;
+    }
+
+    // We load balance via HAProxy, so if Neo4j is unavailable, HAProxy responds
+    // with 5xx status codes.
+    // node-neo4j sees this and translates to a DatabaseError, but the body is
+    // HTML, not JSON, so the `neo4j` property is simply the HTML string.
+    if (err instanceof neo4j.DatabaseError && typeof err.neo4j === 'string' &&
+        err.neo4j.match(/(502 Bad Gateway|503 Service Unavailable)/)) {
+            return true;
+    }
+
+    return false;
+}
+```
+
+In addition to all of the above, node-neo4j also embeds the most useful information from `neo4j` into the `message` and `stack` properties, so you don't need to do anything special to log meaningful, actionable, and debuggable errors. (E.g. Node's native logging of errors, both via `console.log` and on uncaught exceptions, includes this info.)
+
+Here are some example snippets from real-world `stack` traces:
+
+```
+neo4j.ClientError: [Neo.ClientError.Statement.ParameterMissing] Expected a parameter named email
+
+neo4j.ClientError: [Neo.ClientError.Schema.ConstraintViolation] Node 15 already exists with label User and property "email"=[15]
+
+neo4j.DatabaseError: [Neo.DatabaseError.Statement.ExecutionFailure] scala.MatchError: (email,null) (of class scala.Tuple2)
+    at <Java stack first, to include in Neo4j bug report>
+    at <then Node.js stack...>
+
+neo4j.DatabaseError: 502 Bad Gateway response for POST /db/data/transaction/commit: "<html><body><h1>502 Bad Gateway</h1>\nThe server returned an invalid or incomplete response.\n</body></html>\n"
+
+neo4j.TransientError: [Neo.TransientError.Transaction.DeadlockDetected] LockClient[1150] can't wait on resource RWLock[NODE(196), hash=2005718009] since => LockClient[1150] <-[:HELD_BY]- RWLock[NODE(197), hash=1180589294] <-[:WAITING_FOR]- LockClient[1149] <-[:HELD_BY]- RWLock[NODE(196), hash=2005718009]
+```
+
+Precise and helpful error reporting is one of node-neo4j's best strengths. We hope it helps your app run smoothly!
+
+
+## Tuning
+
+(TODO)
+
+
+## Management
+
+(TODO)
+
+- change password
+- get labels, etc.
+
+
+## Help
+
+Questions, comments, or other general discussion? **[Google Group »](https://groups.google.com/group/node-neo4j)**
+
+Bug reports or feature requests? **[GitHub Issues »](https://github.com/thingdom/node-neo4j/issues)**
+
+You can also try **[Gitter](https://gitter.im/thingdom/node-neo4j)**, **[Stack Overflow](http://stackoverflow.com/search?q=node-neo4j)** or **[Slack](https://neo4j-users.slack.com/messages/neo4j-javascript)** ([sign up here](http://neo4j-users-slack-invite.herokuapp.com/)).
+
+
+## Contributing
+
+[See **CONTRIBUTING.md** »](./CONTRIBUTING.md)
+
+
+## History
+
+[See **CHANGELOG.md** »](./CHANGELOG.md)
 
 
 ## License
 
-This library is licensed under the [Apache License, Version 2.0][license].
+Copyright © 2016 **[Aseem Kishore](https://github.com/aseemk)** and [contributors](https://github.com/thingdom/node-neo4j/graphs/contributors).
 
-
-## Feedback
-
-If you encounter any bugs or other issues, please file them in the
-[issue tracker][issue-tracker].
-
-We also now have a [Google Group][google-group]!
-Post questions and participate in general discussions there.
-
-
-[neo4j]: http://neo4j.org/
-[node.js]: http://nodejs.org/
-[neo4j-rest-api]: http://docs.neo4j.org/chunked/stable/rest-api.html
-
-[api-docs]: http://coffeedoc.info/github/thingdom/node-neo4j/master/
-[aseemk]: https://github.com/aseemk
-[node-neo4j-template]: https://github.com/aseemk/node-neo4j-template
-[semver]: http://semver.org/
-
-[neo4j-getting-started]: http://wiki.neo4j.org/content/Getting_Started_With_Neo4j_Server
-[coffeescript]: http://coffeescript.org/
-[streamline.js]: https://github.com/Sage/streamlinejs
-
-[changelog]: CHANGELOG.md
-[issue-tracker]: https://github.com/thingdom/node-neo4j/issues
-[license]: http://www.apache.org/licenses/LICENSE-2.0.html
-[google-group]: https://groups.google.com/group/node-neo4j
+This library is licensed under the **[Apache License, Version 2.0](./LICENSE)**.

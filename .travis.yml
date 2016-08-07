@@ -1,26 +1,34 @@
 language: node_js
 
 node_js:
-    - "0.11"
-    - "0.10"
+  # test across multiple versions of Node:
+  - "5"
+  - "4"
+  - "0.12"
+  - "0.10"
 
 jdk:
-    - oraclejdk7  # needed for local Neo4j 2.0+
+  - oraclejdk7  # needed for local Neo4j 2.0+
 
 env:
-    # test across multiple versions of Neo4j:
-    - NEO4J_VERSION="2.1.5"
-    - NEO4J_VERSION="2.0.4"
-    - NEO4J_VERSION="1.9.8"
+  # test across multiple versions of Neo4j:
+  - NEO4J_VERSION="2.3.3"
+  - NEO4J_VERSION="2.2.8"
+  - NEO4J_VERSION="2.1.8"
+  - NEO4J_VERSION="2.0.4"
 
 before_install:
-    # install Neo4j locally:
-    - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
-    - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
-    - neo4j-community-$NEO4J_VERSION/bin/neo4j start
+  # install Neo4j locally:
+  - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
+  - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
+  - neo4j-community-$NEO4J_VERSION/bin/neo4j start
 
 # don't CI feature branches, but note that this *does* CI PR merge commits --
 # including before they're made! =)
 branches:
   only:
     - master
+
+script:
+  - npm run lint
+  - npm test

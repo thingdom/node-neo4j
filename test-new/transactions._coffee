@@ -113,7 +113,7 @@ describe 'Transactions', ->
             expect(tx.state).to.equal tx.STATE_PENDING
 
         cb = (err, results) ->
-            expect(err).to.not.exist()
+            expect(err).to.not.exist
             expect(tx.state).to.equal tx.STATE_OPEN
             done()
 
@@ -165,7 +165,7 @@ describe 'Transactions', ->
             params: {properties}
         , _
 
-        expect(results).to.be.empty()
+        expect(results).to.be.empty
 
     it 'should support committing, and reject subsequent requests', (_) ->
         tx = beginTx()
@@ -390,7 +390,7 @@ describe 'Transactions', ->
                 params:
                     idA: TEST_NODE_A._id
             , (err, results) =>
-                expect(err).to.exist()
+                expect(err).to.exist
                 helpers.expectError err, 'ClientError', 'Statement',
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
@@ -484,7 +484,7 @@ describe 'Transactions', ->
                 params:
                     idA: TEST_NODE_A._id
             , (err, results) ->
-                expect(err).to.exist()
+                expect(err).to.exist
                 # NOTE: Deadlock detected messages aren't predictable,
                 # so having the assertion for it simply check itself:
                 helpers.expectError err, 'TransientError', 'Transaction',
@@ -535,7 +535,7 @@ describe 'Transactions', ->
                 params:
                     props: {foo: null}
             , (err, results) =>
-                expect(err).to.exist()
+                expect(err).to.exist
                 helpers.expectError err,
                     'DatabaseError', 'Statement', 'ExecutionFailure',
                     'scala.MatchError: (foo,null) (of class scala.Tuple2)'
@@ -590,7 +590,7 @@ describe 'Transactions', ->
                     idA: TEST_NODE_A._id
                 commit: true
             , (err, results) =>
-                expect(err).to.exist()
+                expect(err).to.exist
                 helpers.expectError err, 'ClientError', 'Statement',
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
@@ -605,7 +605,7 @@ describe 'Transactions', ->
         # For precision, implementing this step without Streamline.
         do (cont=_) =>
             tx.cypher 'RETURN {foo}', (err, results) =>
-                expect(err).to.exist()
+                expect(err).to.exist
                 helpers.expectError err, 'ClientError', 'Statement',
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
@@ -626,7 +626,7 @@ describe 'Transactions', ->
                 query: 'RETURN {foo}'
                 commit: true
             , (err, results) =>
-                expect(err).to.exist()
+                expect(err).to.exist
                 helpers.expectError err, 'ClientError', 'Statement',
                     'ParameterMissing', 'Expected a parameter named foo'
                 cont()
@@ -661,7 +661,7 @@ describe 'Transactions', ->
         for result in results
             expect(result).to.be.an 'array'
 
-        expect(results[0]).to.be.empty()
+        expect(results[0]).to.be.empty
         expect(results[1]).to.have.length 1
 
         [{nodeA}] = results[1]
@@ -696,7 +696,7 @@ describe 'Transactions', ->
                         idA: TEST_NODE_A._id
                 ]
             , (err, results) =>
-                expect(err).to.exist()
+                expect(err).to.exist
 
                 # Simplified error checking, since the message is complex:
                 expect(err).to.be.an.instanceOf neo4j.ClientError

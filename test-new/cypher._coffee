@@ -80,7 +80,7 @@ describe 'GraphDatabase::cypher', ->
             params: {unused: 'param'}
         , _
 
-        expect(results).to.be.empty()
+        expect(results).to.be.empty
 
     it 'should reject empty/missing queries', ->
         fail = -> throw new Error 'Callback should not have been called'
@@ -91,7 +91,7 @@ describe 'GraphDatabase::cypher', ->
 
     it 'should properly parse and throw Neo4j errors', (done) ->
         DB.cypher 'RETURN {foo}', (err, results) ->
-            expect(err).to.exist()
+            expect(err).to.exist
             helpers.expectError err, 'ClientError', 'Statement',
                 'ParameterMissing', 'Expected a parameter named foo'
 
@@ -101,13 +101,13 @@ describe 'GraphDatabase::cypher', ->
             # before the error. In this case, the query began execution,
             # so we expect an array, but no actual results.
             expect(results).to.be.an 'array'
-            expect(results).to.be.empty()
+            expect(results).to.be.empty
 
             done()
 
     it 'should properly return null result on syntax errors', (done) ->
         DB.cypher '(syntax error)', (err, results) ->
-            expect(err).to.exist()
+            expect(err).to.exist
 
             # Simplified error checking, since the message is complex:
             expect(err).to.be.an.instanceOf neo4j.ClientError
@@ -117,7 +117,7 @@ describe 'GraphDatabase::cypher', ->
 
             # Unlike the previous test case, since Neo4j could not be
             # executed, no results should have been returned at all:
-            expect(results).to.not.exist()
+            expect(results).to.not.exist
 
             done()
 
@@ -251,7 +251,7 @@ describe 'GraphDatabase::cypher', ->
                     idR: TEST_REL._id
             ]
         , (err, results) ->
-            expect(err).to.exist()
+            expect(err).to.exist
             helpers.expectError err, 'ClientError', 'Statement',
                 'ParameterMissing', 'Expected a parameter named foo'
 
@@ -270,7 +270,7 @@ describe 'GraphDatabase::cypher', ->
             expect(resultsA).to.eql [
                 a: TEST_NODE_A.properties
             ]
-            expect(resultsB).to.be.empty()
+            expect(resultsB).to.be.empty
 
             done()
 

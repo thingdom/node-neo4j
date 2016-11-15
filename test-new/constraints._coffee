@@ -150,7 +150,7 @@ describe 'Constraints', ->
 
         it '(verify with test query)', (done) ->
             violateConstraint (err) ->
-                expect(err).to.exist()
+                expect(err).to.exist
 
                 helpers.expectError err,
                     'ClientError', 'Schema', 'ConstraintValidationFailed',
@@ -166,7 +166,7 @@ describe 'Constraints', ->
                 property: TEST_PROP
             , _
 
-            expect(constraint).to.not.exist()
+            expect(constraint).to.not.exist
 
         it 'should support dropping constraint', (_) ->
             dropped = DB.dropConstraint

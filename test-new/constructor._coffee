@@ -58,7 +58,7 @@ expectAuth = (db, username, password) ->
     expect(db.auth).to.eql {username, password}
 
 expectNoAuth = (db) ->
-    expect(db.auth).to.not.exist()
+    expect(db.auth).to.not.exist
 
 
 ## TESTS

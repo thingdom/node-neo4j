@@ -71,10 +71,10 @@ describe 'Auth', ->
         # NOTE: Explicitly not using `db.checkPasswordChangeNeeded` since that
         # rejects calls when no auth is set.
         db.http '/db/data/', (err, data) ->
-            expect(err).to.exist()
+            expect(err).to.exist
             helpers.expectError err, 'ClientError', 'Security',
                 'Unauthorized', 'No authentication header supplied.'
-            expect(data).to.not.exist()
+            expect(data).to.not.exist
             done()
 
     it 'should fail when auth is incorrect (username)', (done) ->
@@ -85,10 +85,10 @@ describe 'Auth', ->
         db.auth.username = RANDOM_PASSWORD
 
         db.checkPasswordChangeNeeded (err, bool) ->
-            expect(err).to.exist()
+            expect(err).to.exist
             helpers.expectError err, 'ClientError', 'Security',
                 'Unauthorized', 'Invalid username or password.'
-            expect(bool).to.not.exist()
+            expect(bool).to.not.exist
             done()
 
     it 'should fail when auth is incorrect (password)', (done) ->
@@ -99,10 +99,10 @@ describe 'Auth', ->
         db.auth.password = RANDOM_PASSWORD
 
         db.checkPasswordChangeNeeded (err, bool) ->
-            expect(err).to.exist()
+            expect(err).to.exist
             helpers.expectError err, 'ClientError', 'Security',
                 'Unauthorized', 'Invalid username or password.'
-            expect(bool).to.not.exist()
+            expect(bool).to.not.exist
             done()
 
     it 'should support checking whether a password change is needed', (_) ->

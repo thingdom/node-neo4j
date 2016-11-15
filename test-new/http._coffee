@@ -109,8 +109,8 @@ describe 'GraphDatabase::http', ->
             method: 'POST'
             path: '/'
         , (err, body) ->
-            expect(err).to.exist()
-            expect(body).to.not.exist()
+            expect(err).to.exist
+            expect(body).to.not.exist
 
             helpers.expectRawError err, 'ClientError',
                 '405 Method Not Allowed response for POST /'
@@ -122,8 +122,8 @@ describe 'GraphDatabase::http', ->
             method: 'GET'
             path: '/db/data/node/-1'
         , (err, body) ->
-            expect(err).to.exist()
-            expect(body).to.not.exist()
+            expect(err).to.exist
+            expect(body).to.not.exist
 
             # Neo4j 2.2 returns a proper new-style error object for this case,
             # but previous versions return an old-style error.
@@ -168,8 +168,8 @@ describe 'GraphDatabase::http', ->
             path: '/'
             raw: true
         , (err, resp) ->
-            expect(err).to.exist()
-            expect(resp).to.not.exist()
+            expect(err).to.exist
+            expect(resp).to.not.exist
 
             # NOTE: *Not* using our `expectError` helpers here, because we
             # explicitly don't wrap native (non-Neo4j) errors.

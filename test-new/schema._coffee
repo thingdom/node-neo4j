@@ -27,14 +27,14 @@ describe 'Schema', ->
         labels = DB.getLabels _
 
         expect(labels).to.be.an 'array'
-        expect(labels).to.not.be.empty()
+        expect(labels).to.not.be.empty
         expect(labels).to.contain TEST_LABEL
 
     it 'should support listing all property keys', (_) ->
         keys = DB.getPropertyKeys _
 
         expect(keys).to.be.an 'array'
-        expect(keys).to.not.be.empty()
+        expect(keys).to.not.be.empty
 
         for key of TEST_NODE_A.properties
             expect(keys).to.contain key
@@ -43,7 +43,7 @@ describe 'Schema', ->
         types = DB.getRelationshipTypes _
 
         expect(types).to.be.an 'array'
-        expect(types).to.not.be.empty()
+        expect(types).to.not.be.empty
         expect(types).to.contain TEST_REL_TYPE
 
     it '(delete test graph)', (_) ->

@@ -150,10 +150,10 @@ describe 'Constraints', ->
 
         it '(verify with test query)', (done) ->
             violateConstraint (err) ->
-                expect(err).to.exist()
+                expect(err).to.exist
 
                 helpers.expectError err,
-                    'ClientError', 'Schema', 'ConstraintViolation',
+                    'ClientError', 'Schema', 'ConstraintValidationFailed',
                     "Node #{TEST_NODE_A._id} already exists
                         with label #{TEST_LABEL}
                         and property \"#{TEST_PROP}\"=[#{TEST_NODE_A._id}]"
@@ -166,7 +166,7 @@ describe 'Constraints', ->
                 property: TEST_PROP
             , _
 
-            expect(constraint).to.not.exist()
+            expect(constraint).to.not.exist
 
         it 'should support dropping constraint', (_) ->
             dropped = DB.dropConstraint

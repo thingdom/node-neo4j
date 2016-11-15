@@ -115,8 +115,8 @@ describe 'Indexes', ->
                 # So we explicitly guard against that, and just continue then.
                 # TODO: Would be nice to test the index another way...
                 try
-                    expect(err).to.exist()
-                    expect(results).to.not.exist()
+                    expect(err).to.exist
+                    expect(results).to.not.exist
                 catch assertionErr
                     # HACK: Because this test isn't a Streamline function,
                     # relying on `fixtures.queryDbVersion` having been called
@@ -205,7 +205,7 @@ describe 'Indexes', ->
                 property: TEST_PROP
             , _
 
-            expect(index).to.not.exist()
+            expect(index).to.not.exist
 
         it 'should support dropping index', (_) ->
             dropped = DB.dropIndex

@@ -95,10 +95,10 @@ exports.expectOldError = (err, statusCode, shortName, longName, message) ->
         message: message
 
     expect(err.neo4j.stacktrace).to.be.an 'array'
-    expect(err.neo4j.stacktrace).to.not.be.empty()
+    expect(err.neo4j.stacktrace).to.not.be.empty
     for line in err.neo4j.stacktrace
         expect(line).to.be.a 'string'
-        expect(line).to.not.be.empty()
+        expect(line).to.not.be.empty
 
 
 #
@@ -118,7 +118,7 @@ exports.expectRawError = (err, classification, message) ->
         throw new Error "Unrecognized type of expected `message`:
             #{typeof message} / #{message?.constructor.name}"
 
-    expect(err.neo4j).to.be.empty()     # TODO: Should this really be the case?
+    expect(err.neo4j).to.be.empty     # TODO: Should this really be the case?
 
 
 #

@@ -2,11 +2,11 @@ $ = require 'underscore'
 assert = require 'assert'
 http = require 'http'
 
-class @Error extends Error
+class @Error extends global.Error
 
     constructor: (@message='Unknown error', @neo4j={}) ->
         @name = 'neo4j.' + @constructor.name
-        Error.captureStackTrace @, @constructor
+        global.Error.captureStackTrace @, @constructor
 
     #
     # Accepts the given HTTP client response, and if it represents an error,

@@ -153,7 +153,7 @@ describe 'Constraints', ->
                 expect(err).to.exist()
 
                 helpers.expectError err,
-                    'ClientError', 'Schema', 'ConstraintViolation',
+                    'ClientError', 'Schema', 'ConstraintValidationFailed',
                     "Node #{TEST_NODE_A._id} already exists
                         with label #{TEST_LABEL}
                         and property \"#{TEST_PROP}\"=[#{TEST_NODE_A._id}]"

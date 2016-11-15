@@ -113,7 +113,7 @@ describe 'GraphDatabase::cypher', ->
             expect(err).to.be.an.instanceOf neo4j.ClientError
             expect(err.neo4j).to.be.an 'object'
             expect(err.neo4j.code).to.equal \
-                'Neo.ClientError.Statement.InvalidSyntax'
+                'Neo.ClientError.Statement.SyntaxError'
 
             # Unlike the previous test case, since Neo4j could not be
             # executed, no results should have been returned at all:

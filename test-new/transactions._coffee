@@ -504,7 +504,9 @@ describe 'Transactions', ->
         expect(nodeB.properties.test).to.not.equal 'transient errors'
         expect(nodeB.properties.tx).to.equal 1
 
-    it 'should properly handle (fatal) database errors', (_) ->
+    # TODO: Skipping this test for now, because the hack used here has been
+    # fixed, and this is not crucial, unique test coverage.
+    it.skip 'should properly handle (fatal) database errors', (_) ->
         tx = beginTx()
 
         # Important: don't auto-commit in the first query, because that doesn't
@@ -700,7 +702,7 @@ describe 'Transactions', ->
                 expect(err).to.be.an.instanceOf neo4j.ClientError
                 expect(err.neo4j).to.be.an 'object'
                 expect(err.neo4j.code).to.equal \
-                    'Neo.ClientError.Statement.InvalidSyntax'
+                    'Neo.ClientError.Statement.SyntaxError'
 
                 expect(results).to.be.an 'array'
                 expect(results).to.have.length 1

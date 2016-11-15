@@ -73,7 +73,7 @@ describe 'Auth', ->
         db.http '/db/data/', (err, data) ->
             expect(err).to.exist()
             helpers.expectError err, 'ClientError', 'Security',
-                'AuthorizationFailed', 'No authorization header supplied.'
+                'Unauthorized', 'No authentication header supplied.'
             expect(data).to.not.exist()
             done()
 
@@ -87,7 +87,7 @@ describe 'Auth', ->
         db.checkPasswordChangeNeeded (err, bool) ->
             expect(err).to.exist()
             helpers.expectError err, 'ClientError', 'Security',
-                'AuthorizationFailed', 'Invalid username or password.'
+                'Unauthorized', 'Invalid username or password.'
             expect(bool).to.not.exist()
             done()
 
@@ -101,7 +101,7 @@ describe 'Auth', ->
         db.checkPasswordChangeNeeded (err, bool) ->
             expect(err).to.exist()
             helpers.expectError err, 'ClientError', 'Security',
-                'AuthorizationFailed', 'Invalid username or password.'
+                'Unauthorized', 'Invalid username or password.'
             expect(bool).to.not.exist()
             done()
 

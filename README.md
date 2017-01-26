@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/thingdom/node-neo4j.svg?branch=master)](https://travis-ci.org/thingdom/node-neo4j)
 
 # Node-Neo4j
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/thingdom/node-neo4j?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This is a client library for accessing [Neo4j][], a graph database, from
 [Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api], and supports

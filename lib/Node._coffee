@@ -502,3 +502,55 @@ module.exports = class Node extends PropertyContainer
 
         catch error
             throw adjustError error
+            
+            
+    # @param to {Node}
+    # @param type {String} The property to be counted.
+    # @param type {String} The type of relationship to follow.
+    # @param direction {String} One of `'in'`, `'out'`, or `'all'`.
+    # @param algorithm {String} This needs to be `'shortestPath'` for now.
+    # @param callback {Function}
+    # @return {Path}
+    #
+    dijkstraPath: (to, cost, type, direction, _) ->
+        try
+            pathURL = "#{@self}/path"
+            data =
+                to: to.self,
+                cost_property: cost
+                relationships:
+                    type: type
+                    direction: direction
+                algorithm: 'dijkstra'
+
+            res = @_request.post
+                url: pathURL
+                json: data
+            , _
+
+            if res.statusCode is status.NOT_FOUND
+                # Empty path
+                return null
+
+            if res.statusCode isnt status.OK
+                throw new Error "Unrecognized response code: #{res.statusCode}"
+
+            # Parse result
+            data = res.body
+
+            # parsing manually (instead of using util.transform) in order to
+            # preserve relationship type info (which we know but isn't in the
+            # response):
+            start = new Node this, {self: data.start}
+            end = new Node this, {self: data.end}
+            length = data.length
+            nodes = data.nodes.map (url) =>
+                new Node this, {self: url}
+            relationships = data.relationships.map (url) =>
+                new Relationship this, {self: url, type}
+            weight = data.weight
+            # Return path
+            return new Path start, end, length, nodes, relationships, weight
+
+        catch error
+            throw adjustError error

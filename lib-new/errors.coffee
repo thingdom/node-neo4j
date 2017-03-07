@@ -2,7 +2,7 @@ $ = require 'underscore'
 assert = require 'assert'
 http = require 'http'
 
-class @Error extends Error
+class @Neo4jError extends Error
 
     constructor: (@message='Unknown error', @neo4j={}) ->
         @name = 'neo4j.' + @constructor.name
@@ -97,8 +97,8 @@ class @Error extends Error
 
     # TODO: Helper to rethrow native/inner errors? Not sure if we need one.
 
-class @ClientError extends @Error
+class @ClientError extends @Neo4jError
 
-class @DatabaseError extends @Error
+class @DatabaseError extends @Neo4jError
 
-class @TransientError extends @Error
+class @TransientError extends @Neo4jError

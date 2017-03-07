@@ -1,7 +1,7 @@
 $ = require 'underscore'
 assert = require 'assert'
 Constraint = require './Constraint'
-{Error} = require './errors'
+{Neo4jError} = require './errors'
 Index = require './Index'
 lib = require '../package.json'
 Node = require './Node'
@@ -99,7 +99,7 @@ module.exports = class GraphDatabase
                 # TODO: Do we want to return our own Response object?
                 return cb null, resp
 
-            if err = Error._fromResponse resp
+            if err = Neo4jError._fromResponse resp
                 return cb err
 
             cb null, _transform resp.body
@@ -258,7 +258,7 @@ module.exports = class GraphDatabase
                 # NOTE: This includes our own errors for non-2xx responses.
                 return cb err
 
-            if err = Error._fromResponse resp
+            if err = Neo4jError._fromResponse resp
                 return cb err
 
             _tx?._updateFromResponse resp
@@ -329,7 +329,7 @@ module.exports = class GraphDatabase
                 # TODO: Is it possible to get back more than one error?
                 # If so, is it fine for us to just use the first one?
                 [error] = errors
-                err = Error._fromObject error
+                err = Neo4jError._fromObject error
 
             cb err, results
 
@@ -428,7 +428,7 @@ module.exports = class GraphDatabase
                 return cb null, null
 
             # Translate all other error responses as legitimate errors:
-            if err = Error._fromResponse resp
+            if err = Neo4jError._fromResponse resp
                 return cb err
 
             cb err, if resp.body then Index._fromRaw resp.body
@@ -457,7 +457,7 @@ module.exports = class GraphDatabase
                 return cb null, false
 
             # Translate all other error responses as legitimate errors:
-            if err = Error._fromResponse resp
+            if err = Neo4jError._fromResponse resp
                 return cb err
 
             cb err, true    # Index existed and was dropped
@@ -555,7 +555,7 @@ module.exports = class GraphDatabase
                 return cb null, null
 
             # Translate all other error responses as legitimate errors:
-            if err = Error._fromResponse resp
+            if err = Neo4jError._fromResponse resp
                 return cb err
 
             cb err, if resp.body then Constraint._fromRaw resp.body
@@ -587,7 +587,7 @@ module.exports = class GraphDatabase
                 return cb null, false
 
             # Translate all other error responses as legitimate errors:
-            if err = Error._fromResponse resp
+            if err = Neo4jError._fromResponse resp
                 return cb err
 
             cb err, true    # Constraint existed and was dropped

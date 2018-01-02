@@ -2,6 +2,8 @@
 
 # Node-Neo4j
 
+⚠️ <em>**NOTE: This library is no longer under development.** Neo4j 3.0 comes with a [first-party JavaScript driver](http://neo4j.com/docs/api/javascript-driver/current/) which obviates the need for this library.</em> ⚠️
+
 This is a client library for accessing [Neo4j][], a graph database, from
 [Node.js][]. It uses Neo4j's [REST API][neo4j-rest-api], and supports
 Neo4j 1.5 through Neo4j 2.1.
@@ -10,7 +12,7 @@ Neo4j 1.5 through Neo4j 2.1.
 through Cypher for now -- but Cypher is the recommended interface for Neo4j
 anyway. This driver might change to wrap Cypher entirely.)
 
-<em>**Update: [node-neo4j v2][] is under development and almost finished!**
+<em>Update: [node-neo4j v2][] is under development and almost finished!
 [Read the full spec here][v2 spec], and follow the progress in [pull #145][].
 If you're comfortable using pre-release code, alpha versions are available on
 npm; we at [FiftyThree][] are running them in production. =)</em>

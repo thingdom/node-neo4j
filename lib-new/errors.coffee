@@ -6,7 +6,7 @@ class @Error extends Error
 
     constructor: (@message='Unknown error', @neo4j={}) ->
         @name = 'neo4j.' + @constructor.name
-        Error.captureStackTrace @, @constructor
+        super.captureStackTrace @, @constructor
 
     #
     # Accepts the given HTTP client response, and if it represents an error,

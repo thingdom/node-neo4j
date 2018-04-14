@@ -166,3 +166,19 @@ user9 = users[9]
         expect(results[0]['path'].relationships).to.have.length 2
         expect(results[0]['path'].relationships[1]).to.be.an 'object'
         # expect(results[0]['path'].relationships[1].type).to.eq 'follows'
+    
+    'neo4j error': (_) ->
+        try
+            results = db.query """
+                START notfound=node(999999)
+            """, _
+        catch err
+            expect(err.originalError).to.be.an 'object'
+            expect(err.originalError.message).to.be.an 'string'
+            expect(err.originalError.exception).to.be.an 'string'
+            expect(err.originalError.stacktrace).to.be.an 'array'
+            expect(err.originalError.message).to.be.an 'string'
+            expect(err.name).to.eql 'Neo4jError'
+            expect(err.exception).to.eql err.originalError.exception
+            expect(err.message).to.match /^Neo4j [A-Za-z]+Exception: /
+            expect(err.statusCode).to.eql 400

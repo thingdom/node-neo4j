@@ -84,15 +84,26 @@ exports.adjustError = (error) ->
 
         # also in some cases, the response body is indeed an error object, but
         # it's a Neo4j exception without a message:
-        if serverError?.exception and not serverError.message
-            serverError.message = """
-                Neo4j #{serverError.exception}: #{
-                    JSON.stringify serverError.stacktrace or [], null, 2
-                }
-            """
+        if not serverError.message
+            serverError.message = "(no message)"
+        
+        status = error.statusCode
 
         error = new Error
-        error.message = serverError.message or serverError
+        
+        message = serverError.message
+        if serverError.exception
+            message = "Neo4j #{serverError.exception}: #{message}"
+            error.exception = serverError.exception
+            error.name = "Neo4jError"
+            
+        error.message = message
+        
+        # Attach original error to expose neo4j's error stack and code
+        error.originalError = serverError
+        
+        # Expose status code
+        error.statusCode = status
 
     if typeof error isnt 'object'
         error = new Error error
